@@ -1,16 +1,19 @@
 package team.kitemc.verifymc.service;
 
+import java.security.SecureRandom;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class VerifyCodeService {
+    private static final int MAX_ATTEMPTS = 5; // 最大尝试次数
     private final ConcurrentHashMap<String, CodeEntry> codeMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> rateLimitMap = new ConcurrentHashMap<>(); // Rate limiting for email sending
     private final long expireMillis = 5 * 60 * 1000; // 5分钟
     private final long rateLimitMillis = 60 * 1000; // 60秒频率限制
     private final boolean debug;
     private final org.bukkit.plugin.Plugin plugin;
+    private final SecureRandom secureRandom = new SecureRandom();
+    private volatile boolean running = true;
 
     public VerifyCodeService(org.bukkit.plugin.Plugin plugin) {
         this.plugin = plugin;
@@ -32,7 +35,7 @@ public class VerifyCodeService {
      */
     private void startCleanupTask() {
         Thread cleanupThread = new Thread(() -> {
-            while (true) {
+            while (running) {
                 try {
                     Thread.sleep(300000); // Clean up every 5 minutes
                     cleanupExpiredEntries();
@@ -43,8 +46,17 @@ public class VerifyCodeService {
             }
         });
         cleanupThread.setDaemon(true);
+        cleanupThread.setName("VerifyCodeService-Cleanup");
         cleanupThread.start();
         debugLog("Cleanup task started");
+    }
+    
+    /**
+     * Stop the cleanup task gracefully
+     */
+    public void stop() {
+        running = false;
+        debugLog("Cleanup task stopped");
     }
     
     /**
@@ -125,7 +137,7 @@ public class VerifyCodeService {
 
     public String generateCode(String key) {
         debugLog("generateCode called for key: " + key);
-        String code = String.format("%06d", new Random().nextInt(1000000));
+        String code = String.format("%06d", secureRandom.nextInt(1000000));
         long expireTime = System.currentTimeMillis() + expireMillis;
         long currentTime = System.currentTimeMillis();
         
@@ -150,13 +162,23 @@ public class VerifyCodeService {
             debugLog("No code found for key: " + key);
             return false;
         }
+        
+        // 检查尝试次数
+        if (entry.attempts >= MAX_ATTEMPTS) {
+            debugLog("Too many attempts for key: " + key + ", attempts: " + entry.attempts);
+            codeMap.remove(key);
+            return false;
+        }
+        
         if (entry.expire < System.currentTimeMillis()) {
             debugLog("Code expired for key: " + key + ", expired at: " + entry.expire);
             codeMap.remove(key);
             return false;
         }
+        
+        entry.attempts++; // 增加尝试次数
         boolean ok = entry.code.equals(code);
-        debugLog("Code verification result: " + ok + " (expected: " + entry.code + ", provided: " + code + ")");
+        debugLog("Code verification result: " + ok + " (expected: " + entry.code + ", provided: " + code + ", attempts: " + entry.attempts + ")");
         if (ok) {
             debugLog("Removing used code for key: " + key);
             codeMap.remove(key);
@@ -167,9 +189,11 @@ public class VerifyCodeService {
     static class CodeEntry {
         String code;
         long expire;
+        int attempts; // 尝试次数
         CodeEntry(String code, long expire) {
             this.code = code;
             this.expire = expire;
+            this.attempts = 0;
         }
     }
 } 

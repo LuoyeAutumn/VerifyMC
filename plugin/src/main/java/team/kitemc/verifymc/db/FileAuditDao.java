@@ -103,4 +103,9 @@ public class FileAuditDao implements AuditDao {
     public synchronized List<AuditRecord> getAllAudits() {
         return new ArrayList<>(audits);
     }
+
+    @Override
+    public void close() {
+        // File-based storage: no resources to close
+    }
 }

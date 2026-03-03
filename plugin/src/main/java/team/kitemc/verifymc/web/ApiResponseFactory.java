@@ -4,9 +4,6 @@ import org.json.JSONObject;
 
 /**
  * Factory for building standardised JSON API responses.
- * Both {@code msg} and {@code message} keys are included for backward compatibility
- * with older frontend versions that read different keys.
- * (Preserved from original.)
  */
 public final class ApiResponseFactory {
     private ApiResponseFactory() {}
@@ -22,7 +19,6 @@ public final class ApiResponseFactory {
     public static JSONObject create(boolean success, String message) {
         JSONObject response = new JSONObject();
         response.put("success", success);
-        response.put("msg", message);
         response.put("message", message);
         return response;
     }

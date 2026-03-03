@@ -54,7 +54,7 @@ public class UserStatusHandler implements HttpHandler {
             }
         } else {
             resp.put("success", false);
-            resp.put("msg", ctx.getMessage("error.missing_username", language));
+            resp.put("message", ctx.getMessage("error.missing_username", language));
         }
         WebResponseHelper.sendJson(exchange, resp);
     }

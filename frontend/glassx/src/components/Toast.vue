@@ -8,14 +8,14 @@
     leave-to-class="opacity-0 translate-y-2 scale-95"
   >
     <div
-      v-if="visible"
-      class="max-w-sm w-full"
-    >
+        v-if="visible"
+        class="max-w-sm w-full"
+      >
         <div
-          class="glass-card p-4 flex items-center space-x-3"
+          class="glass-card p-4 flex items-start space-x-3 relative pr-12"
           :class="toastClasses"
         >
-          <div class="flex-shrink-0">
+          <div class="flex-shrink-0 mt-0.5">
             <CheckCircle v-if="type === 'success'" class="w-5 h-5 text-green-400" />
             <XCircle v-else-if="type === 'error'" class="w-5 h-5 text-red-400" />
             <AlertCircle v-else-if="type === 'warning'" class="w-5 h-5 text-yellow-400" />
@@ -23,25 +23,31 @@
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-white">{{ title }}</p>
-            <p v-if="message" class="text-sm text-gray-300 mt-1">{{ message }}</p>
+            <p v-if="message" class="text-sm text-white/70 mt-1">{{ message }}</p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             @click="close"
-            class="flex-shrink-0 text-gray-400 hover:text-white transition-colors duration-200"
+            class="absolute top-2 right-2 flex-shrink-0 transition-colors duration-200 rounded-full"
+            :aria-label="$t('common.close')"
+            :title="$t('common.close')"
           >
-            <X class="w-4 h-4" />
-          </button>
+            <X class="w-5 h-5" />
+          </Button>
         </div>
       </div>
   </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-vue-next'
+import Button from '@/components/ui/Button.vue'
+import type { NotificationType } from '@/types'
 
 interface Props {
-  type?: 'success' | 'error' | 'warning' | 'info'
+  type?: NotificationType
   title: string
   message?: string
   duration?: number
@@ -60,6 +66,10 @@ const emit = defineEmits<{
 
 const visible = ref(false)
 
+// 使用 ref 保存定时器 ID，确保组件卸载时能正确清理
+const autoCloseTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
+const closeTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
+
 const toastClasses = computed(() => {
   const baseClasses = 'border-l-4'
   switch (props.type) {
@@ -76,7 +86,7 @@ const toastClasses = computed(() => {
 
 const close = () => {
   visible.value = false
-  setTimeout(() => {
+  closeTimeout.value = setTimeout(() => {
     emit('close')
   }, 300)
 }
@@ -85,9 +95,21 @@ onMounted(() => {
   visible.value = true
   
   if (props.autoClose) {
-    setTimeout(() => {
+    autoCloseTimeout.value = setTimeout(() => {
       close()
     }, props.duration)
+  }
+})
+
+onUnmounted(() => {
+  // 清理所有定时器
+  if (autoCloseTimeout.value) {
+    clearTimeout(autoCloseTimeout.value)
+    autoCloseTimeout.value = null
+  }
+  if (closeTimeout.value) {
+    clearTimeout(closeTimeout.value)
+    closeTimeout.value = null
   }
 })
 </script>

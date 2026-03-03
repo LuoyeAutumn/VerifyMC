@@ -2,12 +2,14 @@ package team.kitemc.verifymc.web.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 public class AdminSyncHandler implements HttpHandler {
     private final PluginContext ctx;
@@ -19,9 +21,18 @@ public class AdminSyncHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!WebResponseHelper.requireMethod(exchange, "POST")) return;
-        if (!AdminAuthUtil.requireAuth(exchange, ctx)) return;
 
-        JSONObject req = WebResponseHelper.readJson(exchange);
+        // Require admin privileges
+        if (AdminAuthUtil.requireAdmin(exchange, ctx) == null) return;
+
+        JSONObject req;
+        try {
+            req = WebResponseHelper.readJson(exchange);
+        } catch (JSONException e) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("error.invalid_json", "en")), 400);
+            return;
+        }
         String language = req.optString("language", "en");
 
         if (ctx.getAuthmeService() == null) {
@@ -41,7 +52,7 @@ public class AdminSyncHandler implements HttpHandler {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.success(
                     ctx.getMessage("authme.sync_success", language)));
         } catch (Exception e) {
-            ctx.debugLog("AuthMe sync failed: " + e.getMessage());
+            ctx.getPlugin().getLogger().log(Level.WARNING, "AuthMe sync failed", e);
             String errorMsg = ctx.getMessage("authme.sync_failed", language).replace("{error}", e.getMessage());
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(errorMsg), 500);
         }

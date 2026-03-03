@@ -11,6 +11,8 @@ debug: false
 # ----------------------------------------
 # The port for the web interface.
 web_port: 8080
+# The port for WebSocket service.
+ws_port: 8081
 # The server name displayed on the web interface.
 web_server_prefix: '[ Name ]'
 
@@ -47,9 +49,6 @@ register:
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 # If false, usernames that only differ by case (e.g., "Player" and "player") are treated as the same.
 username_case_sensitive: false
-# The password for accessing the admin panel on the web interface.
-admin:
-  password: your_custom_password
 
 # ----------------------------------------
 # User Notification
@@ -115,8 +114,8 @@ email_domain_whitelist:
 # ----------------------------------------
 # Storage
 # ----------------------------------------
-# Storage type, options: data (local file), mysql (external database)
-storage: data
+# Storage type, options: file (local file), mysql (external database)
+storage: file
 mysql:
   host: localhost
   port: 3306
@@ -301,3 +300,35 @@ discord:
   guild_id: ""
   # Whether Discord linking is required for registration
   required: false
+
+# ----------------------------------------
+# Downloads Configuration
+# ----------------------------------------
+# Configure server client resource downloads, displayed on the web interface downloads page
+downloads:
+  client-modpack:
+    # Download item name
+    name: "Client Modpack"
+    # Download item description
+    description: "Required modpack for the server. Includes all necessary mods and configurations."
+    # Version number
+    version: "1.0.0"
+    # File size (for display)
+    size: "256 MB"
+    # Download URL
+    url: "#"
+    # Icon name (options: gamepad, package, download, file, folder, etc.)
+    icon: "gamepad"
+  server-resource-pack:
+    # Download item name
+    name: "Server Resource Pack"
+    # Download item description
+    description: "Custom textures and assets for the server."
+    # Version number
+    version: "2.1.0"
+    # File size (for display)
+    size: "64 MB"
+    # Download URL
+    url: "#"
+    # Icon name
+    icon: "package"

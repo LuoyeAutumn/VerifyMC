@@ -1,13 +1,6 @@
 import { onScopeDispose, ref, type Ref, watch } from 'vue'
-import { apiService, type PendingUser } from '@/services/api'
-
-interface PaginationState {
-  currentPage: number
-  totalCount: number
-  totalPages: number
-  hasNext: boolean
-  hasPrev: boolean
-}
+import { apiService } from '@/services/api'
+import type { PendingUser, PaginationState } from '@/types'
 
 interface UsersPaginatedResponse {
   success: boolean
@@ -155,7 +148,7 @@ export const useAdminUsers = ({ locale, t, notification }: UseAdminUsersOptions)
     loadAllUsers()
   }
 
-  watch(searchQuery, () => {
+  const stopWatch = watch(searchQuery, () => {
     if (searchDebounceTimer) {
       clearTimeout(searchDebounceTimer)
     }
@@ -166,8 +159,8 @@ export const useAdminUsers = ({ locale, t, notification }: UseAdminUsersOptions)
     }, 500)
   })
 
-
   onScopeDispose(() => {
+    stopWatch()
     if (searchDebounceTimer) {
       clearTimeout(searchDebounceTimer)
     }

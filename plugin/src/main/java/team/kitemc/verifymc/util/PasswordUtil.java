@@ -42,29 +42,43 @@ public final class PasswordUtil {
 
         if (isUnsaltedSha256(storedPassword)) {
             String computedHash = sha256Hex(plainPassword);
-            return computedHash.equalsIgnoreCase(storedPassword);
+            // Use constant-time comparison to prevent timing attacks
+            return MessageDigest.isEqual(
+                    computedHash.toLowerCase().getBytes(StandardCharsets.UTF_8),
+                    storedPassword.toLowerCase().getBytes(StandardCharsets.UTF_8)
+            );
         }
 
-        LOGGER.warning("[VerifyMC] Plaintext password detected in storage. Please trigger a password migration.");
+        LOGGER.severe("[VerifyMC] SECURITY WARNING: Plaintext password detected in storage for user. Please trigger a password migration immediately.");
         return plainPassword.equals(storedPassword);
     }
 
     private static boolean verifySaltedHash(String plainPassword, String storedPassword) {
         String[] parts = storedPassword.split("\\" + DELIMITER);
-        if (parts.length < 3) {
+        if (parts.length < 4) {
             return false;
         }
-        String salt = parts[1];
-        String storedHash = parts[2];
+        if (!"SHA".equals(parts[1])) {
+            LOGGER.warning("[VerifyMC] Unknown hash algorithm: " + parts[1]);
+            return false;
+        }
+        String salt = parts[2];
+        String storedHash = parts[3];
+        if (salt.isEmpty() || storedHash.isEmpty()) {
+            return false;
+        }
         String computedHash = sha256Hex(sha256Hex(plainPassword) + salt);
-        return computedHash.equals(storedHash);
+        return MessageDigest.isEqual(
+                computedHash.getBytes(StandardCharsets.UTF_8),
+                storedHash.toLowerCase().getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     public static boolean isHashed(String password) {
         return password != null && password.startsWith(HASH_PREFIX);
     }
 
-    private static boolean isUnsaltedSha256(String password) {
+    public static boolean isUnsaltedSha256(String password) {
         if (password == null || password.length() != 64) {
             return false;
         }
@@ -75,6 +89,20 @@ public final class PasswordUtil {
             }
         }
         return true;
+    }
+
+    public static boolean needsMigration(String storedPassword) {
+        if (storedPassword == null || storedPassword.isEmpty()) {
+            return false;
+        }
+        return isUnsaltedSha256(storedPassword) || !storedPassword.startsWith(HASH_PREFIX);
+    }
+
+    public static boolean isPlaintext(String storedPassword) {
+        if (storedPassword == null || storedPassword.isEmpty()) {
+            return false;
+        }
+        return !storedPassword.startsWith(HASH_PREFIX) && !isUnsaltedSha256(storedPassword);
     }
 
     private static String generateHexSalt() {

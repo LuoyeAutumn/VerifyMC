@@ -5,7 +5,7 @@ import java.util.*;
 import org.bukkit.plugin.Plugin;
 import team.kitemc.verifymc.util.PasswordUtil;
 
-public class MysqlUserDao implements UserDao {
+public class MysqlUserDao implements UserDao, AutoCloseable {
     private final Connection conn;
     private final ResourceBundle messages;
     private final boolean debug;
@@ -15,9 +15,14 @@ public class MysqlUserDao implements UserDao {
         this.messages = messages;
         this.plugin = plugin;
         this.debug = plugin.getConfig().getBoolean("debug", false);
+        String useSSL = mysqlConfig.getProperty("useSSL", "true");
+        String allowPublicKeyRetrieval = mysqlConfig.getProperty("allowPublicKeyRetrieval", "false");
         String url = "jdbc:mysql://" + mysqlConfig.getProperty("host") + ":" +
                 mysqlConfig.getProperty("port") + "/" +
-                mysqlConfig.getProperty("database") + "?useSSL=false&characterEncoding=utf8";
+                mysqlConfig.getProperty("database") +
+                "?useSSL=" + useSSL +
+                "&allowPublicKeyRetrieval=" + allowPublicKeyRetrieval +
+                "&characterEncoding=utf8";
         conn = DriverManager.getConnection(url, mysqlConfig.getProperty("user"), mysqlConfig.getProperty("password"));
         initDatabase();
     }
@@ -26,9 +31,14 @@ public class MysqlUserDao implements UserDao {
         this.messages = null;
         this.plugin = null;
         this.debug = false;
+        String useSSL = mysqlConfig.getProperty("useSSL", "true");
+        String allowPublicKeyRetrieval = mysqlConfig.getProperty("allowPublicKeyRetrieval", "false");
         String url = "jdbc:mysql://" + mysqlConfig.getProperty("host") + ":" +
                 mysqlConfig.getProperty("port") + "/" +
-                mysqlConfig.getProperty("database") + "?useSSL=false&characterEncoding=utf8";
+                mysqlConfig.getProperty("database") +
+                "?useSSL=" + useSSL +
+                "&allowPublicKeyRetrieval=" + allowPublicKeyRetrieval +
+                "&characterEncoding=utf8";
         conn = DriverManager.getConnection(url, mysqlConfig.getProperty("user"), mysqlConfig.getProperty("password"));
         initDatabase();
     }
@@ -88,6 +98,7 @@ public class MysqlUserDao implements UserDao {
             }
 
             ensureIndex(stmt, "idx_email", "CREATE INDEX idx_email ON users(email)");
+            ensureIndex(stmt, "idx_discord_id", "CREATE INDEX idx_discord_id ON users(discord_id)");
         }
     }
 
@@ -221,10 +232,10 @@ public class MysqlUserDao implements UserDao {
     }
 
     @Override
-    public boolean updateUserPassword(String username, String password) {
+    public boolean updateUserPassword(String username, String plainPassword) {
         String sql = "UPDATE users SET password=? WHERE username=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, PasswordUtil.hash(password));
+            ps.setString(1, PasswordUtil.hash(plainPassword));
             ps.setString(2, username);
             int rows = ps.executeUpdate();
             debugLog("User password updated: " + username);
@@ -285,11 +296,11 @@ public class MysqlUserDao implements UserDao {
         user.put("status", rs.getString("status"));
         user.put("password", rs.getString("password"));
         user.put("regTime", rs.getLong("regTime"));
-        user.put("discord_id", rs.getString("discord_id"));
-        user.put("questionnaire_score", rs.getObject("questionnaire_score"));
-        user.put("questionnaire_passed", rs.getObject("questionnaire_passed"));
-        user.put("questionnaire_review_summary", rs.getString("questionnaire_review_summary"));
-        user.put("questionnaire_scored_at", rs.getObject("questionnaire_scored_at"));
+        user.put("discordId", rs.getString("discord_id"));
+        user.put("questionnaireScore", rs.getObject("questionnaire_score"));
+        user.put("questionnairePassed", rs.getObject("questionnaire_passed"));
+        user.put("questionnaireReviewSummary", rs.getString("questionnaire_review_summary"));
+        user.put("questionnaireScoredAt", rs.getObject("questionnaire_scored_at"));
         return user;
     }
 
@@ -642,5 +653,17 @@ public class MysqlUserDao implements UserDao {
     public boolean isDiscordIdLinked(String discordId) {
         debugLog("Checking if Discord ID is linked: " + discordId);
         return getUserByDiscordId(discordId) != null;
+    }
+
+    @Override
+    public void close() {
+        if (conn != null) {
+            try {
+                conn.close();
+                debugLog("Database connection closed");
+            } catch (SQLException e) {
+                debugLog("Error closing database connection: " + e.getMessage());
+            }
+        }
     }
 }

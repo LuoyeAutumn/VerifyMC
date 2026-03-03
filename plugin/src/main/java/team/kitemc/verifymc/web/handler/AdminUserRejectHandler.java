@@ -2,6 +2,7 @@ package team.kitemc.verifymc.web.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.db.AuditRecord;
@@ -24,11 +25,20 @@ public class AdminUserRejectHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!WebResponseHelper.requireMethod(exchange, "POST")) return;
-        if (!AdminAuthUtil.requireAuth(exchange, ctx)) return;
 
-        JSONObject req = WebResponseHelper.readJson(exchange);
+        // Require admin privileges and get operator username
+        String operator = AdminAuthUtil.requireAdmin(exchange, ctx);
+        if (operator == null) return;
+
+        JSONObject req;
+        try {
+            req = WebResponseHelper.readJson(exchange);
+        } catch (JSONException e) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("error.invalid_json", "en")), 400);
+            return;
+        }
         String target = req.optString("username", req.optString("uuid", ""));
-        String operator = req.optString("operator", "admin");
         String reason = req.optString("reason", "");
         String language = req.optString("language", "en");
 
@@ -64,5 +74,4 @@ public class AdminUserRejectHandler implements HttpHandler {
                     ctx.getMessage("review.failed", language)));
         }
     }
-
 }

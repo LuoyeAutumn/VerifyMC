@@ -99,13 +99,15 @@ public class VerifyMC extends JavaPlugin {
             }
         }
 
-        // Save data
+        // Save and close data access layer
         if (context != null) {
             if (context.getUserDao() != null) {
                 context.getUserDao().save();
+                context.getUserDao().close();
             }
             if (context.getAuditDao() != null) {
                 context.getAuditDao().save();
+                context.getAuditDao().close();
             }
         }
 
@@ -125,7 +127,7 @@ public class VerifyMC extends JavaPlugin {
             if ("mysql".equalsIgnoreCase(storageType)) {
                 var props = config.getMysqlProperties();
                 context.setUserDao(new MysqlUserDao(props, context.getI18nManager().getResourceBundle(), this));
-                context.setAuditDao(new MysqlAuditDao(props));
+                context.setAuditDao(new MysqlAuditDao(props, this));
                 log.info("[VerifyMC] Using MySQL storage.");
             } else {
                 File dataDir = getDataFolder();
@@ -199,14 +201,14 @@ public class VerifyMC extends JavaPlugin {
         context.setQuestionnaireApplicationService(new QuestionnaireApplicationService());
 
         // Web auth
-        context.setWebAuthHelper(new WebAuthHelper(this));
+        context.setWebAuthHelper(new WebAuthHelper(this, context.getI18nManager()));
     }
 
     private void initWebLayer(Logger log) {
         // WebSocket server for review notifications
         int wsPort = context.getConfigManager().getWsPort();
         try {
-            wsServer = new ReviewWebSocketServer(wsPort);
+            wsServer = new ReviewWebSocketServer(wsPort, context);
             wsServer.start();
             context.setWsServer(wsServer);
             log.info("[VerifyMC] WebSocket server started on port " + wsPort);

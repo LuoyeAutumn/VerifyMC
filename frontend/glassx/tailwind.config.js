@@ -28,6 +28,11 @@ export default {
       backdropBlur: {
         xs: "2px",
       },
+      backdropSaturate: {
+        '150': '1.5',
+        '180': '1.8',
+        '200': '2.0',
+      },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
       },
@@ -79,8 +84,8 @@ export default {
   corePlugins: {
     // Disable unused core plugins to reduce CSS size
     preflight: true,
-    container: false,
-    accessibility: false,
+    container: true,
+    accessibility: true,
     appearance: false,
     backgroundAttachment: false,
     backgroundClip: true,
@@ -170,9 +175,9 @@ export default {
     zIndex: true,
     gap: true,
     gridAutoFlow: false,
-    gridTemplateColumns: false,
+    gridTemplateColumns: true,
     gridAutoColumns: false,
-    gridColumn: false,
+    gridColumn: true,
     gridColumnStart: false,
     gridColumnEnd: false,
     gridTemplateRows: false,

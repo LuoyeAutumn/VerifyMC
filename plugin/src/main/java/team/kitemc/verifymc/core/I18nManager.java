@@ -4,10 +4,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Unified i18n management. Loads property-based resource bundles from the
@@ -15,7 +15,7 @@ import java.util.ResourceBundle;
  */
 public class I18nManager {
     private final JavaPlugin plugin;
-    private final HashMap<String, ResourceBundle> languageCache = new HashMap<>();
+    private final ConcurrentHashMap<String, ResourceBundle> languageCache = new ConcurrentHashMap<>();
     private ResourceBundle defaultBundle;
 
     public I18nManager(JavaPlugin plugin) {

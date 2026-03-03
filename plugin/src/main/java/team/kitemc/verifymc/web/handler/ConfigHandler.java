@@ -26,17 +26,18 @@ public class ConfigHandler implements HttpHandler {
         if (!WebResponseHelper.requireMethod(exchange, "GET")) return;
 
         JSONObject config = new JSONObject();
-        config.put("auth_methods", new JSONArray(ctx.getConfigManager().getAuthMethods()));
+        config.put("authMethods", new JSONArray(ctx.getConfigManager().getAuthMethods()));
         config.put("theme", ctx.getConfigManager().getTheme());
-        config.put("logo_url", ctx.getConfigManager().getLogoUrl());
+        config.put("logoUrl", ctx.getConfigManager().getLogoUrl());
         config.put("announcement", ctx.getConfigManager().getAnnouncement());
-        config.put("username_regex", ctx.getConfigManager().getUsernameRegex());
-        config.put("web_server_prefix", ctx.getConfigManager().getWebServerPrefix());
+        config.put("usernameRegex", ctx.getConfigManager().getUsernameRegex());
+        config.put("webServerPrefix", ctx.getConfigManager().getWebServerPrefix());
+        config.put("wsPort", ctx.getConfigManager().getWsPort());
 
         JSONObject authmeConfig = new JSONObject();
         authmeConfig.put("enabled", ctx.getConfigManager().isAuthmeEnabled());
-        authmeConfig.put("require_password", ctx.getConfigManager().isAuthmePasswordRequired());
-        authmeConfig.put("password_regex", ctx.getConfigManager().getAuthmePasswordRegex());
+        authmeConfig.put("requirePassword", ctx.getConfigManager().isAuthmePasswordRequired());
+        authmeConfig.put("passwordRegex", ctx.getConfigManager().getAuthmePasswordRegex());
         config.put("authme", authmeConfig);
 
         List<String> authMethods = ctx.getConfigManager().getAuthMethods();
@@ -44,14 +45,14 @@ public class ConfigHandler implements HttpHandler {
         boolean emailEnabled = authMethods.contains("email");
         JSONObject captchaConfig = new JSONObject();
         captchaConfig.put("enabled", captchaEnabled);
-        captchaConfig.put("email_enabled", emailEnabled);
+        captchaConfig.put("emailEnabled", emailEnabled);
         captchaConfig.put("type", ctx.getConfigManager().getCaptchaType());
         config.put("captcha", captchaConfig);
 
         JSONObject questionnaireConfig = new JSONObject();
         questionnaireConfig.put("enabled", ctx.getQuestionnaireService() != null && ctx.getQuestionnaireService().isEnabled());
-        questionnaireConfig.put("pass_score", ctx.getQuestionnaireService() != null ? ctx.getQuestionnaireService().getPassScore() : 60);
-        questionnaireConfig.put("has_text_questions", ctx.getQuestionnaireService() != null && ctx.getQuestionnaireService().hasTextQuestions());
+        questionnaireConfig.put("passScore", ctx.getQuestionnaireService() != null ? ctx.getQuestionnaireService().getPassScore() : 60);
+        questionnaireConfig.put("hasTextQuestions", ctx.getQuestionnaireService() != null && ctx.getQuestionnaireService().hasTextQuestions());
         config.put("questionnaire", questionnaireConfig);
 
         JSONObject discordConfig = new JSONObject();
@@ -62,14 +63,14 @@ public class ConfigHandler implements HttpHandler {
         JSONObject bedrockConfig = new JSONObject();
         bedrockConfig.put("enabled", ctx.getConfigManager().isBedrockEnabled());
         bedrockConfig.put("prefix", ctx.getConfigManager().getBedrockPrefix());
-        bedrockConfig.put("username_regex", ctx.getConfigManager().getBedrockUsernameRegex());
+        bedrockConfig.put("usernameRegex", ctx.getConfigManager().getBedrockUsernameRegex());
         config.put("bedrock", bedrockConfig);
 
         if (ctx.getConfigManager().isEmailDomainWhitelistEnabled()) {
-            config.put("email_domain_whitelist", new JSONArray(ctx.getConfigManager().getEmailDomainWhitelist()));
+            config.put("emailDomainWhitelist", new JSONArray(ctx.getConfigManager().getEmailDomainWhitelist()));
         }
-        config.put("enable_email_domain_whitelist", ctx.getConfigManager().isEmailDomainWhitelistEnabled());
-        config.put("enable_email_alias_limit", ctx.getConfigManager().isEmailAliasLimitEnabled());
+        config.put("enableEmailDomainWhitelist", ctx.getConfigManager().isEmailDomainWhitelistEnabled());
+        config.put("enableEmailAliasLimit", ctx.getConfigManager().isEmailAliasLimitEnabled());
         config.put("language", ctx.getConfigManager().getLanguage());
 
         JSONObject resp = new JSONObject();

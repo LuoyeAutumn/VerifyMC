@@ -1,10 +1,12 @@
 <template>
   <div class="fluid-language-switcher" ref="dropdownRef">
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       @click="toggleDropdown"
       :class="[
-        'fluid-trigger',
-        { 'fluid-trigger-open': isOpen }
+        'w-full justify-between px-3',
+        { 'bg-white/10': isOpen }
       ]"
       :aria-expanded="isOpen"
       aria-haspopup="true"
@@ -21,7 +23,7 @@
       <div class="fluid-chevron" :class="{ 'fluid-chevron-open': isOpen }">
         <ChevronDown class="w-4 h-4" />
       </div>
-    </button>
+    </Button>
     
     <Transition
       name="fluid-dropdown"
@@ -72,8 +74,9 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Globe, ChevronDown } from 'lucide-vue-next'
+import Button from '@/components/ui/Button.vue'
 
-const { locale, t } = useI18n()
+const { locale } = useI18n()
 
 const isOpen = ref(false)
 const hoveredLanguage = ref<string | null>(null)
@@ -108,12 +111,15 @@ const toggleDropdown = () => {
 
 const switchLanguage = (langCode: string) => {
   locale.value = langCode
-  localStorage.setItem('language', langCode)
   isOpen.value = false
   hoveredLanguage.value = null
-  
-  // Update document language
-  document.documentElement.lang = langCode
+
+  // SSR 兼容性：仅在浏览器环境中访问浏览器 API
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('language', langCode)
+    // Update document language
+    document.documentElement.lang = langCode
+  }
 }
 
 const closeDropdown = (event: Event) => {
@@ -150,21 +156,25 @@ const handleKeyDown = (event: KeyboardEvent) => {
   }
 }
 
-// 初始化优先读取 localStorage
-const savedLang = localStorage.getItem('language') || localStorage.getItem('lang')
-if (savedLang && savedLang !== locale.value) {
-  locale.value = savedLang
-}
-
-watch(locale, (val) => {
-  localStorage.setItem('language', val)
-  localStorage.setItem('lang', val)
-})
-
+// SSR 兼容性：初始化语言设置移到 onMounted 中
 onMounted(() => {
+  // 初始化优先读取 localStorage
+  const savedLang = localStorage.getItem('language') || localStorage.getItem('lang')
+  if (savedLang && savedLang !== locale.value) {
+    locale.value = savedLang
+  }
+
   document.addEventListener('click', closeDropdown)
   document.addEventListener('keydown', handleKeyDown)
   document.documentElement.lang = currentLocale.value
+})
+
+// 监听语言变化，保存到 localStorage
+watch(locale, (val) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('language', val)
+    localStorage.setItem('lang', val)
+  }
 })
 
 onUnmounted(() => {
@@ -179,47 +189,6 @@ onUnmounted(() => {
   position: relative;
   width: fit-content;
   min-width: 120px;
-}
-
-/* 触发按钮 */
-.fluid-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  background: rgba(23, 23, 23, 0.9);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.fluid-trigger:hover {
-  background: rgba(38, 38, 38, 0.9);
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(115, 115, 115, 0.3);
-}
-
-.fluid-trigger:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: rgba(115, 115, 115, 0.5);
-  ring-offset: 2px;
-  ring-offset-color: transparent;
-  border-color: rgba(115, 115, 115, 0.5);
-}
-
-.fluid-trigger-open {
-  background: rgba(38, 38, 38, 0.9);
-  color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(115, 115, 115, 0.3);
 }
 
 /* 触发按钮内容 */
@@ -293,8 +262,8 @@ onUnmounted(() => {
 }
 
 .fluid-dropdown-content {
-  background: rgba(23, 23, 23, 0.95);
-  border: 1px solid rgba(38, 38, 38, 1);
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 4px;
   box-shadow: 
@@ -314,7 +283,7 @@ onUnmounted(() => {
   position: absolute;
   left: 4px;
   right: 4px;
-  background: rgba(38, 38, 38, 1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
   pointer-events: none;

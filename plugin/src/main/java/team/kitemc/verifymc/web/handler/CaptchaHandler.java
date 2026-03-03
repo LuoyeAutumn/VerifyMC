@@ -7,6 +7,7 @@ import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 public class CaptchaHandler implements HttpHandler {
     private final PluginContext ctx;
@@ -36,14 +37,12 @@ public class CaptchaHandler implements HttpHandler {
             resp.put("success", true);
             resp.put("token", result.token());
             resp.put("image", result.imageBase64());
-            if (ctx.getConfigManager().isDebug()) {
-                resp.put("answer", result.answer());
-            }
             WebResponseHelper.sendJson(exchange, resp);
         } catch (Exception e) {
+            ctx.getPlugin().getLogger().log(Level.WARNING, "Captcha generation failed", e);
             JSONObject resp = new JSONObject();
             resp.put("success", false);
-            resp.put("msg", ctx.getMessage("captcha.generate_failed", language));
+            resp.put("message", ctx.getMessage("captcha.generate_failed", language));
             WebResponseHelper.sendJson(exchange, resp, 500);
         }
     }

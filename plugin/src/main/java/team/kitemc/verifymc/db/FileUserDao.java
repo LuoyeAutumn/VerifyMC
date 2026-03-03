@@ -15,16 +15,22 @@ public class FileUserDao implements UserDao {
     private final org.bukkit.plugin.Plugin plugin;
 
     public FileUserDao(File dataFile, org.bukkit.plugin.Plugin plugin) {
-        this.file = dataFile;
         this.plugin = plugin;
         this.debug = plugin.getConfig().getBoolean("debug", false);
-        load();
-    }
 
-    public FileUserDao(File dataFile) {
+        // 验证文件路径在插件数据目录内，防止路径遍历攻击
+        try {
+            File dataFolder = plugin.getDataFolder();
+            String canonicalPath = dataFile.getCanonicalPath();
+            String expectedPath = dataFolder.getCanonicalPath();
+            if (!canonicalPath.startsWith(expectedPath)) {
+                throw new SecurityException("File path must be within plugin data folder: " + canonicalPath);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to validate file path", e);
+        }
+
         this.file = dataFile;
-        this.plugin = null;
-        this.debug = false;
         load();
     }
 
@@ -32,9 +38,10 @@ public class FileUserDao implements UserDao {
         if (debug && plugin != null) plugin.getLogger().info("[DEBUG] FileUserDao: " + msg);
     }
     
-    private Long getRegTimeAsLong(Object regTimeValue) {
+    @Override
+    public long getRegTimeAsLong(Object regTimeValue) {
         if (regTimeValue == null) {
-            return null;
+            return 0L;
         }
         if (regTimeValue instanceof Long) {
             return (Long) regTimeValue;
@@ -78,26 +85,46 @@ public class FileUserDao implements UserDao {
                             debugLog("Added missing regTime field for user: " + user.get("username"));
                         }
                         
-                        if (!user.containsKey("discord_id")) {
-                            user.put("discord_id", null);
+                        if (!user.containsKey("discordId") && !user.containsKey("discord_id")) {
+                            user.put("discordId", null);
                             hasUpgraded = true;
-                            debugLog("Added missing discord_id field for user: " + user.get("username"));
+                            debugLog("Added missing discordId field for user: " + user.get("username"));
+                        }
+                        if (user.containsKey("discord_id") && !user.containsKey("discordId")) {
+                            user.put("discordId", user.remove("discord_id"));
+                            hasUpgraded = true;
                         }
 
-                        if (!user.containsKey("questionnaire_score")) {
-                            user.put("questionnaire_score", null);
+                        if (!user.containsKey("questionnaireScore") && !user.containsKey("questionnaire_score")) {
+                            user.put("questionnaireScore", null);
                             hasUpgraded = true;
                         }
-                        if (!user.containsKey("questionnaire_passed")) {
-                            user.put("questionnaire_passed", null);
+                        if (user.containsKey("questionnaire_score") && !user.containsKey("questionnaireScore")) {
+                            user.put("questionnaireScore", user.remove("questionnaire_score"));
                             hasUpgraded = true;
                         }
-                        if (!user.containsKey("questionnaire_review_summary")) {
-                            user.put("questionnaire_review_summary", null);
+                        if (!user.containsKey("questionnairePassed") && !user.containsKey("questionnaire_passed")) {
+                            user.put("questionnairePassed", null);
                             hasUpgraded = true;
                         }
-                        if (!user.containsKey("questionnaire_scored_at")) {
-                            user.put("questionnaire_scored_at", null);
+                        if (user.containsKey("questionnaire_passed") && !user.containsKey("questionnairePassed")) {
+                            user.put("questionnairePassed", user.remove("questionnaire_passed"));
+                            hasUpgraded = true;
+                        }
+                        if (!user.containsKey("questionnaireReviewSummary") && !user.containsKey("questionnaire_review_summary")) {
+                            user.put("questionnaireReviewSummary", null);
+                            hasUpgraded = true;
+                        }
+                        if (user.containsKey("questionnaire_review_summary") && !user.containsKey("questionnaireReviewSummary")) {
+                            user.put("questionnaireReviewSummary", user.remove("questionnaire_review_summary"));
+                            hasUpgraded = true;
+                        }
+                        if (!user.containsKey("questionnaireScoredAt") && !user.containsKey("questionnaire_scored_at")) {
+                            user.put("questionnaireScoredAt", null);
+                            hasUpgraded = true;
+                        }
+                        if (user.containsKey("questionnaire_scored_at") && !user.containsKey("questionnaireScoredAt")) {
+                            user.put("questionnaireScoredAt", user.remove("questionnaire_scored_at"));
                             hasUpgraded = true;
                         }
                     }
@@ -121,21 +148,48 @@ public class FileUserDao implements UserDao {
     @Override
     public synchronized void save() {
         debugLog("Saving " + users.size() + " users to: " + file.getAbsolutePath());
-        try (Writer writer = new FileWriter(file)) {
+        
+        // Use temporary file for atomic write operation
+        File tempFile = new File(file.getAbsolutePath() + ".tmp");
+        
+        try (Writer writer = new FileWriter(tempFile)) {
             gson.toJson(users, writer);
+            writer.flush();
+            
+            // Atomic rename: tempFile -> target file
+            if (!tempFile.renameTo(file)) {
+                // If rename fails (e.g., cross-filesystem), try copy and delete
+                debugLog("Atomic rename failed, falling back to copy");
+                try (java.io.InputStream in = new FileInputStream(tempFile);
+                     java.io.OutputStream out = new FileOutputStream(file)) {
+                    byte[] buffer = new byte[8192];
+                    int bytesRead;
+                    while ((bytesRead = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, bytesRead);
+                    }
+                }
+                if (!tempFile.delete()) {
+                    debugLog("Warning: failed to delete temporary file: " + tempFile.getAbsolutePath());
+                }
+            }
+            
             debugLog("Save successful");
         } catch (Exception e) {
             debugLog("Error saving users: " + e.getMessage());
+            // Clean up temp file if it exists
+            if (tempFile.exists() && !tempFile.delete()) {
+                debugLog("Warning: failed to delete temporary file after error: " + tempFile.getAbsolutePath());
+            }
         }
     }
 
 
     private void applyQuestionnaireAuditFields(Map<String, Object> user, Integer questionnaireScore, Boolean questionnairePassed,
                                                String questionnaireReviewSummary, Long questionnaireScoredAt) {
-        user.put("questionnaire_score", questionnaireScore);
-        user.put("questionnaire_passed", questionnairePassed);
-        user.put("questionnaire_review_summary", questionnaireReviewSummary);
-        user.put("questionnaire_scored_at", questionnaireScoredAt);
+        user.put("questionnaireScore", questionnaireScore);
+        user.put("questionnairePassed", questionnairePassed);
+        user.put("questionnaireReviewSummary", questionnaireReviewSummary);
+        user.put("questionnaireScoredAt", questionnaireScoredAt);
     }
 
     @Override
@@ -231,7 +285,7 @@ public class FileUserDao implements UserDao {
     }
 
     @Override
-    public boolean updateUserPassword(String username, String password) {
+    public boolean updateUserPassword(String username, String plainPassword) {
         debugLog("updateUserPassword called: username=" + username);
         String key = username.toLowerCase();
         Map<String, Object> user = users.get(key);
@@ -241,7 +295,7 @@ public class FileUserDao implements UserDao {
             return false;
         }
         
-        user.put("password", PasswordUtil.hash(password));
+        user.put("password", PasswordUtil.hash(plainPassword));
         save();
         debugLog("User password updated: " + user.get("username"));
         return true;
@@ -571,7 +625,7 @@ public class FileUserDao implements UserDao {
             return false;
         }
         
-        user.put("discord_id", discordId);
+        user.put("discordId", discordId);
         save();
         debugLog("User Discord ID updated: " + user.get("username") + " -> " + discordId);
         return true;
@@ -581,7 +635,10 @@ public class FileUserDao implements UserDao {
     public Map<String, Object> getUserByDiscordId(String discordId) {
         debugLog("Getting user by Discord ID: " + discordId);
         for (Map<String, Object> user : users.values()) {
-            Object userDiscordId = user.get("discord_id");
+            Object userDiscordId = user.get("discordId");
+            if (userDiscordId == null) {
+                userDiscordId = user.get("discord_id");
+            }
             if (userDiscordId != null && userDiscordId.toString().equals(discordId)) {
                 debugLog("User found: " + user.get("username"));
                 return user;
@@ -595,5 +652,11 @@ public class FileUserDao implements UserDao {
     public boolean isDiscordIdLinked(String discordId) {
         debugLog("Checking if Discord ID is linked: " + discordId);
         return getUserByDiscordId(discordId) != null;
+    }
+
+    @Override
+    public void close() {
+        // File-based storage: no resources to close
+        debugLog("FileUserDao closed (no-op for file storage)");
     }
 } 

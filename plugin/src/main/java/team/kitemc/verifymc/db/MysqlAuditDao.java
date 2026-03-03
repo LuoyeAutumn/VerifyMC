@@ -1,17 +1,26 @@
 package team.kitemc.verifymc.db;
 
+import org.bukkit.plugin.Plugin;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
 
-public class MysqlAuditDao implements AuditDao {
+public class MysqlAuditDao implements AuditDao, AutoCloseable {
     private final Connection conn;
+    private final Plugin plugin;
 
-    public MysqlAuditDao(Properties mysqlConfig) throws SQLException {
+    public MysqlAuditDao(Properties mysqlConfig, Plugin plugin) throws SQLException {
+        this.plugin = plugin;
+        String useSSL = mysqlConfig.getProperty("useSSL", "true");
+        String allowPublicKeyRetrieval = mysqlConfig.getProperty("allowPublicKeyRetrieval", "false");
         String url = "jdbc:mysql://" + mysqlConfig.getProperty("host") + ":" +
                 mysqlConfig.getProperty("port") + "/" +
-                mysqlConfig.getProperty("database") + "?useSSL=false&characterEncoding=utf8";
+                mysqlConfig.getProperty("database") +
+                "?useSSL=" + useSSL +
+                "&allowPublicKeyRetrieval=" + allowPublicKeyRetrieval +
+                "&characterEncoding=utf8";
         conn = DriverManager.getConnection(url, mysqlConfig.getProperty("user"), mysqlConfig.getProperty("password"));
         try (Statement stmt = conn.createStatement()) {
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS audits (" +
@@ -34,7 +43,9 @@ public class MysqlAuditDao implements AuditDao {
             ps.setString(4, audit.detail());
             ps.setLong(5, audit.timestamp());
             ps.executeUpdate();
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to add audit record", e);
+        }
     }
 
     @Override
@@ -52,12 +63,23 @@ public class MysqlAuditDao implements AuditDao {
                         rs.getLong("timestamp")
                 ));
             }
-        } catch (SQLException ignored) {}
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Failed to get all audits", e);
+        }
         return result;
     }
 
     @Override
     public void save() {
         // MySQL storage: save() called (no-op)
+    }
+
+    @Override
+    public void close() {
+        if (conn != null) {
+            try {
+                conn.close();
+            } catch (SQLException ignored) {}
+        }
     }
 }

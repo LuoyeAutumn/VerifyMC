@@ -1,39 +1,38 @@
 release: true
-version: 1.6.0
+version: 1.7.0
 release_notes: |
-  [简体中文](https://github.com/KiteMC/VerifyMC/blob/v1.6.0/release_notes_zh.md) | English | [Official Documentation](https://kitemc.com/docs/verifymc/)
-
-  # VerifyMC v1.6.0 Release Notes
+  [简体中文](https://github.com/KiteMC/VerifyMC/blob/v1.7.0/release_notes_zh.md) | English | [Official Documentation](https://kitemc.com/docs/verifymc/)
 
   ## Architecture: Modular Refactoring
 
-  - Introduced `PluginContext` as a central service container, replacing scattered fields in `VerifyMC` and the 13-parameter `WebServer` constructor
-  - Extracted `ConfigManager`, `I18nManager`, `OpsManager`, `ResourceManager` into `core/` package for clear separation of concerns
+  - Introduced `PluginContext` as central service container
   - Split monolithic `WebServer` (~1800 lines) into 20+ single-responsibility `HttpHandler` classes under `web/handler/`
+  - Extracted `ConfigManager`, `I18nManager`, `OpsManager`, `ResourceManager` into `core/` package
   - Added `ApiRouter` for centralized route registration
-  - Introduced `VmcCommandExecutor` for in-game admin commands (`/vmc approve/reject/ban/unban/delete/list/info`)
+  - Added `VmcCommandExecutor` for in-game admin commands (`/vmc approve/reject/ban/unban/delete/list/info`)
   - Added `PlayerLoginListener` with plugin-mode whitelist enforcement and status-based kick messages
-  - Unified admin handler authentication via `AdminAuthUtil` utility class
+  - Unified admin handler authentication via `AdminAuthUtil`
 
-  ## Identifier Migration: UUID → Username
+  ## Identifier Migration: UUID -> Username
 
   - Removed UUID as primary user identifier; username is now the sole key across all layers
-  - Updated `UserDao`, `FileUserDao`, `MysqlUserDao` to use username-based lookups and operations
+  - Updated `UserDao`, `FileUserDao`, `MysqlUserDao` to use username-based lookups
   - Added `getUserByEmail`, `getUserByUsernameExact` to `UserDao` interface
-  - Added convenience default methods on `UserDao`: `banUser`, `unbanUser`, `getUsers`, `getTotalUsers`, `getUsersByStatus`, `updatePassword`
+  - Added convenience default methods: `banUser`, `unbanUser`, `getUsers`, `getTotalUsers`, etc.
 
   ## Admin Login Refactoring
 
   - Replaced static `admin.password` config with player-data-based authentication
-  - Admin login now verifies against registered player credentials; only server OPs can access the admin panel
+  - Admin login now verifies against registered player credentials; only server OPs can access admin panel
   - Login supports both username and email lookup with AuthMe password integration
 
-  ## Security Improvements
+  ## Security Enhancements
 
   - Introduced `PasswordUtil` with SHA-256 + salt hashing (AuthMe-compatible `$SHA$` format)
   - Plaintext password fallback now logs a warning to encourage migration
   - Unified admin endpoint authentication through `AdminAuthUtil`
   - Added query parameter URL decoding to prevent injection via encoded characters
+  - Proxy error handling changed from fail-open to fail-close (deny login), fixing security vulnerability
 
   ## API Endpoint Restructuring
 
@@ -44,15 +43,18 @@ release_notes: |
 
   ## Frontend Improvements
 
+  - Optimized dialog system: unified all modals to use shared `Dialog` component
+  - Refactored User Management: split user list and pending reviews into separate components
+  - Improved accessibility: added `aria-labelledby`, `role="dialog"`, and focus management
+  - Fixed z-index issues: elevated dialog layer to z-60 to prevent overlap
   - Admin login form updated to username + password fields
   - API service updated to match new RESTful endpoint paths
-  - Notification messages simplified and unified
 
   ## Dependency Updates
 
   - MySQL driver updated from `mysql-connector-java` to `mysql-connector-j`
   - Removed duplicate `jakarta.mail-api` dependency
-  - Maven Shade Plugin updated to 3.5.0 with improved filtering and `ServicesResourceTransformer`
+  - Maven Shade Plugin updated to 3.5.0
 
   ## Bug Fixes
 

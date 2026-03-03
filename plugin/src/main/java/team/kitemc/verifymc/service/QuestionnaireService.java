@@ -135,7 +135,7 @@ public class QuestionnaireService {
     public JSONObject getQuestionnaire(String language) {
         JSONObject result = new JSONObject();
         result.put("enabled", isEnabled());
-        result.put("pass_score", getPassScore());
+        result.put("passScore", getPassScore());
 
         if (!isEnabled() || questionnaireConfig == null) {
             result.put("questions", new JSONArray());
@@ -169,7 +169,19 @@ public class QuestionnaireService {
                     Map<String, Object> inputMap = (Map<String, Object>) questionMap.get("input");
                     if (inputMap != null) {
                         for (Map.Entry<String, Object> entry : inputMap.entrySet()) {
-                            inputMeta.put(entry.getKey(), entry.getValue());
+                            String key = entry.getKey();
+                            Object value = entry.getValue();
+                            if ("min_selections".equals(key)) {
+                                inputMeta.put("minSelections", value);
+                            } else if ("max_selections".equals(key)) {
+                                inputMeta.put("maxSelections", value);
+                            } else if ("min_length".equals(key)) {
+                                inputMeta.put("minLength", value);
+                            } else if ("max_length".equals(key)) {
+                                inputMeta.put("maxLength", value);
+                            } else if (!key.startsWith("placeholder_")) {
+                                inputMeta.put(key, value);
+                            }
                         }
                     }
 
@@ -237,16 +249,19 @@ public class QuestionnaireService {
         if (answersArray != null) {
             for (int i = 0; i < answersArray.length(); i++) {
                 JSONObject answerObj = answersArray.getJSONObject(i);
-                int questionId = answerObj.getInt("question_id");
+                int questionId = answerObj.getInt("questionId");
                 String type = answerObj.optString("type", "single_choice");
                 List<Integer> selectedOptionIds = new ArrayList<>();
-                JSONArray optionsArray = answerObj.optJSONArray("selected_option_ids");
+                JSONArray optionsArray = answerObj.optJSONArray("selectedOptionIds");
+                if (optionsArray == null) {
+                    optionsArray = answerObj.optJSONArray("selected_option_ids");
+                }
                 if (optionsArray != null) {
                     for (int j = 0; j < optionsArray.length(); j++) {
                         selectedOptionIds.add(optionsArray.getInt(j));
                     }
                 }
-                String textAnswer = answerObj.optString("text_answer", "");
+                String textAnswer = answerObj.optString("textAnswer", answerObj.optString("text_answer", ""));
                 answerMap.put(questionId, new QuestionAnswer(type, selectedOptionIds, textAnswer));
             }
         } else {
@@ -510,19 +525,19 @@ public class QuestionnaireService {
         public boolean isScoringUnavailable() { return scoringUnavailable; }
         public JSONObject toJson() {
             JSONObject json = new JSONObject();
-            json.put("question_id", questionId);
+            json.put("questionId", questionId);
             json.put("type", type);
             json.put("score", score);
-            json.put("max_score", maxScore);
+            json.put("maxScore", maxScore);
             json.put("reason", reason);
             json.put("confidence", confidence);
-            json.put("manual_review", manualReview);
-            json.put("scoring_unavailable", scoringUnavailable);
+            json.put("manualReview", manualReview);
+            json.put("scoringUnavailable", scoringUnavailable);
             json.put("provider", provider);
             json.put("model", model);
-            json.put("request_id", requestId);
-            json.put("latency_ms", latencyMs);
-            json.put("retry_count", retryCount);
+            json.put("requestId", requestId);
+            json.put("latencyMs", latencyMs);
+            json.put("retryCount", retryCount);
             return json;
         }
     }
@@ -567,9 +582,9 @@ public class QuestionnaireService {
             JSONObject json = new JSONObject();
             json.put("passed", passed);
             json.put("score", score);
-            json.put("pass_score", passScore);
-            json.put("manual_review_required", isManualReviewRequired());
-            json.put("scoring_service_unavailable", isScoringServiceUnavailable());
+            json.put("passScore", passScore);
+            json.put("manualReviewRequired", isManualReviewRequired());
+            json.put("scoringServiceUnavailable", isScoringServiceUnavailable());
 
             JSONArray detailArray = new JSONArray();
             for (QuestionScoreDetail detail : details) {

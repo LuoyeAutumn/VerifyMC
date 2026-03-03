@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.bukkit.plugin.Plugin;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.db.UserDao;
 import team.kitemc.verifymc.registration.RegistrationOutcome;
@@ -93,7 +94,14 @@ public class RegistrationProcessingHandler implements HttpHandler {
             return;
         }
 
-        JSONObject req = WebResponseHelper.readJson(exchange);
+        JSONObject req;
+        try {
+            req = WebResponseHelper.readJson(exchange);
+        } catch (JSONException e) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    messageResolver.apply("error.invalid_json", "en")), 400);
+            return;
+        }
         RegistrationRequest request = RegistrationRequest.fromJson(req, usernameNormalizer);
 
         RegistrationValidationResult basicResult = validateBasicInput(request, requestId);
@@ -187,8 +195,8 @@ public class RegistrationProcessingHandler implements HttpHandler {
         }
 
         String questionnaireToken = questionnaire.optString("token", "");
-        long submittedAt = questionnaire.optLong("submitted_at", 0L);
-        long expiresAt = questionnaire.optLong("expires_at", 0L);
+        long submittedAt = questionnaire.optLong("submittedAt", questionnaire.optLong("submitted_at", 0L));
+        long expiresAt = questionnaire.optLong("expiresAt", questionnaire.optLong("expires_at", 0L));
         JSONObject answers = questionnaire.optJSONObject("answers");
 
         if (questionnaireToken.isEmpty() || answers == null) {
@@ -246,7 +254,7 @@ public class RegistrationProcessingHandler implements HttpHandler {
     private RegistrationValidationResult validateDiscordRequirement(RegistrationRequest request, String requestId) {
         logRegistrationStage(requestId, "validate_discord_requirement", null);
         if (discordService.isRequired() && !discordService.isLinked(request.normalizedUsername())) {
-            return RegistrationValidationResult.reject("discord.required", new JSONObject().put("discord_required", true));
+            return RegistrationValidationResult.reject("discord.required", new JSONObject().put("discordRequired", true));
         }
         return RegistrationValidationResult.pass();
     }
@@ -299,9 +307,9 @@ public class RegistrationProcessingHandler implements HttpHandler {
             if (detail == null || !"text".equalsIgnoreCase(detail.optString("type", ""))) {
                 continue;
             }
-            int questionId = detail.optInt("question_id", -1);
+            int questionId = detail.optInt("questionId", detail.optInt("question_id", -1));
             int score = detail.optInt("score", 0);
-            int maxScore = detail.optInt("max_score", 0);
+            int maxScore = detail.optInt("maxScore", detail.optInt("max_score", 0));
             String reason = detail.optString("reason", "").trim();
             if (reason.isEmpty()) {
                 reason = "N/A";

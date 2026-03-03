@@ -431,7 +431,10 @@ public class DiscordService {
         if (userDao != null) {
             Map<String, Object> user = userDao.getUserByUsername(username);
             if (user != null) {
-                Object discordId = user.get("discord_id");
+                Object discordId = user.get("discordId");
+                if (discordId == null) {
+                    discordId = user.get("discord_id");
+                }
                 if (discordId != null && !discordId.toString().isEmpty()) {
                     return true;
                 }
@@ -451,7 +454,10 @@ public class DiscordService {
         if (userDao != null) {
             Map<String, Object> user = userDao.getUserByUsername(username);
             if (user != null) {
-                Object discordId = user.get("discord_id");
+                Object discordId = user.get("discordId");
+                if (discordId == null) {
+                    discordId = user.get("discord_id");
+                }
                 if (discordId != null && !discordId.toString().isEmpty()) {
                     return discordId.toString();
                 }
@@ -513,16 +519,16 @@ public class DiscordService {
      * Read HTTP response
      */
     private String readResponse(HttpURLConnection conn) throws Exception {
-        BufferedReader reader = new BufferedReader(
-            new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
-        );
-        StringBuilder response = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            response.append(line);
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8)
+        )) {
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+            return response.toString();
         }
-        reader.close();
-        return response.toString();
     }
     
     /**
@@ -609,7 +615,7 @@ public class DiscordService {
             if (username != null) json.put("username", username);
             json.put("discriminator", discriminator);
             if (avatar != null) json.put("avatar", avatar);
-            if (globalName != null) json.put("global_name", globalName);
+            if (globalName != null) json.put("globalName", globalName);
             return json;
         }
     }

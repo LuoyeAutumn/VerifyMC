@@ -94,11 +94,12 @@ public class VersionCheckService {
      * @return Latest version string or null if failed
      */
     private String fetchLatestVersionFromGitHub() {
+        HttpURLConnection connection = null;
         try {
             debugLog("Fetching version from: " + GITHUB_POM_URL);
             
             URL url = new URL(GITHUB_POM_URL);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(TIMEOUT_MS);
             connection.setReadTimeout(TIMEOUT_MS);
@@ -135,6 +136,10 @@ public class VersionCheckService {
         } catch (Exception e) {
             debugLog("Exception while fetching version: " + e.getMessage());
             return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
     

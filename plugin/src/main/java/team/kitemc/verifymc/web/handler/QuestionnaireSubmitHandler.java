@@ -3,6 +3,7 @@ package team.kitemc.verifymc.web.handler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.service.QuestionnaireService;
@@ -28,7 +29,14 @@ public class QuestionnaireSubmitHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         if (!WebResponseHelper.requireMethod(exchange, "POST")) return;
 
-        JSONObject req = WebResponseHelper.readJson(exchange);
+        JSONObject req;
+        try {
+            req = WebResponseHelper.readJson(exchange);
+        } catch (JSONException e) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("error.invalid_json", "en")), 400);
+            return;
+        }
         String language = req.optString("language", "en");
 
         if (!ctx.getQuestionnaireService().isEnabled()) {
@@ -68,11 +76,11 @@ public class QuestionnaireSubmitHandler implements HttpHandler {
         resp.put("success", true);
         resp.put("token", token);
         resp.put("score", score);
-        resp.put("pass_score", passScore);
+        resp.put("passScore", passScore);
         resp.put("passed", passed);
-        resp.put("manual_review_required", manualReviewRequired);
-        resp.put("submitted_at", submittedAt);
-        resp.put("expires_at", record.expiresAt());
+        resp.put("manualReviewRequired", manualReviewRequired);
+        resp.put("submittedAt", submittedAt);
+        resp.put("expiresAt", record.expiresAt());
         if (details != null && !details.isEmpty()) {
             resp.put("details", details);
         }

@@ -38,7 +38,7 @@ public class DiscordAuthHandler implements HttpHandler {
         if (username == null || username.isBlank()) {
             JSONObject resp = new JSONObject()
                     .put("success", false)
-                    .put("msg", ctx.getMessage("error.missing_username", language));
+                    .put("message", ctx.getMessage("error.missing_username", language));
             WebResponseHelper.sendJson(exchange, resp);
             return;
         }
@@ -46,7 +46,7 @@ public class DiscordAuthHandler implements HttpHandler {
         String authUrl = ctx.getDiscordService().getAuthorizationUrl(username);
         JSONObject resp = new JSONObject();
         resp.put("success", true);
-        resp.put("auth_url", authUrl);
+        resp.put("authUrl", authUrl);
         WebResponseHelper.sendJson(exchange, resp);
     }
 }

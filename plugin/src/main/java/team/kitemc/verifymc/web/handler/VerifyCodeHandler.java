@@ -2,6 +2,7 @@ package team.kitemc.verifymc.web.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.web.ApiResponseFactory;
@@ -24,7 +25,14 @@ public class VerifyCodeHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         if (!WebResponseHelper.requireMethod(exchange, "POST")) return;
 
-        JSONObject req = WebResponseHelper.readJson(exchange);
+        JSONObject req;
+        try {
+            req = WebResponseHelper.readJson(exchange);
+        } catch (JSONException e) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("error.invalid_json", "en")), 400);
+            return;
+        }
         String email = req.optString("email", "").trim().toLowerCase();
         String language = req.optString("language", "en");
 
@@ -56,8 +64,11 @@ public class VerifyCodeHandler implements HttpHandler {
         boolean sent = ctx.getMailService().sendVerifyCode(email, code, language);
 
         if (sent) {
-            WebResponseHelper.sendJson(exchange, ApiResponseFactory.success(
-                    ctx.getMessage("verify.sent", language)));
+            // Get remaining cooldown seconds for next send
+            long remainingSeconds = ctx.getVerifyCodeService().getRemainingCooldownSeconds(email);
+            JSONObject response = ApiResponseFactory.success(ctx.getMessage("verify.sent", language));
+            response.put("remainingSeconds", remainingSeconds);
+            WebResponseHelper.sendJson(exchange, response);
         } else {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("verify.send_failed", language)));

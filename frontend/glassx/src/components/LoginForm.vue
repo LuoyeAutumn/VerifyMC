@@ -28,14 +28,14 @@
               />
             </div>
 
-            <button
+            <Button
               type="submit"
               :disabled="loading"
-              class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              class="w-full"
             >
-              <div v-if="loading" class="spinner"></div>
+              <div v-if="loading" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
               <span>{{ loading ? $t('common.loading') : $t('login.form.submit') }}</span>
-            </button>
+            </Button>
           </div>
         </form>
       </CardContent>
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useNotification } from '@/composables/useNotification'
@@ -55,7 +55,7 @@ import CardHeader from './ui/CardHeader.vue'
 import CardTitle from './ui/CardTitle.vue'
 import CardDescription from './ui/CardDescription.vue'
 import CardContent from './ui/CardContent.vue'
-
+import Button from './ui/Button.vue'
 import Input from './ui/Input.vue'
 import Label from './ui/Label.vue'
 
@@ -65,6 +65,9 @@ const route = useRoute()
 const notification = useNotification()
 
 const loading = ref(false)
+
+// 使用 ref 保存定时器 ID，确保组件卸载时能正确清理
+const redirectTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 const form = reactive({
   username: '',
@@ -118,12 +121,19 @@ const handleSubmit = async () => {
     
     if (response.success) {
       sessionService.setToken(response.token)
+      
+      // Store user info including admin status
+      sessionService.setUserInfo({
+        username: response.username || form.username.trim(),
+        isAdmin: response.isAdmin ?? false
+      })
+      
       notification.success(response.message || t('login.messages.success'))
       const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/')
         ? route.query.redirect
-        : '/admin'
+        : '/dashboard'
 
-      setTimeout(() => {
+      redirectTimeout.value = setTimeout(() => {
         router.push(redirect)
       }, 1000)
     } else {
@@ -136,4 +146,12 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
+
+onUnmounted(() => {
+  // 清理定时器
+  if (redirectTimeout.value) {
+    clearTimeout(redirectTimeout.value)
+    redirectTimeout.value = null
+  }
+})
 </script> 

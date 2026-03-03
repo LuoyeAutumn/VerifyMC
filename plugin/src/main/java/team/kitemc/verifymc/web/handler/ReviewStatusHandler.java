@@ -48,7 +48,7 @@ public class ReviewStatusHandler implements HttpHandler {
             resp.put("username", user.getOrDefault("username", ""));
         } else {
             resp.put("success", false);
-            resp.put("msg", ctx.getMessage("error.user_not_found", language));
+            resp.put("message", ctx.getMessage("error.user_not_found", language));
         }
         WebResponseHelper.sendJson(exchange, resp);
     }

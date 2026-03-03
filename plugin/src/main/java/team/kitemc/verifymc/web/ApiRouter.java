@@ -95,6 +95,16 @@ public class ApiRouter {
         // --- User status query ---
         server.createContext("/api/user/status", new UserStatusHandler(ctx));
 
+        // --- Server status ---
+        server.createContext("/api/server/status", new ServerStatusHandler(ctx));
+
+        // --- Downloads ---
+        server.createContext("/api/downloads", new DownloadsHandler(ctx));
+
+        // --- User profile management ---
+        server.createContext("/api/user/update", new UserUpdateHandler(ctx));
+        server.createContext("/api/user/password", new UserPasswordHandler(ctx));
+
         // --- Static files (front-end) ---
         server.createContext("/", new StaticFileHandler(ctx));
     }

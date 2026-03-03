@@ -2,6 +2,7 @@ package team.kitemc.verifymc.web.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.db.AuditRecord;
@@ -9,11 +10,13 @@ import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 /**
  * Bans a user — updates status and removes from whitelist.
  */
 public class AdminUserBanHandler implements HttpHandler {
+    private static final Pattern VALID_USERNAME = Pattern.compile("^[a-zA-Z0-9_]{1,16}$");
     private final PluginContext ctx;
 
     public AdminUserBanHandler(PluginContext ctx) {
@@ -23,17 +26,33 @@ public class AdminUserBanHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!WebResponseHelper.requireMethod(exchange, "POST")) return;
-        if (!AdminAuthUtil.requireAuth(exchange, ctx)) return;
 
-        JSONObject req = WebResponseHelper.readJson(exchange);
+        // Require admin privileges and get operator username
+        String operator = AdminAuthUtil.requireAdmin(exchange, ctx);
+        if (operator == null) return;
+
+        JSONObject req;
+        try {
+            req = WebResponseHelper.readJson(exchange);
+        } catch (JSONException e) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("error.invalid_json", "en")), 400);
+            return;
+        }
         String target = req.optString("username", req.optString("uuid", ""));
-        String operator = req.optString("operator", "admin");
         String reason = req.optString("reason", "");
         String language = req.optString("language", "en");
 
         if (target.isBlank()) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("admin.missing_user_identifier", language)));
+            return;
+        }
+
+        // Validate username format to prevent command injection
+        if (!VALID_USERNAME.matcher(target).matches()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("admin.invalid_username", language)));
             return;
         }
 

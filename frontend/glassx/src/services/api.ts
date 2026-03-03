@@ -1,34 +1,30 @@
 import { sessionService } from '@/services/session'
+import type { PendingUser, ServerStatusData } from '@/types'
 
 const API_BASE = '/api'
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   message?: string
   data?: T
 }
 
 export interface ConfigResponse {
-  login: {
-    enable_email: boolean
-    email_smtp: string
-  }
-  admin: any
-  frontend: {
-    theme: string
-    logo_url: string
-    announcement: string
-    web_server_prefix: string
-    username_regex: string
-  }
+  authMethods: string[]
+  theme: string
+  logoUrl: string
+  announcement: string
+  webServerPrefix: string
+  wsPort?: number
+  usernameRegex: string
   authme: {
     enabled: boolean
-    require_password: boolean
-    password_regex: string
+    requirePassword: boolean
+    passwordRegex: string
   }
   captcha?: {
     enabled: boolean
-    email_enabled: boolean
+    emailEnabled: boolean
     type: string
   }
   discord?: {
@@ -37,14 +33,18 @@ export interface ConfigResponse {
   }
   questionnaire?: {
     enabled: boolean
-    pass_score: number
-    has_text_questions?: boolean
+    passScore: number
+    hasTextQuestions?: boolean
   }
   bedrock?: {
     enabled: boolean
     prefix: string
-    username_regex: string
+    usernameRegex: string
   }
+  emailDomainWhitelist?: string[]
+  enableEmailDomainWhitelist?: boolean
+  enableEmailAliasLimit?: boolean
+  language?: string
 }
 
 export interface QuestionnaireAnswer {
@@ -59,10 +59,10 @@ export interface QuestionOption {
 }
 
 export interface QuestionInputMeta {
-  min_selections?: number
-  max_selections?: number
-  min_length?: number
-  max_length?: number
+  minSelections?: number
+  maxSelections?: number
+  minLength?: number
+  maxLength?: number
   multiline?: boolean
   placeholder?: string
 }
@@ -82,31 +82,30 @@ export interface SubmitQuestionnaireResponse {
   success: boolean
   passed: boolean
   score: number
-  pass_score: number
-  manual_review_required?: boolean
+  passScore: number
+  manualReviewRequired?: boolean
   token?: string
-  submitted_at?: number
-  expires_at?: number
-  msg?: string
+  submittedAt?: number
+  expiresAt?: number
   message?: string
 }
 
 export interface QuestionnaireSubmission {
   passed: boolean
   score: number
-  pass_score: number
-  manual_review_required?: boolean
+  passScore: number
+  manualReviewRequired?: boolean
   answers: Record<string, QuestionnaireAnswer>
   token: string
-  submitted_at: number
-  expires_at: number
+  submittedAt: number
+  expiresAt: number
 }
 
 export interface CaptchaResponse {
   success: boolean
   token?: string
   image?: string
-  msg?: string
+  message?: string
 }
 
 export interface SendCodeRequest {
@@ -116,7 +115,8 @@ export interface SendCodeRequest {
 
 export interface SendCodeResponse {
   success: boolean
-  msg: string
+  message: string
+  remainingSeconds?: number
 }
 
 export interface RegisterRequest {
@@ -133,7 +133,7 @@ export interface RegisterRequest {
 
 export interface RegisterResponse {
   success: boolean
-  msg: string
+  message: string
 }
 
 export interface AdminLoginRequest {
@@ -146,15 +146,8 @@ export interface AdminLoginResponse {
   success: boolean
   token: string
   message: string
-}
-
-export interface PendingUser {
-  username: string
-  email: string
-  status: string
-  regTime: string
-  questionnaire_score?: number | null
-  questionnaire_review_summary?: string | null
+  isAdmin?: boolean
+  username?: string
 }
 
 export interface PendingListResponse {
@@ -172,13 +165,38 @@ export interface ReviewRequest {
 
 export interface ReviewResponse {
   success: boolean
-  msg: string
+  message: string
 }
 
 export interface ChangePasswordRequest {
   username: string
   password: string
   language: string
+}
+
+export interface AuditRecord {
+  id?: number
+  action: string
+  operator: string
+  target: string
+  detail: string
+  timestamp: number
+}
+
+export interface AuditListResponse {
+  success: boolean
+  audits: AuditRecord[]
+  message?: string
+}
+
+export interface DownloadResource {
+  id: string
+  name: string
+  description: string
+  version?: string
+  size?: string
+  url: string
+  icon?: string
 }
 
 class ApiService {
@@ -195,35 +213,75 @@ class ApiService {
     }
   }
 
-  private getResponseMessage(payload: { msg?: string; message?: string } | null | undefined): string {
-    return payload?.msg || payload?.message || ''
+  private getResponseMessage(payload: { message?: string } | null | undefined): string {
+    return payload?.message || ''
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE}${endpoint}`
-    const response = await fetch(url, {
-      headers: this.getAuthHeaders(),
-      ...options,
-    })
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000)
 
-    if (response.status === 401 || response.status === 403) {
-      sessionService.handleUnauthorized()
-      throw new Error('Authentication required')
-    }
+    try {
+      const response = await fetch(url, {
+        headers: this.getAuthHeaders(),
+        ...options,
+        signal: controller.signal,
+      })
 
-    const data = await response.json()
-    const responseMessage = this.getResponseMessage(data)
-    if (data && data.success === false && responseMessage.includes('Authentication required')) {
-      sessionService.handleUnauthorized()
-      throw new Error('Authentication required')
+      // 处理 401/403 认证错误
+      if (response.status === 401 || response.status === 403) {
+        sessionService.handleUnauthorized()
+        throw new Error('Authentication required')
+      }
+
+      // 检查 HTTP 状态码，非 2xx 响应抛出错误
+      if (!response.ok) {
+        let errorMessage = `HTTP error: ${response.status}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData?.message || errorMessage
+        } catch {
+          // 无法解析 JSON，使用默认错误消息
+        }
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      const responseMessage = this.getResponseMessage(data)
+      if (data && data.success === false && responseMessage.includes('Authentication required')) {
+        sessionService.handleUnauthorized()
+        throw new Error('Authentication required')
+      }
+      return data
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout')
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
     }
-    return data
   }
 
   // 获取配置
   async getConfig(): Promise<ConfigResponse> {
     const response = await this.request<{ success: boolean; config: ConfigResponse }>('/config')
-    return response.config || response as unknown as ConfigResponse
+    // 运行时验证：优先使用 config 字段，否则验证 response 是否符合 ConfigResponse 结构
+    if (response.config) {
+      return response.config
+    }
+    // 检查 response 本身是否符合 ConfigResponse 结构
+    const candidate = response as unknown
+    if (
+      candidate &&
+      typeof candidate === 'object' &&
+      'authMethods' in candidate &&
+      Array.isArray((candidate as Record<string, unknown>).authMethods)
+    ) {
+      return candidate as ConfigResponse
+    }
+    throw new Error('Invalid config response format')
   }
 
   // 获取验证码
@@ -254,7 +312,6 @@ class ApiService {
       enabled: boolean
       questions: Question[]
     }
-    msg?: string
     message?: string
   }> {
     return this.request(`/questionnaire/config?language=${encodeURIComponent(language)}`)
@@ -271,12 +328,17 @@ class ApiService {
     })
   }
 
-  // 管理员登录
-  async adminLogin(data: AdminLoginRequest): Promise<AdminLoginResponse> {
-    return this.request<AdminLoginResponse>('/admin/login', {
+  // 统一登录接口（管理员和玩家共用）
+  async login(data: AdminLoginRequest): Promise<AdminLoginResponse> {
+    return this.request<AdminLoginResponse>('/login', {
       method: 'POST',
       body: JSON.stringify(data),
     })
+  }
+
+  // 兼容旧方法名
+  async adminLogin(data: AdminLoginRequest): Promise<AdminLoginResponse> {
+    return this.login(data)
   }
 
   // 获取待审核用户列表
@@ -302,10 +364,12 @@ class ApiService {
   }
 
   // 封禁用户
-  async banUser(username: string, language: string = 'zh'): Promise<ReviewResponse> {
+  async banUser(username: string, language: string = 'zh', reason?: string): Promise<ReviewResponse> {
+    const body: Record<string, string> = { username, language }
+    if (reason) body.reason = reason
     return this.request<ReviewResponse>('/admin/user/ban', {
       method: 'POST',
-      body: JSON.stringify({ username, language }),
+      body: JSON.stringify(body),
     })
   }
 
@@ -314,21 +378,6 @@ class ApiService {
     return this.request<ReviewResponse>('/admin/user/unban', {
       method: 'POST',
       body: JSON.stringify({ username, language }),
-    })
-  }
-
-  // 更新公告
-  async updateAnnouncement(content: string, language: string = 'zh'): Promise<ReviewResponse> {
-    return this.request<ReviewResponse>('/update-announcement', {
-      method: 'POST',
-      body: JSON.stringify({ content, language }),
-    })
-  }
-
-  // 重载配置
-  async reloadConfig(): Promise<{ success: boolean; message: string }> {
-    return this.request<{ success: boolean; message: string }>('/reload-config', {
-      method: 'POST',
     })
   }
 
@@ -374,8 +423,15 @@ class ApiService {
   }
 
   // 获取用户状态
-  async getUserStatus(): Promise<{ success: boolean; data: { status: string; reason?: string }; message?: string }> {
-    return this.request<{ success: boolean; data: { status: string; reason?: string }; message?: string }>('/user/status')
+  async getUserStatus(language: string = 'zh'): Promise<{ success: boolean; data: { status: string; reason?: string }; message?: string }> {
+    const params = new URLSearchParams({ language })
+    const username = sessionService.getUserInfo()?.username
+
+    if (username) {
+      params.set('username', username)
+    }
+
+    return this.request<{ success: boolean; data: { status: string; reason?: string }; message?: string }>(`/user/status?${params.toString()}`)
   }
 
   // 修改用户密码
@@ -410,16 +466,16 @@ class ApiService {
   }
 
   // Discord OAuth - 获取授权 URL
-  async getDiscordAuthUrl(username: string): Promise<{
+  async getDiscordAuthUrl(username: string, language: string = 'en'): Promise<{
     success: boolean;
-    auth_url?: string;
-    msg?: string;
+    authUrl?: string;
+    message?: string;
   }> {
-    return this.request(`/discord/auth?username=${encodeURIComponent(username)}`)
+    return this.request(`/discord/auth?username=${encodeURIComponent(username)}&language=${language}`)
   }
 
   // Discord OAuth - 检查绑定状态
-  async getDiscordStatus(username: string): Promise<{
+  async getDiscordStatus(username: string, language: string = 'en'): Promise<{
     success: boolean;
     linked: boolean;
     user?: {
@@ -427,11 +483,68 @@ class ApiService {
       username: string;
       discriminator: string;
       avatar?: string;
-      global_name?: string;
+      globalName?: string;
     };
-    msg?: string;
+    message?: string;
   }> {
-    return this.request(`/discord/status?username=${encodeURIComponent(username)}`)
+    return this.request(`/discord/status?username=${encodeURIComponent(username)}&language=${language}`)
+  }
+
+  // Discord OAuth - 解绑 Discord 账号
+  async unlinkDiscord(username: string, language: string = 'en'): Promise<ReviewResponse> {
+    return this.request<ReviewResponse>('/discord/unlink', {
+      method: 'POST',
+      body: JSON.stringify({ username, language }),
+    })
+  }
+
+  // AuthMe 同步
+  async syncAuthme(language: string = 'en'): Promise<{ success: boolean; message?: string }> {
+    return this.request<{ success: boolean; message?: string }>('/admin/sync', {
+      method: 'POST',
+      body: JSON.stringify({ language }),
+    })
+  }
+  // 获取审计日志
+  async getAuditLogs(): Promise<AuditListResponse> {
+    return this.request<AuditListResponse>('/admin/audits')
+  }
+
+  // 获取下载资源列表（预留接口，后端可能未实现）
+  async getDownloadResources(): Promise<{ success: boolean; resources?: DownloadResource[]; message?: string }> {
+    return this.request('/downloads')
+  }
+
+  // 获取服务器状态（预留接口，后端可能未实现）
+  async getServerStatus(): Promise<{
+    success: boolean
+    data?: ServerStatusData
+    message?: string
+  }> {
+    return this.request('/server/status')
+  }
+
+  // 更新用户信息（预留接口）
+  async updateUserInfo(data: {
+    email?: string
+    language?: string
+  }): Promise<{ success: boolean; message?: string }> {
+    return this.request('/user/update', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  // 用户修改密码
+  async userChangePassword(data: {
+    currentPassword: string
+    newPassword: string
+    language: string
+  }): Promise<{ success: boolean; message?: string }> {
+    return this.request('/user/password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
   }
 
   // AuthMe 同步

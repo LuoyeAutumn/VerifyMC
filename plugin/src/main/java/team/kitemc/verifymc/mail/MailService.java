@@ -42,7 +42,7 @@ public class MailService {
         from = config.getString("smtp.from", username);
         boolean enableSsl = config.getBoolean("smtp.enable_ssl", true);
         
-        debugLog("SMTP Configuration: host=" + host + ", port=" + port + ", username=" + username + ", enableSsl=" + enableSsl);
+        debugLog("SMTP Configuration: host=" + host + ", port=" + port + ", enableSsl=" + enableSsl);
 
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -74,7 +74,7 @@ public class MailService {
      * @return true if email sent successfully
      */
     public boolean sendCode(String to, String subject, String code, String language) {
-        debugLog("sendCode called: to=" + to + ", subject=" + subject + ", code=" + code + ", language=" + language);
+        debugLog("sendCode called: to=" + to + ", subject=" + subject + ", language=" + language);
         try {
             String lang = (language != null && !language.isEmpty()) ? language : plugin.getConfig().getString("language", "en");
             debugLog("Using language: " + lang);

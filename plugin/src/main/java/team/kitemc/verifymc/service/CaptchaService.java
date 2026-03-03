@@ -19,6 +19,7 @@ public class CaptchaService {
     private final Plugin plugin;
     private final boolean debug;
     private final SecureRandom random = new SecureRandom();
+    private volatile boolean running = true;
     
     // Store captcha tokens and their answers: token -> CaptchaData
     private final Map<String, CaptchaData> captchaStore = new ConcurrentHashMap<>();
@@ -239,8 +240,8 @@ public class CaptchaService {
      * Start background cleanup task for expired captchas
      */
     private void startCleanupTask() {
-        new Thread(() -> {
-            while (true) {
+        Thread cleanupThread = new Thread(() -> {
+            while (running) {
                 try {
                     Thread.sleep(CLEANUP_INTERVAL);
                     long currentTime = System.currentTimeMillis();
@@ -258,7 +259,17 @@ public class CaptchaService {
                     break;
                 }
             }
-        }, "CaptchaCleanup").start();
+        }, "CaptchaCleanup");
+        cleanupThread.setDaemon(true);
+        cleanupThread.start();
+    }
+    
+    /**
+     * Stop the cleanup task gracefully
+     */
+    public void stop() {
+        running = false;
+        debugLog("Cleanup task stopped");
     }
     
     private void debugLog(String msg) {

@@ -6,7 +6,7 @@
         <!-- Badge -->
         <div class="fade-up-item" style="--delay: 0s">
           <div
-            class="github-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/[0.1] mb-8 md:mb-12 backdrop-blur-sm">
+            class="github-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 md:mb-12 backdrop-blur-sm">
             <a href="https://github.com/KiteMC/VerifyMC" target="_blank" rel="noopener noreferrer"
               class="inline-flex items-center gap-2 text-white/70 hover:text-white transition-all duration-300">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -15,6 +15,9 @@
               </svg>
               <span class="text-sm font-medium tracking-wide">GitHub</span>
             </a>
+            <div class="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-white/90">
+              v1.6.6
+            </div>
           </div>
         </div>
 
@@ -59,13 +62,11 @@
             </router-link>
 
             <router-link :to="secondaryAction.href" class="glass-button group">
-              <svg class="w-5 h-5 transition-transform duration-300 group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-                </path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-              </svg>
+              <component
+                :is="isAdminLoggedIn ? Settings : LogIn"
+                class="w-5 h-5 transition-transform duration-300"
+                :class="{ 'group-hover:rotate-90': isAdminLoggedIn, 'group-hover:translate-x-1': !isAdminLoggedIn }"
+              />
               <span>{{ secondaryAction.label }}</span>
             </router-link>
           </div>
@@ -79,14 +80,19 @@
 </template>
 
 <script setup lang="ts">
-import { inject, computed, watch } from 'vue'
+import { inject, computed, watch, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import { sessionService } from '@/services/session'
+import { LogIn, Settings } from 'lucide-vue-next'
 
 const { t } = useI18n()
-const route = useRoute()
-const config = inject('config', { value: {} as any })
+
+interface AppConfig {
+  webServerPrefix?: string
+  announcement?: string
+}
+
+const config = inject<Ref<AppConfig>>('config', ref({}))
 
 interface Props {
   badge?: string
@@ -101,7 +107,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 使用配置中的服务器名称
-const serverName = computed(() => config.value?.frontend?.web_server_prefix)
+const serverName = computed(() => config.value?.webServerPrefix)
 
 const displayTitle1 = computed(() => {
   return props.title1 || t('home.welcome')
@@ -111,11 +117,10 @@ const displayTitle2 = computed(() => serverName.value)
 
 // 获取announcement
 const announcement = computed(() => {
-  return config.value?.frontend?.announcement || ''
+  return config.value?.announcement || ''
 })
 
 const isAdminLoggedIn = computed(() => {
-  route.fullPath
   return sessionService.isAuthenticated()
 })
 
@@ -134,9 +139,9 @@ const secondaryAction = computed(() => {
 })
 
 // 监听配置变化
-watch(() => config.value?.frontend?.web_server_prefix, (newPrefix) => {
+watch(() => config.value?.webServerPrefix, (newPrefix) => {
   if (newPrefix) {
-    // Optimized: removed empty block
+    // Config loaded
   }
 }, { immediate: true })
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-md border border-white/20 overflow-hidden">
+  <div class="w-full overflow-auto">
     <table class="w-full">
       <slot />
     </table>

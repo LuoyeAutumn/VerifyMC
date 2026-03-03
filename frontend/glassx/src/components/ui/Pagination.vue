@@ -2,99 +2,91 @@
   <!-- Pagination component with glassx theme styling -->
   <div v-if="totalPages > 1" class="flex items-center justify-between mt-6">
     <!-- Page info -->
-    <div class="text-sm text-white/60">
+    <div class="text-sm text-white/60" aria-live="polite">
       {{ $t('pagination.showing') }} {{ startItem }} - {{ endItem }} {{ $t('pagination.of') }} {{ totalCount }} {{ $t('pagination.items') }}
     </div>
     
     <!-- Pagination controls -->
-    <div class="flex items-center space-x-2">
+    <nav class="flex items-center space-x-2" :aria-label="$t('pagination.title') || 'Pagination'">
       <!-- Previous button -->
-      <button
+      <Button
         @click="goToPage(currentPage - 1)"
         :disabled="!hasPrev"
-        :class="[
-          'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-          hasPrev 
-            ? 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40' 
-            : 'bg-white/5 text-white/40 border border-white/10 cursor-not-allowed'
-        ]"
+        variant="ghost"
+        size="sm"
+        :aria-label="$t('pagination.previous')"
+        :aria-disabled="!hasPrev"
       >
         {{ $t('pagination.previous') }}
-      </button>
+      </Button>
       
       <!-- Page numbers -->
-      <div class="flex items-center space-x-1">
+      <div class="flex items-center space-x-1" role="group" :aria-label="$t('pagination.page_numbers') || 'Page numbers'">
         <!-- First page -->
-        <button
+        <Button
           v-if="showFirstPage"
           @click="goToPage(1)"
-          :class="[
-            'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-            currentPage === 1
-              ? 'bg-blue-500 text-white border border-blue-500'
-              : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
-          ]"
+          :variant="currentPage === 1 ? 'default' : 'ghost'"
+          size="icon"
+          :aria-label="$t('pagination.page', { page: 1 }) || `Page 1`"
+          :aria-current="currentPage === 1 ? 'page' : undefined"
         >
           1
-        </button>
+        </Button>
         
         <!-- Left ellipsis -->
-        <span v-if="showLeftEllipsis" class="px-2 text-white/60">...</span>
+        <span v-if="showLeftEllipsis" class="px-2 text-white/60" aria-hidden="true">...</span>
         
         <!-- Visible page numbers -->
-        <button
+        <Button
           v-for="page in visiblePages"
           :key="page"
           @click="goToPage(page)"
-          :class="[
-            'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-            currentPage === page
-              ? 'bg-blue-500 text-white border border-blue-500'
-              : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
-          ]"
+          :variant="currentPage === page ? 'default' : 'ghost'"
+          size="icon"
+          :aria-label="$t('pagination.page', { page }) || `Page ${page}`"
+          :aria-current="currentPage === page ? 'page' : undefined"
         >
           {{ page }}
-        </button>
+        </Button>
         
         <!-- Right ellipsis -->
-        <span v-if="showRightEllipsis" class="px-2 text-white/60">...</span>
+        <span v-if="showRightEllipsis" class="px-2 text-white/60" aria-hidden="true">...</span>
         
         <!-- Last page -->
-        <button
+        <Button
           v-if="showLastPage"
           @click="goToPage(totalPages)"
-          :class="[
-            'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-            currentPage === totalPages
-              ? 'bg-blue-500 text-white border border-blue-500'
-              : 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40'
-          ]"
+          :variant="currentPage === totalPages ? 'default' : 'ghost'"
+          size="icon"
+          :aria-label="$t('pagination.page', { page: totalPages }) || `Page ${totalPages}`"
+          :aria-current="currentPage === totalPages ? 'page' : undefined"
         >
           {{ totalPages }}
-        </button>
+        </Button>
       </div>
       
       <!-- Next button -->
-      <button
+      <Button
         @click="goToPage(currentPage + 1)"
         :disabled="!hasNext"
-        :class="[
-          'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-          hasNext 
-            ? 'bg-white/10 text-white hover:bg-white/20 border border-white/20 hover:border-white/40' 
-            : 'bg-white/5 text-white/40 border border-white/10 cursor-not-allowed'
-        ]"
+        variant="ghost"
+        size="sm"
+        :aria-label="$t('pagination.next')"
+        :aria-disabled="!hasNext"
       >
         {{ $t('pagination.next') }}
-      </button>
-    </div>
+      </Button>
+    </nav>
     
     <!-- Page size selector -->
     <div class="flex items-center space-x-2 text-sm">
-      <span class="text-white/60">{{ $t('pagination.per_page') }}:</span>
+      <label for="page-size-select" class="text-white/60">{{ $t('pagination.per_page') }}:</label>
       <select
+        id="page-size-select"
         :value="pageSize"
         @change="changePageSize(($event.target as HTMLSelectElement)?.value)"
+        :aria-label="$t('pagination.per_page')"
         class="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
       >
         <option value="10" class="bg-gray-800 text-white">10</option>
@@ -108,9 +100,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-
-const { t } = useI18n()
+import Button from '@/components/ui/Button.vue'
 
 interface Props {
   currentPage: number
@@ -148,7 +138,6 @@ const endItem = computed(() => {
 const visiblePages = computed(() => {
   const delta = 2 // Number of pages to show on each side of current page
   const range = []
-  const rangeWithDots = []
   
   for (let i = Math.max(2, props.currentPage - delta); 
        i <= Math.min(props.totalPages - 1, props.currentPage + delta); 

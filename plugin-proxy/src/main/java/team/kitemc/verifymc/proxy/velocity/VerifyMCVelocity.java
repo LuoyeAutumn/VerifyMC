@@ -1,5 +1,13 @@
 package team.kitemc.verifymc.proxy.velocity;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import org.slf4j.Logger;
+
+import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -7,19 +15,13 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.slf4j.Logger;
 import team.kitemc.verifymc.proxy.ApiClient;
 import team.kitemc.verifymc.proxy.ProxyConfig;
-import team.kitemc.verifymc.proxy.ProxyVersionCheckService;
 import team.kitemc.verifymc.proxy.ProxyResourceUpdater;
-
-import com.google.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import team.kitemc.verifymc.proxy.ProxyVersionCheckService;
 
 /**
  * VerifyMC Proxy Plugin for Velocity
@@ -28,7 +30,7 @@ import java.nio.file.Path;
 @Plugin(
     id = "verifymc-proxy",
     name = "VerifyMC-Proxy",
-    version = "1.6.0",
+    version = "1.7.0",
     description = "VerifyMC proxy plugin for Velocity",
     authors = {"KiteMC"}
 )
@@ -87,7 +89,7 @@ public class VerifyMCVelocity {
         apiClient = new ApiClient(config, julLogger);
 
         // Initialize version check service
-        String version = "1.6.0"; // From @Plugin annotation
+        String version = "1.7.0"; // From @Plugin annotation
         versionCheckService = new ProxyVersionCheckService(version, julLogger, config.isDebug());
 
         // Initialize resource updater
@@ -148,7 +150,8 @@ public class VerifyMCVelocity {
                 event.setResult(PreLoginEvent.PreLoginComponentResult.denied(kickComponent));
 
                 if (config.isDebug()) {
-                    logger.info("[DEBUG] Blocked player: " + playerName + " (not approved)");
+                    String reason = (status == null) ? "lookup failed" : "not approved";
+                    logger.info("[DEBUG] Blocked player: {} ({})", playerName, reason);
                 }
             } else {
                 if (config.isDebug()) {
@@ -157,7 +160,10 @@ public class VerifyMCVelocity {
             }
         } catch (Exception e) {
             logger.warn("Failed to check whitelist for " + playerName, e);
-            // On error, allow login by default (fail-open)
+            String kickMessage = config.getKickMessage()
+                .replace("{url}", config.getRegisterUrl());
+            Component kickComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(kickMessage);
+            event.setResult(PreLoginEvent.PreLoginComponentResult.denied(kickComponent));
         }
     }
 

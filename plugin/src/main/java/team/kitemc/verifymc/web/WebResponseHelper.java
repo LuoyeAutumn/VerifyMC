@@ -17,8 +17,12 @@ public final class WebResponseHelper {
 
     /**
      * Read the request body as a JSONObject.
+     * @param exchange the HTTP exchange
+     * @return JSONObject parsed from request body, or empty JSONObject if body is empty
+     * @throws IOException if an I/O error occurs
+     * @throws JSONException if the request body contains invalid JSON
      */
-    public static JSONObject readJson(HttpExchange exchange) throws IOException {
+    public static JSONObject readJson(HttpExchange exchange) throws IOException, JSONException {
         try (InputStream is = exchange.getRequestBody();
              BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
@@ -30,11 +34,7 @@ public final class WebResponseHelper {
             if (body.isEmpty()) {
                 return new JSONObject();
             }
-            try {
-                return new JSONObject(body);
-            } catch (JSONException e) {
-                return new JSONObject();
-            }
+            return new JSONObject(body);  // Let JSONException propagate to caller
         }
     }
 

@@ -20,7 +20,7 @@
             {{ result.passed ? $t('questionnaire.passed') : $t('questionnaire.failed') }}
           </div>
           <p class="text-white/60 mb-2">
-            {{ $t('questionnaire.your_score') }}: {{ result.score }} / {{ result.pass_score }}
+            {{ $t('questionnaire.your_score') }}: {{ result.score }} / {{ result.passScore }}
           </p>
           <Button class="mt-4" @click="resetForm">
             {{ $t('questionnaire.retry') }}
@@ -51,14 +51,14 @@
                   :name="`question_${question.id}`"
                   :value="option.id"
                   v-model="answers[question.id].selectedOptionIds[0]"
-                  class="w-4 h-4 text-blue-500"
+                  class="w-4 h-4 text-blue-500 accent-blue-500"
                 />
                 <input
                   v-else
                   type="checkbox"
                   :value="option.id"
                   v-model="answers[question.id].selectedOptionIds"
-                  class="w-4 h-4 text-blue-500"
+                  class="w-4 h-4 text-blue-500 accent-blue-500"
                 />
                 <span class="text-white/80">{{ option.text }}</span>
               </label>
@@ -69,22 +69,20 @@
                 v-if="question.input?.multiline"
                 v-model="answers[question.id].textAnswer"
                 :placeholder="question.input?.placeholder || $t('questionnaire.text_placeholder')"
-                :maxlength="question.input?.max_length || undefined"
+                :maxlength="question.input?.maxLength || undefined"
                 rows="4"
-                class="w-full rounded-lg border border-white/10 bg-white/5 p-3 text-white placeholder:text-white/40"
+                class="glass-input w-full"
               />
-              <input
+              <Input
                 v-else
-                type="text"
                 v-model="answers[question.id].textAnswer"
                 :placeholder="question.input?.placeholder || $t('questionnaire.text_placeholder')"
-                :maxlength="question.input?.max_length || undefined"
-                class="w-full rounded-lg border border-white/10 bg-white/5 p-3 text-white placeholder:text-white/40"
+                :maxlength="question.input?.maxLength || undefined"
               />
               <div class="text-xs text-white/50 mt-2">
                 {{ $t('questionnaire.length_hint', {
-                  min: question.input?.min_length || 0,
-                  max: question.input?.max_length || 0
+                  min: question.input?.minLength || 0,
+                  max: question.input?.maxLength || 0
                 }) }}
               </div>
             </div>
@@ -115,6 +113,7 @@ import { useI18n } from 'vue-i18n'
 import { useNotification } from '@/composables/useNotification'
 import { apiService } from '@/services/api'
 import type { Question, QuestionnaireAnswer, SubmitQuestionnaireResponse } from '@/services/api'
+import Input from './ui/Input.vue'
 
 const { t, locale } = useI18n()
 import Card from './ui/Card.vue'
@@ -139,21 +138,21 @@ const answers = reactive<Record<number, QuestionnaireAnswer>>({})
 const result = ref<{
   passed: boolean
   score: number
-  pass_score: number
-  manual_review_required?: boolean
+  passScore: number
+  manualReviewRequired?: boolean
   answers: Record<string, QuestionnaireAnswer>
   token: string
-  submitted_at: number
-  expires_at: number
+  submittedAt: number
+  expiresAt: number
 }>({
   passed: false,
   score: 0,
-  pass_score: 60,
-  manual_review_required: false,
+  passScore: 60,
+  manualReviewRequired: false,
   answers: {},
   token: '',
-  submitted_at: 0,
-  expires_at: 0
+  submittedAt: 0,
+  expiresAt: 0
 })
 
 const isChoiceQuestion = (question: Question): question is Question & { type: 'single_choice' | 'multiple_choice' } => {
@@ -168,8 +167,8 @@ const isSupportedQuestionType = (question: Question) => {
   return isChoiceQuestion(question) || isTextQuestion(question)
 }
 
-const getErrorMessage = (payload?: { msg?: string; message?: string }) => {
-  return payload?.msg || payload?.message || ''
+const getErrorMessage = (payload?: { message?: string }) => {
+  return payload?.message || ''
 }
 
 const initAnswer = (question: Question): QuestionnaireAnswer => ({
@@ -187,16 +186,16 @@ const isFormValid = computed(() => {
     const answer = answers[question.id] ?? initAnswer(question)
 
     if (isChoiceQuestion(question)) {
-      const minSelections = question.input?.min_selections ?? (question.required ? 1 : 0)
-      const maxSelections = question.input?.max_selections ?? Number.MAX_SAFE_INTEGER
+      const minSelections = question.input?.minSelections ?? (question.required ? 1 : 0)
+      const maxSelections = question.input?.maxSelections ?? Number.MAX_SAFE_INTEGER
       const selectedCount = answer.selectedOptionIds.length
       return selectedCount >= minSelections && selectedCount <= maxSelections
     }
 
     if (isTextQuestion(question)) {
       const trimmedText = answer.textAnswer.trim()
-      const minLength = question.input?.min_length ?? 0
-      const maxLength = question.input?.max_length ?? Number.MAX_SAFE_INTEGER
+      const minLength = question.input?.minLength ?? 0
+      const maxLength = question.input?.maxLength ?? Number.MAX_SAFE_INTEGER
       if (!question.required && trimmedText.length === 0) return true
       return trimmedText.length >= minLength && trimmedText.length <= maxLength
     }
@@ -271,16 +270,16 @@ const handleSubmit = async () => {
       const submissionResult = {
         passed: data.passed,
         score: data.score,
-        pass_score: data.pass_score,
-        manual_review_required: Boolean(data.manual_review_required),
+        passScore: data.passScore,
+        manualReviewRequired: Boolean(data.manualReviewRequired),
         answers: formattedAnswers,
         token: data.token || '',
-        submitted_at: data.submitted_at || Date.now(),
-        expires_at: data.expires_at || Date.now()
+        submittedAt: data.submittedAt || Date.now(),
+        expiresAt: data.expiresAt || Date.now()
       }
       result.value = submissionResult
 
-      if (data.passed || data.manual_review_required) {
+      if (data.passed || data.manualReviewRequired) {
         if (data.passed) {
           notification.success(t('questionnaire.passed'), getErrorMessage(data) || submitSuccessFallback())
         } else {

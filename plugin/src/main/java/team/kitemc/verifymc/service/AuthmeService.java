@@ -223,7 +223,14 @@ public class AuthmeService {
         String database = plugin.getConfig().getString("authme.database.mysql.database", "authme");
         String user = plugin.getConfig().getString("authme.database.mysql.user", "root");
         String password = plugin.getConfig().getString("authme.database.mysql.password", "");
-        String url = "jdbc:mysql://" + host + ":" + port + "/" + database + "?useSSL=false&characterEncoding=utf8";
+        boolean useSSL = plugin.getConfig().getBoolean("authme.database.mysql.useSSL", true);
+        boolean allowPublicKeyRetrieval = plugin.getConfig().getBoolean("authme.database.mysql.allowPublicKeyRetrieval", false);
+        String url = "jdbc:mysql://" + host + ":" + port + "/" + database +
+                "?useSSL=" + useSSL +
+                "&allowPublicKeyRetrieval=" + allowPublicKeyRetrieval +
+                "&characterEncoding=utf8" +
+                "&connectTimeout=5000" +
+                "&socketTimeout=10000";
         return DriverManager.getConnection(url, user, password);
     }
 
