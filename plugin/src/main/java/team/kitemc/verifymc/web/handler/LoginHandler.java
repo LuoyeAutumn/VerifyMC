@@ -131,7 +131,6 @@ public class LoginHandler implements HttpHandler {
         }
 
         if (!passwordValid) {
-            String clientIp = exchange.getRemoteAddress().getAddress().getHostAddress();
             ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - User: " + actualUsername + ", IP: " + clientIp + ", Reason: Invalid password");
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("login.failed", language)));
