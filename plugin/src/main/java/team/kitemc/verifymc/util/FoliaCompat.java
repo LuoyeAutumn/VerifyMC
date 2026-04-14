@@ -7,6 +7,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public final class FoliaCompat {
 
@@ -31,11 +32,11 @@ public final class FoliaCompat {
 
             getAsyncScheduler = Bukkit.class.getMethod("getAsyncScheduler");
             Class<?> asyncSchedulerClass = Class.forName("io.papermc.paper.threadedregions.scheduler.AsyncScheduler");
-            asyncRunAtFixedRate = asyncSchedulerClass.getMethod("runAtFixedRate", Plugin.class, Runnable.class, long.class, long.class, TimeUnit.class);
+            asyncRunAtFixedRate = asyncSchedulerClass.getMethod("runAtFixedRate", Plugin.class, Consumer.class, long.class, long.class, TimeUnit.class);
 
             getGlobalRegionScheduler = Bukkit.class.getMethod("getGlobalRegionScheduler");
             Class<?> globalRegionSchedulerClass = Class.forName("io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler");
-            globalRun = globalRegionSchedulerClass.getMethod("run", Plugin.class, Runnable.class);
+            globalRun = globalRegionSchedulerClass.getMethod("run", Plugin.class, Consumer.class);
 
             Class<?> scheduledTaskClass = Class.forName("io.papermc.paper.threadedregions.scheduler.ScheduledTask");
             scheduledTaskCancel = scheduledTaskClass.getMethod("cancel");
@@ -63,10 +64,11 @@ public final class FoliaCompat {
                 Object asyncScheduler = GET_ASYNC_SCHEDULER.invoke(null);
                 long delayMs = ticksToMs(delayTicks);
                 long periodMs = ticksToMs(periodTicks);
-                return ASYNC_RUN_AT_FIXED_RATE.invoke(asyncScheduler, plugin, task, delayMs, periodMs, TimeUnit.MILLISECONDS);
+                Consumer<Object> wrappedTask = scheduledTask -> task.run();
+                return ASYNC_RUN_AT_FIXED_RATE.invoke(asyncScheduler, plugin, wrappedTask, delayMs, periodMs, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-                plugin.getLogger().warning("[VerifyMC] Folia async scheduler failed, falling back: " + e.getMessage());
-                return Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, delayTicks, periodTicks);
+                plugin.getLogger().severe("[VerifyMC] Folia async scheduler failed: " + e.getMessage());
+                return null;
             }
         } else {
             return Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, task, delayTicks, periodTicks);
@@ -77,10 +79,10 @@ public final class FoliaCompat {
         if (FOLIA) {
             try {
                 Object globalScheduler = GET_GLOBAL_REGION_SCHEDULER.invoke(null);
-                GLOBAL_RUN.invoke(globalScheduler, plugin, task);
+                Consumer<Object> wrappedTask = scheduledTask -> task.run();
+                GLOBAL_RUN.invoke(globalScheduler, plugin, wrappedTask);
             } catch (Exception e) {
-                plugin.getLogger().warning("[VerifyMC] Folia global scheduler failed, falling back: " + e.getMessage());
-                Bukkit.getScheduler().runTask(plugin, task);
+                plugin.getLogger().severe("[VerifyMC] Folia global scheduler failed: " + e.getMessage());
             }
         } else {
             Bukkit.getScheduler().runTask(plugin, task);
