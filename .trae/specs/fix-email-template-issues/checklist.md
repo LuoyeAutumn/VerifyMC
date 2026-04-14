@@ -1,0 +1,12 @@
+- [x] HTML 转义：`sendReviewResultNotification()` 中 `{username}`, `{reason}`, `{server_name}` 的值已进行 HTML 转义
+- [x] HTML 转义：`sendVerificationCode()` 中 `{code}`, `{server_name}` 的值已进行 HTML 转义
+- [x] 动态过期时间：`verify_code_en.html` 和 `verify_code_zh.html` 中使用 `{expire_minutes}` 占位符替代硬编码 "5 minutes" / "5 分钟"
+- [x] 动态过期时间：`sendVerificationCode()` 从配置读取 `captcha.expire_seconds` 并替换 `{expire_minutes}`
+- [x] 动态过期时间：硬编码 fallback 模板中也使用 `{expire_minutes}` 占位符
+- [x] 服务器名称：验证码模板（HTML 文件和 fallback）中包含 `{server_name}` 占位符
+- [x] 服务器名称：`sendVerificationCode()` 中替换 `{server_name}` 占位符
+- [x] 异常容错：`loadEmailTemplate()` 内部捕获 IOException，降级到 JAR 资源或 fallback，不向上抛出
+- [x] 语言回退：`loadEmailTemplate()` 在请求语言模板不存在时先尝试英文模板文件
+- [x] 死代码清理：`ResourceManager.getEmailTemplate()` 和 `readFileAsString()` 已被删除
+- [x] API 精简：冗余方法已标记 `@Deprecated`，调用方已使用核心方法
+- [x] 编译通过：项目可正常编译无错误

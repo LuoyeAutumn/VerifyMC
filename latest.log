@@ -1,0 +1,721 @@
+[16:31:39] [ServerMain/INFO]: [bootstrap] Running Java 21 (Java HotSpot(TM) 64-Bit Server VM 21.0.8+12-LTS-250; Oracle Corporation null) on Windows 11 10.0 (amd64)
+[16:31:39] [ServerMain/INFO]: [bootstrap] Loading Lophine 1.21.11-DEV-ver/1.21.11@58c5573 (2026-04-08T01:55:26Z) for Minecraft 1.21.11
+[16:31:40] [ServerMain/INFO]: [PluginInitializerManager] Initializing plugins...
+[16:31:41] [ServerMain/INFO]: [PluginInitializerManager] Initialized 24 plugins
+[16:31:41] [ServerMain/INFO]: [PluginInitializerManager] Bukkit plugins (24):
+ - ArcPass (1.6.0), AzuraBoard (1.2.5), BlockLocker (1.14.1), CMI (9.8.6.4), CMILib (1.5.9.2), Citizens (2.0.42-SNAPSHOT (build 4157)), CoreProtect (23.1), GHolo (2.4.2), GrimAC (2.3.74-e8dc9ae), HeadDatabase (4.22.2), LegendaryGuildRemapped (6.0.7), LuckPerms (5.5.29), OnlineReward-NEXT (2.3), PlaceholderAPI (2.12.2), ProtocolLib (5.4.0), Residence (6.0.1.6), TAB (6.0.0), TrChat (2.4.0), Vault (1.7.3-CMI), VerifyMC (1.7.1), ViaBackwards (5.8.1), ViaRewind (4.0.15), ViaVersion (5.8.1), XYMenu (1.1.6-SNAPSHOT)
+[16:31:46] [ServerMain/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[16:31:49] [ServerMain/INFO]: Loaded 1470 recipes
+[16:31:49] [ServerMain/INFO]: Loaded 1584 advancements
+[16:31:49] [ServerMain/INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[16:31:50] [ServerMain/INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 602.3ms
+[16:31:50] [Server thread/INFO]: Starting minecraft server version 1.21.11
+[16:31:50] [Server thread/INFO]: Loading properties
+[16:31:50] [Server thread/INFO]: This server is running Lophine version 1.21.11-DEV-ver/1.21.11@58c5573 (2026-04-08T01:55:26Z) (Implementing API version 1.21.11-R0.1-SNAPSHOT)
+[16:31:50] [Server thread/INFO]: Server Ping Player Sample Count: 12
+[16:31:50] [Server thread/INFO]: Using 4 threads for Netty based IO
+[16:31:50] [Server thread/INFO]: [MoonriseCommon] Lophine is using 5 worker threads, 1 I/O threads
+[16:31:50] [Server thread/INFO]: [io.papermc.paper.threadedregions.TickRegions] Initialised EDF Folia scheduler with initial 2 target thread(s)
+[16:31:51] [ForkJoinPool.commonPool-worker-1/WARN]: [me.earthme.luminol.config.modules.optimizations.SIMDConfig] SIMD operations are available for your server, but are not configured!
+[16:31:51] [ForkJoinPool.commonPool-worker-1/WARN]: [me.earthme.luminol.config.modules.optimizations.SIMDConfig] To enable additional optimizations, add "--add-modules=jdk.incubator.vector" to your startup flags, BEFORE the "-jar".
+[16:31:51] [ForkJoinPool.commonPool-worker-1/WARN]: [me.earthme.luminol.config.modules.optimizations.SIMDConfig] If you have already added this flag, then SIMD operations are not supported on your JVM or CPU.
+[16:31:51] [ForkJoinPool.commonPool-worker-1/WARN]: [me.earthme.luminol.config.modules.optimizations.SIMDConfig] Debug: Java: 21.0.8, test run: true
+[16:31:51] [Server thread/INFO]: Default game type: SURVIVAL
+[16:31:51] [Server thread/INFO]: Generating keypair
+[16:31:51] [Server thread/INFO]: Starting Minecraft server on *:1000
+[16:31:51] [Server thread/INFO]: Paper: Using RecastXZ 2 (Windows x86_64) compression from Velocity.
+[16:31:51] [Server thread/INFO]: Paper: Using Java cipher from Velocity.
+[16:31:52] [Server thread/WARN]: [org.bukkit.craftbukkit.legacy.CraftLegacy] Initializing Legacy Material Support. Unless you have legacy plugins and/or data this is a bug!
+[16:31:58] [Server thread/WARN]: Legacy plugin VerifyMC v1.7.1 does not specify an api-version.
+[16:32:00] [Server thread/WARN]: Legacy plugin OnlineReward-NEXT v2.3 does not specify an api-version.
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [GHolo] Loading 1 libraries... please wait
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [GHolo] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\com\google\code\gson\gson\2.13.2\gson-2.13.2.jar
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [GHolo] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\com\google\errorprone\error_prone_annotations\2.41.0\error_prone_annotations-2.41.0.jar
+[16:32:00] [Server thread/WARN]: Legacy plugin LegendaryGuildRemapped v6.0.7 does not specify an api-version.
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [Citizens] Loading 4 libraries... please wait
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [Citizens] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\ch\ethz\globis\phtree\phtree\2.8.2\phtree-2.8.2.jar
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [Citizens] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\org\joml\joml\1.10.8\joml-1.10.8.jar
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [Citizens] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\it\unimi\dsi\fastutil\8.5.16\fastutil-8.5.16.jar
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [Citizens] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\team\unnamed\mocha\3.0.0\mocha-3.0.0.jar
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [Citizens] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\org\javassist\javassist\3.30.2-GA\javassist-3.30.2-GA.jar
+[16:32:00] [Server thread/INFO]: [SpigotLibraryLoader] [Citizens] Loaded library D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\libraries\org\jetbrains\annotations\24.0.1\annotations-24.0.1.jar
+[16:32:00] [Server thread/INFO]: [ViaVersion] Loading server plugin ViaVersion v5.8.1
+[16:32:00] [Server thread/INFO]: [ViaVersion] ViaVersion 5.8.1 is now loaded. Registering protocol transformers and injecting...
+[16:32:00] [Via-Mappingloader-1/INFO]: [ViaVersion] Loading block connection mappings ...
+[16:32:00] [Via-Mappingloader-1/INFO]: [ViaVersion] Using FastUtil Long2ObjectOpenHashMap for block connections
+[16:32:01] [Server thread/INFO]: [ViaBackwards] Loading translations...
+[16:32:01] [Server thread/INFO]: [ViaBackwards] Registering protocols...
+[16:32:01] [Server thread/INFO]: [ViaRewind] Registering protocols...
+[16:32:01] [Server thread/INFO]: [PlaceholderAPI] Loading server plugin PlaceholderAPI v2.12.2
+[16:32:02] [Server thread/INFO]: [LuckPerms] Loading server plugin LuckPerms v5.5.29
+[16:32:02] [Server thread/INFO]: [LuckPerms] Loading configuration...
+[16:32:03] [Server thread/INFO]: [ViaBackwards] Loading server plugin ViaBackwards v5.8.1
+[16:32:03] [Server thread/INFO]: [CMILib] Loading server plugin CMILib v1.5.9.2
+[16:32:03] [Server thread/INFO]: [Vault] Loading server plugin Vault v1.7.3-CMI
+[16:32:03] [Server thread/INFO]: [ViaRewind] Loading server plugin ViaRewind v4.0.15
+[16:32:03] [Server thread/INFO]: [CMI] Loading server plugin CMI v9.8.6.4
+[16:32:03] [Server thread/INFO]: [TAB] Loading server plugin TAB v6.0.0
+[16:32:03] [Server thread/INFO]: [ProtocolLib] Loading server plugin ProtocolLib v5.4.0
+[16:32:03] [Server thread/WARN]: [ProtocolLib] Version (MC: 1.21.11) has not yet been tested! Proceed with caution.
+[16:32:03] [Server thread/INFO]: [Residence] Loading server plugin Residence v6.0.1.6
+[16:32:03] [Server thread/INFO]: [VerifyMC] Loading server plugin VerifyMC v1.7.1
+[16:32:03] [Server thread/INFO]: [AzuraBoard] Loading server plugin AzuraBoard v1.2.5
+[16:32:03] [Server thread/INFO]: [CoreProtect] Loading server plugin CoreProtect v23.1
+[16:32:03] [Server thread/INFO]: [XYMenu] Loading server plugin XYMenu v1.1.6-SNAPSHOT
+[16:32:03] [Server thread/INFO]: [TrChat] Loading server plugin TrChat v2.4.0
+[16:32:03] [Server thread/INFO]: 
+[16:32:03] [Server thread/INFO]: 正在加载 TrChat... 1.21.11-R0.1-SNAPSHOT
+[16:32:03] [Server thread/INFO]: 
+[16:32:03] [Server thread/INFO]: [BlockLocker] Loading server plugin BlockLocker v1.14.1
+[16:32:03] [Server thread/INFO]: [ArcPass] Loading server plugin ArcPass v1.6.0
+[16:32:03] [Server thread/INFO]: [HeadDatabase] Loading server plugin HeadDatabase v4.22.2
+[16:32:03] [Server thread/INFO]: [OnlineReward-NEXT] Loading server plugin OnlineReward-NEXT v2.3
+[16:32:03] [Server thread/INFO]: [GrimAC] Loading server plugin GrimAC v2.3.74-e8dc9ae
+[16:32:03] [Server thread/INFO]: [GrimAC] Loading PacketEvents...
+[16:32:05] [Server thread/INFO]: [GHolo] Loading server plugin GHolo v2.4.2
+[16:32:05] [Server thread/INFO]: [LegendaryGuildRemapped] Loading server plugin LegendaryGuildRemapped v6.0.7
+[16:32:05] [Server thread/INFO]: [Citizens] Loading server plugin Citizens v2.0.42-SNAPSHOT (build 4157)
+[16:32:05] [Server thread/INFO]: Server permissions file permissions.yml is empty, ignoring it
+[16:32:05] [Server thread/INFO]: [LuckPerms] Enabling LuckPerms v5.5.29
+[16:32:05] [Server thread/INFO]:         __    
+[16:32:05] [Server thread/INFO]:   |    |__)   LuckPerms v5.5.29
+[16:32:05] [Server thread/INFO]:   |___ |      Running on Bukkit - Lophine
+[16:32:05] [Server thread/INFO]: 
+[16:32:05] [Server thread/INFO]: [LuckPerms] Loading storage provider... [H2]
+[16:32:06] [Server thread/INFO]: [LuckPerms] Loading internal permission managers...
+[16:32:06] [Server thread/INFO]: [LuckPerms] Performing initial data load...
+[16:32:06] [Server thread/INFO]: [LuckPerms] Successfully enabled. (took 940ms)
+[16:32:06] [Server thread/INFO]: [Vault] Enabling Vault v1.7.3-CMI
+[16:32:06] [Server thread/INFO]: [Vault] [Permission] SuperPermissions loaded as backup permission system.
+[16:32:06] [Server thread/INFO]: [Vault] Enabled Version 1.7.3-CMI
+[16:32:06] [Server thread/INFO]: [LuckPerms] Registered Vault permission & chat hook.
+[16:32:06] [Server thread/INFO]: [ViaRewind] Enabling ViaRewind v4.0.15
+[16:32:06] [Server thread/INFO]: [ProtocolLib] Enabling ProtocolLib v5.4.0
+[16:32:06] [Server thread/INFO]: [BlockLocker] Enabling BlockLocker v1.14.1
+[16:32:06] [Server thread/INFO]: Preparing level "world"
+[16:32:07] [Server thread/INFO]: Loading 0 persistent chunks for world 'minecraft:overworld'...
+[16:32:07] [Server thread/INFO]: Prepared spawn area in 0 ms
+[16:32:07] [Server thread/INFO]: Loading 0 persistent chunks for world 'minecraft:the_nether'...
+[16:32:07] [Server thread/INFO]: Prepared spawn area in 0 ms
+[16:32:07] [Server thread/INFO]: Loading 0 persistent chunks for world 'minecraft:the_end'...
+[16:32:07] [Server thread/INFO]: Prepared spawn area in 0 ms
+[16:32:07] [Server thread/INFO]: Done preparing level "world" (0.526s)
+[16:32:07] [Server thread/INFO]: [ViaVersion] Enabling ViaVersion v5.8.1
+[16:32:07] [Server thread/INFO]: [PlaceholderAPI] Enabling PlaceholderAPI v2.12.2
+[16:32:07] [Server thread/INFO]: [PlaceholderAPI] Fetching available expansion information...
+[16:32:07] [Server thread/INFO]: [ViaBackwards] Enabling ViaBackwards v5.8.1
+[16:32:07] [Server thread/INFO]: [CMILib] Enabling CMILib v1.5.9.2
+[16:32:07] [Server thread/INFO]: Server version detection by new method: v1_21_R7 Legacy: true Mojang Mappings: true
+[16:32:07] [Server thread/INFO]: Server version: v1_21_R7 - 1.21.11 - folia  1.21.11-DEV-58c5573 (MC: 1.21.11)
+[16:32:07] [Server thread/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[16:32:08] [Server thread/INFO]: CMI hooked.
+[16:32:08] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: cmil [1.5.9.2]
+[16:32:08] [Server thread/INFO]: PlaceholderAPI hooked.
+[16:32:08] [Server thread/INFO]: Updated (EN) language file. Took 42ms
+[16:32:08] [Server thread/INFO]: [CMI] Enabling CMI v9.8.6.4
+[16:32:09] [Server thread/INFO]: _______________________________________________________
+[16:32:09] [Server thread/INFO]:  
+[16:32:09] [Server thread/INFO]:  ██████╗███╗   ███╗██╗
+[16:32:09] [Server thread/INFO]: ██╔════╝████╗ ████║██║
+[16:32:09] [Server thread/INFO]: ██║     ██╔████╔██║██║
+[16:32:09] [Server thread/INFO]: ██║     ██║╚██╔╝██║██║
+[16:32:09] [Server thread/INFO]: ╚██████╗██║ ╚═╝ ██║██║
+[16:32:09] [Server thread/INFO]:  ╚═════╝╚═╝     ╚═╝╚═╝
+[16:32:09] [Server thread/INFO]: _______________________________________________________
+[16:32:09] [Server thread/INFO]: _______________________________________________________
+[16:32:09] [Server thread/INFO]: _ Folia server detected.
+[16:32:09] [Server thread/INFO]: _______________________________________________________
+[16:32:09] [Server thread/INFO]: Integrating PaperSpigot async methods
+[16:32:09] [Server thread/INFO]: Vault found. (Loaded: true)
+[16:32:09] [Server thread/INFO]: Citizens found. (Loaded: false)
+[16:32:09] [CMI-Thread-1/INFO]: Loaded (-) locale download into memory. Took 6ms
+[16:32:09] [Server thread/INFO]: Loaded (69) 69 Enabled and 0 Disabled modules into memory. Took 66ms
+[16:32:09] [Server thread/INFO]: Initialized Cipher256 AES
+[16:32:09] [Server thread/INFO]: Loaded (61) regular alias into memory. Took 45ms
+[16:32:09] [CMI-Thread-2/INFO]: Loaded (1) custom text's into memory. Took 3ms
+[16:32:09] [Server thread/INFO]: SQLite 3.49.1 data base type detected
+[16:32:09] [Server thread/INFO]: Loaded (-) SqLite into memory. Took 90ms
+[16:32:09] [Server thread/INFO]: [CMI] Vault was found but economy engine is missing. Use one from list provided in https://dev.bukkit.org/bukkit-plugins/vault/
+[16:32:09] [Server thread/INFO]: [CMI] Alternatively you can enable CMI economy in config.yml file
+[16:32:09] [Server thread/INFO]: Vault was found but not economy plugin, you will have limited economy support
+[16:32:09] [Server thread/INFO]: Will attempt secondary economy check after server starts.
+[16:32:09] [Server thread/INFO]: Loaded (5) warning categories into memory. Took 0ms
+[16:32:09] [Server thread/INFO]: Loaded (3) warning commands into memory. Took 0ms
+[16:32:09] [Server thread/INFO]: Loaded (0) cooldowns into memory. Took 0ms
+[16:32:09] [Server thread/INFO]: Loaded (159) custom mob heads into memory. Took 15ms
+[16:32:10] [Server thread/INFO]: Enabling BungeeCord Support
+[16:32:10] [Server thread/INFO]: Loaded (5) kits into memory. Took 13ms
+[16:32:10] [Server thread/INFO]: Loaded (5) dialogs into memory. Took 9ms
+[16:32:10] [Server thread/INFO]: Loaded (7) ranks into memory. Took 14ms
+[16:32:10] [Server thread/INFO]: Loaded (8) playtime rewards into memory. Took 2ms
+[16:32:10] [Server thread/INFO]: Executed Player DB querry in 0ms
+[16:32:10] [Server thread/INFO]: Loaded (2) player data into memory. Took 5ms
+[16:32:10] [Server thread/INFO]: Loaded (0) playtime records into memory. Took 0ms
+[16:32:10] [Server thread/INFO]: Loaded (0) playtime reward records into memory. Took 0ms
+[16:32:10] [Server thread/INFO]: Loaded (0) custom alias into memory. Took 1ms
+[16:32:10] [Server thread/INFO]: Loaded (-) Registered events into memory. Took 78ms
+[16:32:10] [Server thread/INFO]: Loaded (0) event action commands into memory. Took 3ms
+[16:32:10] [Server thread/INFO]: Loaded (EN) language file into memory. Took 75ms
+[16:32:10] [Server thread/INFO]: Loaded (CN) language file into memory. Took 45ms
+[16:32:10] [Server thread/INFO]: Loaded (245) worth values into memory. Took 91ms
+[16:32:10] [Server thread/INFO]: VaultPermissions found. (Loaded: true)
+[16:32:10] [Server thread/INFO]: PlaceholderAPI found. (Loaded: true)
+[16:32:10] [Server thread/INFO]: Loaded (4) schedules into memory. Took 6ms
+[16:32:10] [Server thread/INFO]: Loaded (0) skin cache entries into memory. Took 0ms
+[16:32:10] [Server thread/INFO]: Loaded (0) ArmorStand templates into memory. Took 1ms
+[16:32:10] [Server thread/INFO]: Version 9.8.6.4 has been enabled
+[16:32:10] [Server thread/INFO]: _______________________________________________________
+[16:32:10] [Server thread/INFO]: [TAB] Enabling TAB v6.0.0
+[16:32:10] [Server thread/INFO]: [TAB] Found NMS implementation: me.neznamy.tab.platforms.bukkit.paper_1_21_11.NMSImplementationProvider
+[16:32:10] [Server thread/INFO]: [TAB] Enabled in 156ms
+[16:32:10] [Server thread/INFO]: [Residence] Enabling Residence v6.0.1.6
+[16:32:10] [Server thread/INFO]: [Residence] Can't find effect for Selected Frame with this name, it was set to default
+[16:32:10] [Server thread/INFO]: [Residence] Can't find effect for Selected Sides with this name, it was set to default
+[16:32:10] [Server thread/INFO]: [Residence] Can't find effect for Overlap Frame with this name, it was set to default
+[16:32:10] [Server thread/INFO]: [Residence] an't find effect for Selected Sides with this name, it was set to default
+[16:32:10] [Server thread/INFO]: [Residence] Loaded (2) groups
+[16:32:10] [Server thread/INFO]: [Residence] Found LuckPerms5 Plugin!
+[16:32:10] [Server thread/INFO]: [Residence] Preloaded 2 player cached data
+[16:32:10] [Server thread/INFO]: [Residence] Scanning for economy systems...
+[16:32:10] [Server thread/INFO]: [Residence] Found Vault, but Vault reported no usable economy system...
+[16:32:10] [Server thread/INFO]: [Residence] Successfully linked with CMIEconomy
+[16:32:11] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: residence [6.0.1.6]
+[16:32:11] [Server thread/INFO]: [Residence] PlaceholderAPI was found - Enabling capabilities.
+[16:32:11] [Server thread/INFO]: [Residence] Enabled! Version 6.0.1.6 by Zrips
+[16:32:11] [Server thread/INFO]: [VerifyMC] Enabling VerifyMC v1.7.1*
+[16:32:11] [Server thread/INFO]: [VerifyMC] Configuration validated successfully
+[16:32:11] [Server thread/INFO]: [VerifyMC] [VerifyMC] Using file storage.
+[16:32:11] [Server thread/INFO]: [VerifyMC] [VerifyMC] AuthMe sync completed on startup.
+[16:32:11] [Server thread/ERROR]: Error occurred while enabling VerifyMC v1.7.1 (Is it up to date?)
+java.lang.UnsupportedOperationException
+	at org.bukkit.craftbukkit.scheduler.CraftScheduler.handle(CraftScheduler.java:517) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at org.bukkit.craftbukkit.scheduler.CraftScheduler.runTaskTimerAsynchronously(CraftScheduler.java:251) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at org.bukkit.craftbukkit.scheduler.CraftScheduler.runTaskTimerAsynchronously(CraftScheduler.java:238) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at [账户系统] verifymc-1.7.1.jar//team.kitemc.verifymc.VerifyMC.initServices(VerifyMC.java:186) ~[?:?]
+	at [账户系统] verifymc-1.7.1.jar//team.kitemc.verifymc.VerifyMC.onEnable(VerifyMC.java:52) ~[?:?]
+	at org.bukkit.plugin.java.JavaPlugin.setEnabled(JavaPlugin.java:279) ~[lophine-api-1.21.11-R0.1-SNAPSHOT.jar:?]
+	at io.papermc.paper.plugin.manager.PaperPluginInstanceManager.enablePlugin(PaperPluginInstanceManager.java:207) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at io.papermc.paper.plugin.manager.PaperPluginManagerImpl.enablePlugin(PaperPluginManagerImpl.java:109) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at org.bukkit.plugin.SimplePluginManager.enablePlugin(SimplePluginManager.java:520) ~[lophine-api-1.21.11-R0.1-SNAPSHOT.jar:?]
+	at org.bukkit.craftbukkit.CraftServer.enablePlugin(CraftServer.java:643) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at org.bukkit.craftbukkit.CraftServer.enablePlugins(CraftServer.java:600) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.server.MinecraftServer.initPostWorld(MinecraftServer.java:665) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.server.dedicated.DedicatedServer.initServer(DedicatedServer.java:369) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1337) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:433) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+[16:32:11] [Server thread/INFO]: [VerifyMC] Disabling VerifyMC v1.7.1
+[16:32:11] [Server thread/INFO]: [VerifyMC] [VerifyMC] Plugin disabled.
+[16:32:11] [Server thread/INFO]: [AzuraBoard] Enabling AzuraBoard v1.2.5
+[16:32:11] [Server thread/INFO]: [AzuraBoard] Loaded language file: messages_en_US.yml
+[16:32:11] [Server thread/INFO]: [AzuraBoard] Loaded language file: messages_zh_CN.yml
+[16:32:11] [Server thread/INFO]: [AzuraBoard] Folia server detected! Using Folia-compatible regionized threading.
+[16:32:11] [Server thread/INFO]: [AzuraBoard] Server version detected: 1.21.11
+[16:32:11] [Server thread/INFO]: [AzuraBoard] RGB colors are supported on this server (1.16+).
+[16:32:11] [Server thread/INFO]: [AzuraBoard] PlaceholderAPI found, placeholders will be processed.
+[16:32:11] [Server thread/INFO]: [AzuraBoard] ViaBackwards found, RGB colors will be supported for all clients.
+[16:32:11] [Server thread/INFO]: [AzuraBoard] AzuraBoard has been enabled!
+[16:32:11] [Server thread/INFO]: [CoreProtect] Enabling CoreProtect v23.1
+[16:32:11] [Server thread/INFO]: [CoreProtect] CoreProtect Community Edition 已成功启用！ 
+[16:32:11] [Server thread/INFO]: [CoreProtect] 使用 SQLite 用于数据存储。
+[16:32:11] [Server thread/INFO]: --------------------
+[16:32:11] [Server thread/INFO]: [CoreProtect] 对 CoreProtect 感到满意吗？请加入我们的 Discord 频道！
+[16:32:11] [Server thread/INFO]: [CoreProtect] Discord: www.coreprotect.net/discord/
+[16:32:11] [Server thread/INFO]: --------------------
+[16:32:11] [Server thread/INFO]: [XYMenu] Enabling XYMenu v1.1.6-SNAPSHOT
+[16:32:11] [Server thread/INFO]: [XYMenu] 已加载菜单: example
+[16:32:11] [Server thread/INFO]: [XYMenu] 已加载菜单: example_with_requirements
+[16:32:11] [Server thread/INFO]: [XYMenu] 已加载菜单: test_menu
+[16:32:11] [Server thread/INFO]: [XYMenu] 检测到 Vault 插件
+[16:32:11] [Server thread/WARN]: [XYMenu] 未找到经济插件，经济相关功能将无法使用
+[16:32:11] [Server thread/INFO]: [XYMenu] 已成功连接到权限插件: LuckPerms
+[16:32:11] [Server thread/INFO]: [XYMenu] 已加载 3 个菜单
+[16:32:11] [Server thread/INFO]: [TrChat] Enabling TrChat v2.4.0
+[16:32:11] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: trchat [2.4.0]
+[16:32:11] [Server thread/INFO]: [TrChat] 已支持 Bungee 通讯.
+[16:32:11] [Server thread/INFO]: [TrChat] 聊天 | 成功载入 12 个聊天功能... [30 Ms]
+[16:32:11] [Server thread/INFO]: [TrChat] 过滤器 | 已载入本地敏感词库总计 3 个.
+[16:32:11] [Server thread/INFO]: [TrChat] 聊天 | 成功载入 4 个聊天频道... [32 Ms]
+[16:32:11] [Server thread/INFO]: [TrChat] 信息 | 加载完毕. TrChat v2.4.0 现已启用, 敬请使用.
+[16:32:11] [Server thread/INFO]: [ArcPass] Enabling ArcPass v1.6.0
+[16:32:11] [Server thread/INFO]: [ArcPass] =================================
+[16:32:11] [Server thread/INFO]: [ArcPass]   ArcPass - Battle Pass System
+[16:32:11] [Server thread/INFO]: [ArcPass]   Version: 1.6.0
+[16:32:11] [Server thread/INFO]: [ArcPass] =================================
+[16:32:11] [Server thread/INFO]: [ArcPass] Folia detected - using region-based scheduling
+[16:32:11] [Server thread/INFO]: [ArcPass] Platform: FOLIA
+[16:32:11] [Folia Async Scheduler Thread #8/INFO]: [TrChat] Failed to catch cloud thesaurus of https://raw.githubusercontent.com/Yurinann/Filter-Thesaurus-Cloud/main/database.json.
+[16:32:11] [Folia Async Scheduler Thread #8/INFO]: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+[16:32:11] [Folia Async Scheduler Thread #8/INFO]: [TrChat] 无法从云端更新敏感词库......
+[16:32:12] [Server thread/INFO]: [ArcPass] Configuration loaded successfully
+[16:32:12] [Server thread/INFO]: [ArcPass] Loaded language: en_US
+[16:32:12] [Server thread/INFO]: [ArcPass] Loaded language: zh_CN
+[16:32:12] [Server thread/INFO]: [ArcPass] Loaded 2 language(s) from lang folder
+[16:32:12] [Server thread/INFO]: [ArcPass] Validating license...
+[16:32:12] [Server thread/INFO]: [HeadDatabase] Enabling HeadDatabase v4.22.2
+[16:32:12] [Server thread/INFO]: [HeadDatabase] [STDOUT] [Spigotunlocked.com] - COSMO
+[16:32:12] [Server thread/WARN]: Nag author(s): '[Arcaniax]' of 'HeadDatabase v4.22.2' about their usage of System.out/err.print. Please use your plugin's logger instead (JavaPlugin#getLogger).
+[16:32:13] [Server thread/INFO]: [HeadDatabase] §bUsing default §3"en_US.lang" §bcreated by §6Arcaniax
+[16:32:13] [Server thread/WARN]: [HeadDatabase] Economy was not loaded, some features will be disabled!
+[16:32:13] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: hdb [4.22.2]
+[16:32:13] [Server thread/INFO]: [OnlineReward-NEXT] Enabling OnlineReward-NEXT v2.3*
+[16:32:13] [Server thread/ERROR]: [OnlineReward-NEXT] ****************************************************************
+[16:32:13] [Server thread/ERROR]: [OnlineReward-NEXT] FoliaLib is not be relocated correctly! This will cause conflicts
+[16:32:13] [Server thread/ERROR]: [OnlineReward-NEXT] with other plugins using FoliaLib. Please contact the developers
+[16:32:13] [Server thread/ERROR]: [OnlineReward-NEXT] of 'OnlineReward-NEXT' and inform them of this issue immediately!
+[16:32:13] [Server thread/ERROR]: [OnlineReward-NEXT] ****************************************************************
+[16:32:13] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: onlinereward [2.0]
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7] §e▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §e欢迎使用 §6OnlineReward-NEXT v2.3§e 插件
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §e数据存储模式：§bYML
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §e奖励发放模式：§b全自动
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §e数据/奖励重置时间：§b00:00:00
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §e是否开启玩家数据重置线程：§atrue
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §e检测到Folia，已兼容
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §f数据存储模式及重置线程需重启服务器/插件生效
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §a当前版本：v2.3
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  §a插件已加载完成，定制/建议/反馈联系QQ：476915861
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7]  
+[16:32:13] [Server thread/INFO]: §7[§6OnlineReward-NEXT§7] §e▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃
+[16:32:13] [Server thread/INFO]: [GrimAC] Enabling GrimAC v2.3.74-e8dc9ae
+[16:32:13] [Server thread/INFO]: [GrimAC] Registering packets...
+[16:32:13] [Server thread/INFO]: [GrimAC] Registering tick schedulers...
+[16:32:13] [Server thread/INFO]: Grim Version: 2.3.74-e8dc9ae
+[16:32:13] [Server thread/WARN]: [GrimAC] GrimAC has detected that you have installed ViaBackwards on a 1.21.2+ server.
+[16:32:13] [Server thread/WARN]: [GrimAC] This setup is currently unsupported and you will experience issues with older clients using vehicles.
+[16:32:13] [Server thread/INFO]: [GrimAC] Registering singular bukkit event... (PistonEvent)
+[16:32:13] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: grim [2.3.74-e8dc9ae]
+[16:32:13] [Server thread/INFO]: [GHolo] Enabling GHolo v2.4.2
+[16:32:13] [Server thread/INFO]: [GHolo] The plugin was successfully enabled.
+[16:32:13] [Server thread/INFO]: [GHolo] Link with PlaceholderAPI successful!
+[16:32:13] [Server thread/INFO]: [LegendaryGuildRemapped] Enabling LegendaryGuildRemapped v6.0.7*
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - 音效ID出错！config.yml ->block_note_chime
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - 音效ID出错！config.yml ->entity_endermen_teleport
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 3 Guild Creation Groups.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 4 Guild Positions.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 3 Guild Icons.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 4 Guild Tree Pots.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 3 Guild Tribute Items.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 2 Team Shop Items.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - 未发现插件 AttributePlus 3.x 已关闭Buff功能.
+[16:32:13] [Folia Async Scheduler Thread #7/INFO]: LegendaryGuildRemapped - Load 0 guild data.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 4 Activity Rewards.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Load 1 Guild Shop items.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Hooked PlaceholderAPI plugin.
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Hooked ProtocolLib plugin.
+[16:32:13] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: LegendaryGuild [6.0.7]
+[16:32:13] [Server thread/INFO]: LegendaryGuildRemapped - Plugin enabled. taking 174ms.
+[16:32:13] [Server thread/INFO]: [Citizens] Enabling Citizens v2.0.42-SNAPSHOT (build 4157)
+[16:32:13] [Server thread/INFO]: [Citizens] 检测到系统语言 [[zh]]. 如果您有兴趣，欢迎通过我们的 Discord 为 Citizens 贡献翻译！https://discord.gg/Q6pZGSR
+[16:32:14] [Server thread/INFO]: [Citizens] Loaded 2 templates.
+[16:32:14] [Server thread/INFO]: [PlaceholderAPI] Successfully registered internal expansion: citizens [1.0.0]
+[16:32:14] [Server thread/INFO]: [Citizens] 已通过 Vault 加载经济处理程序.
+[16:32:14] [Folia Async Scheduler Thread #8/INFO]: You are using the latest version of GrimAC
+[16:32:14] [Server thread/INFO]: [PlaceholderAPI] Placeholder expansion registration initializing...
+[16:32:14] [Server thread/INFO]: [ViaVersion] ViaVersion detected server version: 1.21.11 (774)
+[16:32:14] [Via Async Scheduler 0/INFO]: [ViaVersion] Finished mapping loading, shutting down loader executor.
+[16:32:14] [Server thread/INFO]: Done (35.283s)! For help, type "help"
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [CMI] Permission plugin: LuckPerms5.5.29
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [CMI] Vault was found but economy engine is missing. Use one from list provided in https://dev.bukkit.org/bukkit-plugins/vault/
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [CMI] Alternatively you can enable CMI economy in config.yml file
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [CMI] Vault was found but not economy plugin, you will have limited economy support
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [PlaceholderAPI] Successfully registered internal expansion: cmi [9.8.6.4]
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [CMI] PlaceholderAPI hooked.
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Initializing ArcPass Core...
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Current database schema version: 5
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] SQLite connection established (WAL mode): plugins\ArcPass\data.db
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded pass: builder
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded pass: combat
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded pass: default
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded pass: explorer
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded pass: miner
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded 5 pass(es)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Auto-save task started (interval: 300 seconds)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loading quests...
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Quest directory: D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\plugins\ArcPass\quests
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded 13 quest(s) from D:\Users\Luoye_\Documents\NEKOMC服务端\[1000] 生存一区\plugins\ArcPass\quests
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass]   - DAILY: 5 quest(s)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass]   - WEEKLY: 4 quest(s)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass]   - SEASONAL: 4 quest(s)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded 94 reward(s)
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_400
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_600
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_lapis_lazuli_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_enchanted_book_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_lapis_lazuli_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_book_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_lapis_lazuli_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1250
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_400
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2250
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_redstone_128
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_observer_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1125
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_redstone_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_observer_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_450
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_redstone_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_anvil_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_anvil_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_600
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_blaze_rod_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_brewing_stand_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_blaze_rod_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_brewing_stand_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_700
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_blaze_rod_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_4000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ghast_tear_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_end_crystal_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ghast_tear_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_end_crystal_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_800
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ghast_tear_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_eye_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_eye_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1100
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_6000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_quartz_block_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_experience_bottle_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_quartz_block_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_experience_bottle_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1200
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_quartz_block_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_7500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_8000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_enchanted_book_5
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_4000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_enchanted_book_3
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1600
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_9000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_shell_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_box_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_4500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_shell_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_box_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1800
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_shell_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_10000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_12500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_totem_of_undying_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_6250
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_totem_of_undying_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_30000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_elytra_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_15000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_quartz_block_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_quartz_block_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_anvil_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_quartz_block_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_observer_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_quartz_block_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_redstone_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_redstone_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_observer_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1250
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_4000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_box_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_10000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_box_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: title_builder
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_lapis_lazuli_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_book_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_lapis_lazuli_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_eye_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_experience_bottle_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_4
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_experience_bottle_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_enchanted_book_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_blaze_rod_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_brewing_stand_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1250
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_blaze_rod_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_4000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_box_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_end_crystal_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_shulker_shell_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_enchanted_book_3
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_10000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_elytra_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_totem_of_undying_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_totem_of_undying_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1250
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_ender_pearl_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_4000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_totem_of_undying_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_10000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_lapis_lazuli_32
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_experience_bottle_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_750
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_experience_bottle_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_16
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_redstone_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_8
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_3000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_lapis_lazuli_64
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1250
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_4000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_1500
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_emerald_block_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_2000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_scrap_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_10000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_2
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: economy_5000
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: item_netherite_ingot_1
+[16:32:14] [Folia Region Scheduler Thread #0/WARN]: [ArcPass] Unknown reward ID: title_miner
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Resolved 250 reward(s) across all passes
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] No active season found.
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Network mode: STANDALONE (single server)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] ArcPass Core initialized successfully!
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] LuckPerms permission hook enabled.
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] TAB hook enabled (Folia compatible).
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Developer API disabled (Standard license). Upgrade to Professional to enable API access.
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] Loaded 4 GUI configuration(s)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [PlaceholderAPI] Successfully registered internal expansion: arcpass [1.6.0]
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] PlaceholderAPI integration enabled!
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] bStats metrics enabled.
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] License: Lifetime Plan | API: disabled
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [ArcPass] ArcPass enabled successfully! (2857ms)
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [Citizens] 已载入 0 个NPC.
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [PlaceholderAPI] Successfully registered external expansion: player [2.0.9]
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: [PlaceholderAPI] Successfully registered external expansion: server [2.7.3]
+[16:32:14] [Folia Region Scheduler Thread #0/INFO]: 2 placeholder hook(s) registered!
+[16:32:24] [Folia Async Scheduler Thread #7/INFO]: LegendaryGuildRemapped - There is not a new update available.
+[16:32:24] [Folia Async Scheduler Thread #7/INFO]: LegendaryGuildRemapped - 当前使用版本为最新版本
+[16:32:27] [Folia Async Scheduler Thread #0/INFO]: [HeadDatabase] Invalid Head found in Database: 122729
+[16:32:27] [Folia Async Scheduler Thread #0/INFO]: [HeadDatabase] Successfully loaded 91727 heads!
+[16:32:27] [Folia Async Scheduler Thread #0/INFO]: [HeadDatabase] Successfully loaded 18 featured tags!
+[16:32:31] [Folia Region Scheduler Thread #0/INFO]: ℹ Server Plugins (24):
+[16:32:31] [Folia Region Scheduler Thread #0/INFO]: Bukkit Plugins:
+[16:32:31] [Folia Region Scheduler Thread #0/INFO]:  - ArcPass, AzuraBoard, BlockLocker, Citizens, CMI, CMILib, CoreProtect, GHolo, GrimAC, HeadDatabase
+[16:32:31] [Folia Region Scheduler Thread #0/INFO]:  *LegendaryGuildRemapped, LuckPerms, *OnlineReward-NEXT, PlaceholderAPI, ProtocolLib, Residence, TAB, TrChat, Vault, *VerifyMC
+[16:32:31] [Folia Region Scheduler Thread #0/INFO]:  ViaBackwards, ViaRewind, ViaVersion, XYMenu
+[16:32:36] [Folia Region Scheduler Thread #0/ERROR]: Command exception: /vmc
+org.bukkit.command.CommandException: Cannot execute command 'vmc' in plugin VerifyMC v1.7.1 - plugin is disabled.
+	at org.bukkit.command.PluginCommand.execute(PluginCommand.java:37) ~[lophine-api-1.21.11-R0.1-SNAPSHOT.jar:?]
+	at io.papermc.paper.command.brigadier.bukkit.BukkitCommandNode$BukkitBrigCommand.run(BukkitCommandNode.java:83) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at com.mojang.brigadier.context.ContextChain.runExecutable(ContextChain.java:73) ~[brigadier-1.3.10.jar:?]
+	at net.minecraft.commands.execution.tasks.ExecuteCommand.execute(ExecuteCommand.java:30) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.execution.tasks.ExecuteCommand.execute(ExecuteCommand.java:13) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.execution.UnboundEntryAction.lambda$bind$0(UnboundEntryAction.java:8) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.execution.CommandQueueEntry.execute(CommandQueueEntry.java:5) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.execution.ExecutionContext.runCommandQueue(ExecutionContext.java:104) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.Commands.executeCommandInContext(Commands.java:485) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.Commands.performCommand(Commands.java:390) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.Commands.performCommand(Commands.java:378) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.commands.Commands.performPrefixedCommand(Commands.java:369) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at net.minecraft.server.dedicated.DedicatedServer.handleConsoleInputs(DedicatedServer.java:601) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at io.papermc.paper.threadedregions.RegionizedServer.globalTick(RegionizedServer.java:348) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at io.papermc.paper.threadedregions.RegionizedServer$GlobalTickTickHandle.tickRegion(RegionizedServer.java:184) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at io.papermc.paper.threadedregions.TickRegionScheduler$RegionScheduleHandle.runTick(TickRegionScheduler.java:515) ~[lophine-1.21.11.jar:1.21.11-DEV-58c5573]
+	at ca.spottedleaf.concurrentutil.scheduler.EDFSchedulerThreadPool$TickThreadRunner.run(EDFSchedulerThreadPool.java:526) ~[concurrentutil-0.0.8.jar:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+[16:32:36] [Folia Region Scheduler Thread #0/INFO]: An unexpected error occurred trying to execute that command
+[16:32:39] [Folia Region Scheduler Thread #0/INFO]: Stopping the server
+[16:32:39] [Region shutdown thread/INFO]: [RegionShutdownThread] Awaiting scheduler termination for 60s...
+[16:32:39] [Region shutdown thread/INFO]: [RegionShutdownThread] Scheduler halted
+[16:32:39] [Region shutdown thread/INFO]: Stopping server
+[16:32:39] [Region shutdown thread/INFO]: [Citizens] Disabling Citizens v2.0.42-SNAPSHOT (build 4157)
+[16:32:39] [Region shutdown thread/INFO]: [LegendaryGuildRemapped] Disabling LegendaryGuildRemapped v6.0.7
+[16:32:39] [Region shutdown thread/INFO]: LegendaryGuildRemapped - 成功断开SQLite数据库连接 § Successfully disconnected SQLite database connection
+[16:32:39] [Region shutdown thread/INFO]: [GHolo] Disabling GHolo v2.4.2
+[16:32:39] [Region shutdown thread/INFO]: [GHolo] The plugin was successfully disabled.
+[16:32:39] [Region shutdown thread/INFO]: [GrimAC] Disabling GrimAC v2.3.74-e8dc9ae
+[16:32:39] [Region shutdown thread/INFO]: [GrimAC] Terminating PacketEvents...
+[16:32:39] [Region shutdown thread/INFO]: [OnlineReward-NEXT] Disabling OnlineReward-NEXT v2.3
+[16:32:39] [Region shutdown thread/INFO]: §7[§6OnlineReward-NEXT§7] §c插件已卸载，感谢使用，定制/建议/反馈联系QQ：476915861
+[16:32:39] [Region shutdown thread/INFO]: [HeadDatabase] Disabling HeadDatabase v4.22.2
+[16:32:39] [Region shutdown thread/INFO]: [ArcPass] Disabling ArcPass v1.6.0
+[16:32:39] [Region shutdown thread/INFO]: [ArcPass] Disabling ArcPass Core...
+[16:32:39] [Region shutdown thread/INFO]: [ArcPass] ArcPass Core disabled.
+[16:32:39] [Region shutdown thread/INFO]: [ArcPass] ArcPass disabled.
+[16:32:39] [Region shutdown thread/INFO]: [BlockLocker] Disabling BlockLocker v1.14.1
+[16:32:39] [Region shutdown thread/INFO]: [TrChat] Disabling TrChat v2.4.0
+[16:32:39] [Region shutdown thread/INFO]: [XYMenu] Disabling XYMenu v1.1.6-SNAPSHOT
+[16:32:39] [Region shutdown thread/INFO]: [CoreProtect] Disabling CoreProtect v23.1
+[16:32:39] [Region shutdown thread/INFO]: [CoreProtect] 正在完成数据记录，请稍等...
+[16:32:40] [Region shutdown thread/INFO]: [CoreProtect] 禁用 CoreProtect v23.1 成功！
+[16:32:40] [Region shutdown thread/INFO]: [AzuraBoard] Disabling AzuraBoard v1.2.5
+[16:32:40] [Region shutdown thread/INFO]: [AzuraBoard] AzuraBoard has been disabled!
+[16:32:40] [Region shutdown thread/INFO]: [Residence] Disabling Residence v6.0.1.6
+[16:32:40] [Region shutdown thread/INFO]: [Residence] Disabled!
+[16:32:40] [Region shutdown thread/INFO]: [ProtocolLib] Disabling ProtocolLib v5.4.0
+[16:32:40] [Region shutdown thread/INFO]: [TAB] Disabling TAB v6.0.0
+[16:32:40] [Region shutdown thread/INFO]: [TAB] Disabled in 0ms
+[16:32:40] [Region shutdown thread/INFO]: [CMI] Disabling CMI v9.8.6.4
+[16:32:40] [Region shutdown thread/INFO]: [CMI] Closed db connections
+[16:32:40] [Region shutdown thread/INFO]: [ViaRewind] Disabling ViaRewind v4.0.15
+[16:32:40] [Region shutdown thread/INFO]: [Vault] Disabling Vault v1.7.3-CMI
+[16:32:40] [Region shutdown thread/INFO]: [CMILib] Disabling CMILib v1.5.9.2
+[16:32:40] [Region shutdown thread/INFO]: [ViaBackwards] Disabling ViaBackwards v5.8.1
+[16:32:40] [Region shutdown thread/INFO]: [LuckPerms] Disabling LuckPerms v5.5.29
+[16:32:40] [Region shutdown thread/INFO]: [LuckPerms] Starting shutdown process...
+[16:32:40] [Region shutdown thread/INFO]: [LuckPerms] Closing storage...
+[16:32:40] [Region shutdown thread/INFO]: [LuckPerms] Goodbye!
+[16:32:40] [Region shutdown thread/INFO]: [PlaceholderAPI] Disabling PlaceholderAPI v2.12.2
+[16:32:40] [Region shutdown thread/INFO]: [ViaVersion] Disabling ViaVersion v5.8.1
+[16:32:40] [Region shutdown thread/INFO]: [ViaVersion] ViaVersion has been disabled; uninjected the platform and shut down the scheduler.
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Halting chunk systems...
+[16:32:40] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world'
+[16:32:40] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world'
+[16:32:40] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_nether'
+[16:32:40] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world_nether'
+[16:32:40] [Region shutdown thread/INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_the_end'
+[16:32:40] [Region shutdown thread/INFO]: [ChunkHolderManager] Halted chunk system for world 'world_the_end'
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Halted chunk systems
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Finishing pending teleports...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Finished pending teleports
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving all worlds
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving world data for world 'world'
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Closing player inventories...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Closed player inventories
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved chunks
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving level data...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved level data
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved world data for world 'world'
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving world data for world 'world_nether'
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Closing player inventories...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Closed player inventories
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved chunks
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving level data...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved level data
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved world data for world 'world_nether'
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving world data for world 'world_the_end'
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Closing player inventories...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Closed player inventories
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving chunks...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved chunks
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving level data...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved level data
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved world data for world 'world_the_end'
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved all worlds
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saving all player data...
+[16:32:40] [Region shutdown thread/INFO]: [RegionShutdownThread] Saved all player data
+[16:32:40] [Region shutdown thread/INFO]: Waiting for all RegionFile I/O tasks to complete...
+[16:32:40] [Region shutdown thread/INFO]: All RegionFile I/O tasks to complete
+[16:32:40] [Region shutdown thread/INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[16:32:40] [Region shutdown thread/INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...

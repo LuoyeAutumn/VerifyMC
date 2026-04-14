@@ -1,6 +1,6 @@
-[English](https://github.com/KiteMC/VerifyMC/releases/tag/v1.7.1) | 简体中文 | [官方文档](https://kitemc.com/docs/verifymc/)
+[English](https://github.com/KiteMC/VerifyMC/releases/tag/v1.7.5) | 简体中文 | [官方文档](https://kitemc.com/docs/verifymc/)
 
-# VerifyMC v1.7.1 更新日志
+# VerifyMC v1.7.5 更新日志
 
 ## 安全修复
 

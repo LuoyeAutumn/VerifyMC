@@ -1,8 +1,16 @@
 import { defineConfig } from "vite"
 import vue from "@vitejs/plugin-vue"
 import { resolve } from "path"
+import { readFileSync } from "fs"
+
+const packageJson = JSON.parse(
+  readFileSync(resolve(__dirname, "package.json"), "utf-8")
+) as { version?: string }
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version ?? "0.0.0"),
+  },
   plugins: [
     vue({
       // Enable performance optimizations
