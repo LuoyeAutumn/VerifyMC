@@ -104,13 +104,59 @@
                   type="button"
                   variant="secondary"
                   @click="sendCode"
-                  :disabled="sending || !form.email || cooldownSeconds > 0"
+                  :disabled="sending || !form.email || emailCooldownSeconds > 0"
                   class="whitespace-nowrap"
                 >
-                  {{ sending ? $t('register.sending') : cooldownSeconds > 0 ? `${cooldownSeconds}s` : $t('register.sendCode') }}
+                  {{ sending ? $t('register.sending') : emailCooldownSeconds > 0 ? `${emailCooldownSeconds}s` : $t('register.sendCode') }}
                 </Button>
               </div>
               <p v-if="errors.code" class="mt-1 text-sm text-red-400">{{ errors.code }}</p>
+            </div>
+
+            <div v-if="smsEnabled">
+              <Label for="phone" class="mb-1">{{ $t('register.form.phone') }}</Label>
+              <div class="flex gap-2">
+                <select
+                  v-model="selectedCountryCode"
+                  class="h-10 rounded-md border border-white/10 bg-white/5 px-2 text-sm text-white/80 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                >
+                  <option v-for="code in countryCodes" :key="code" :value="code" class="bg-gray-800">{{ code }}</option>
+                </select>
+                <Input
+                  id="phone"
+                  v-model="form.phone"
+                  type="tel"
+                  :placeholder="$t('register.form.phone_placeholder')"
+                  :class="{ 'border-red-500 focus-visible:ring-red-500': errors.phone, 'flex-1': true }"
+                  @blur="validatePhone"
+                  @input="onPhoneInput"
+                />
+              </div>
+              <p v-if="errors.phone" class="mt-1 text-sm text-red-400">{{ errors.phone }}</p>
+            </div>
+
+            <div v-if="smsEnabled">
+              <Label for="smsCode" class="mb-1">{{ $t('register.form.sms_code') }}</Label>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <Input
+                  id="smsCode"
+                  v-model="form.smsCode"
+                  type="text"
+                  :placeholder="$t('register.form.sms_code_placeholder')"
+                  :class="{ 'border-red-500 focus-visible:ring-red-500': errors.smsCode }"
+                  @blur="validateSmsCode"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  @click="sendSmsCode"
+                  :disabled="smsSending || !form.phone || smsCooldownSeconds > 0"
+                  class="whitespace-nowrap"
+                >
+                  {{ smsSending ? $t('register.sending') : smsCooldownSeconds > 0 ? `${smsCooldownSeconds}s` : $t('register.sendCode') }}
+                </Button>
+              </div>
+              <p v-if="errors.smsCode" class="mt-1 text-sm text-red-400">{{ errors.smsCode }}</p>
             </div>
 
             <div v-if="captchaEnabled">
@@ -175,9 +221,10 @@ import { ref, computed, reactive, onMounted, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { apiService } from '@/services/api'
 import { useNotification } from '@/composables/useNotification'
+import { useCooldown } from '@/composables/useCooldown'
 import DiscordLink from '@/components/DiscordLink.vue'
 import QuestionnaireForm from '@/components/QuestionnaireForm.vue'
-import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest } from '@/services/api'
+import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest, SendSmsCodeResponse } from '@/services/api'
 
 import Button from './ui/Button.vue'
 import Input from './ui/Input.vue'
@@ -209,6 +256,13 @@ const captchaImage = ref('')
 const captchaToken = ref('')
 const captchaEnabled = computed(() => config.value.captcha?.enabled || false)
 const emailEnabled = computed(() => config.value.captcha?.emailEnabled !== false)
+const smsEnabled = computed(() => config.value.sms?.enabled === true)
+const phoneRegex = computed(() => {
+  const regex = config.value.sms?.phoneRegex
+  return regex ? new RegExp(regex) : null
+})
+const countryCodes = computed(() => config.value.sms?.countryCodes || ['+86'])
+const selectedCountryCode = ref('+86')
 
 const discordLinked = ref(false)
 const discordEnabled = computed(() => config.value.discord?.enabled || false)
@@ -227,6 +281,9 @@ onMounted(async () => {
   try {
     const res = await apiService.getConfig()
     config.value = res
+    if (countryCodes.value.length > 0) {
+      selectedCountryCode.value = countryCodes.value[0]
+    }
     if (config.value.captcha?.enabled) {
       await refreshCaptcha()
     }
@@ -247,8 +304,8 @@ const refreshCaptcha = async () => {
   }
 }
 
-const form = reactive({ username: '', email: '', code: '', password: '', captchaAnswer: '' })
-const errors = reactive({ username: '', email: '', code: '', password: '', captcha: '', discord: '' })
+const form = reactive({ username: '', email: '', code: '', password: '', captchaAnswer: '', phone: '', smsCode: '' })
+const errors = reactive({ username: '', email: '', code: '', password: '', captcha: '', discord: '', phone: '', smsCode: '' })
 
 const onDiscordLinked = () => {
   discordLinked.value = true
@@ -352,6 +409,33 @@ const validateCode = () => {
     errors.code = t('register.validation.code_required')
   }
 }
+const validatePhone = () => {
+  errors.phone = ''
+  if (smsEnabled.value && !form.phone) {
+    errors.phone = t('register.validation.phone_required')
+  } else if (smsEnabled.value && form.phone && phoneRegex.value) {
+    const cleanPhone = form.phone.trim().replace(/[\s\-]/g, '')
+    if (!phoneRegex.value.test(cleanPhone)) {
+      errors.phone = t('register.validation.phone_format')
+    }
+  }
+}
+const onPhoneInput = () => {
+    const raw = form.phone.trim()
+    if (raw.startsWith('+')) {
+        const matched = countryCodes.value.find(code => raw.startsWith(code))
+        if (matched) {
+            selectedCountryCode.value = matched
+            form.phone = raw.slice(matched.length)
+        }
+    }
+}
+const validateSmsCode = () => {
+  errors.smsCode = ''
+  if (smsEnabled.value && !form.smsCode) {
+    errors.smsCode = t('register.validation.sms_code_required')
+  }
+}
 const validateCaptcha = () => {
   errors.captcha = ''
   if (captchaEnabled.value && !form.captchaAnswer) {
@@ -364,6 +448,8 @@ const validateForm = () => {
   validateEmail()
   validatePassword()
   validateCode()
+  validatePhone()
+  validateSmsCode()
   validateCaptcha()
   validateDiscord()
 }
@@ -371,6 +457,7 @@ const validateForm = () => {
 const isBasicStepValid = computed(() => {
   let valid = form.username && form.email && !errors.username && !errors.email
   if (emailEnabled.value) valid = valid && !!form.code && !errors.code
+  if (smsEnabled.value) valid = valid && !!form.phone && !!form.smsCode && !errors.phone && !errors.smsCode
   if (captchaEnabled.value) valid = valid && !!form.captchaAnswer && !errors.captcha
   valid = valid && !!form.password && !errors.password
   if (discordRequired.value) valid = valid && discordLinked.value && !errors.discord
@@ -411,29 +498,15 @@ const onQuestionnairePassed = async (result: QuestionnaireSubmission) => {
   await handleSubmit()
 }
 
-const cooldownSeconds = ref(0)
-const cooldownTimer = ref<ReturnType<typeof setInterval> | null>(null)
-const startCooldown = (seconds: number) => {
-  cooldownSeconds.value = seconds
-  if (cooldownTimer.value) clearInterval(cooldownTimer.value)
-  cooldownTimer.value = setInterval(() => {
-    cooldownSeconds.value--
-    if (cooldownSeconds.value <= 0) {
-      clearInterval(cooldownTimer.value!)
-      cooldownTimer.value = null
-    }
-  }, 1000)
-}
+const { cooldownSeconds: emailCooldownSeconds, startCooldown: startEmailCooldown, stopCooldown: stopEmailCooldown } = useCooldown()
 
 onUnmounted(() => {
-  if (cooldownTimer.value) {
-    clearInterval(cooldownTimer.value)
-    cooldownTimer.value = null
-  }
+  stopEmailCooldown()
+  stopSmsCooldown()
 })
 
 const sendCode = async () => {
-  if (sending.value || cooldownSeconds.value > 0) return
+  if (sending.value || emailCooldownSeconds.value > 0) return
   validateEmail()
   if (errors.email) return
   sending.value = true
@@ -442,9 +515,9 @@ const sendCode = async () => {
     const res = await apiService.sendCode({ email, language: locale.value })
     if (res.success) {
       success(t('register.codeSent'))
-      startCooldown(60)
+      startEmailCooldown(60)
     } else if (res.remainingSeconds && res.remainingSeconds > 0) {
-      startCooldown(res.remainingSeconds)
+      startEmailCooldown(res.remainingSeconds)
       error(res.message || t('register.sendFailed'))
     } else {
       error(res.message || t('register.sendFailed'))
@@ -453,6 +526,33 @@ const sendCode = async () => {
     error(t('register.sendFailed'))
   } finally {
     sending.value = false
+  }
+}
+
+const smsSending = ref(false)
+const { cooldownSeconds: smsCooldownSeconds, startCooldown: startSmsCooldown, stopCooldown: stopSmsCooldown } = useCooldown()
+
+const sendSmsCode = async () => {
+  if (smsSending.value || smsCooldownSeconds.value > 0) return
+  validatePhone()
+  if (errors.phone) return
+  smsSending.value = true
+  try {
+    const phone = form.phone.trim().replace(/[\s\-]/g, '')
+    const res = await apiService.sendSmsCode({ phone, countryCode: selectedCountryCode.value, language: locale.value })
+    if (res.success) {
+      success(t('register.sms_code_sent'))
+      startSmsCooldown(60)
+    } else if (res.remainingSeconds && res.remainingSeconds > 0) {
+      startSmsCooldown(res.remainingSeconds)
+      error(res.message || t('register.sms_send_failed'))
+    } else {
+      error(res.message || t('register.sms_send_failed'))
+    }
+  } catch {
+    error(t('register.sms_send_failed'))
+  } finally {
+    smsSending.value = false
   }
 }
 
@@ -473,6 +573,11 @@ const handleSubmit = async () => {
     }
 
     if (emailEnabled.value) registerData.code = form.code
+    if (smsEnabled.value) {
+      registerData.phone = form.phone.trim().replace(/[\s\-]/g, '')
+      registerData.countryCode = selectedCountryCode.value
+      registerData.smsCode = form.smsCode
+    }
     if (captchaEnabled.value) {
       registerData.captchaToken = captchaToken.value
       registerData.captchaAnswer = form.captchaAnswer

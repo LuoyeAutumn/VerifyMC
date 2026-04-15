@@ -215,6 +215,10 @@ public class ConfigManager {
         return getAuthMethods().contains("captcha");
     }
 
+    public boolean isSmsAuthEnabled() {
+        return getAuthMethods().contains("sms");
+    }
+
     // --- Email ---
     public String getEmailSubject() {
         return getConfig().getString("email_subject", "VerifyMC Verification Code");
@@ -241,6 +245,44 @@ public class ConfigManager {
 
     public int getMaxAccountsPerEmail() {
         return getConfig().getInt("max_accounts_per_email", 2);
+    }
+
+    // --- SMS ---
+    public String getSmsSecretId() {
+        return getConfig().getString("sms.secret_id", "");
+    }
+
+    public String getSmsSecretKey() {
+        return getConfig().getString("sms.secret_key", "");
+    }
+
+    public String getSmsSdkAppId() {
+        return getConfig().getString("sms.sdk_app_id", "");
+    }
+
+    public String getSmsSignName() {
+        return getConfig().getString("sms.sign_name", "");
+    }
+
+    public String getSmsTemplateId() {
+        return getConfig().getString("sms.template_id", "");
+    }
+
+    public String getSmsRegion() {
+        return getConfig().getString("sms.region", "ap-guangzhou");
+    }
+
+    public int getMaxAccountsPerPhone() {
+        return getConfig().getInt("max_accounts_per_phone", 2);
+    }
+
+    public String getSmsPhoneRegex() {
+        return getConfig().getString("sms.phone_regex", "^\\d{6,15}$");
+    }
+
+    public List<String> getCountryCodes() {
+        List<String> codes = getConfig().getStringList("sms.country_codes");
+        return codes.isEmpty() ? Arrays.asList("+86") : codes;
     }
 
     // --- Whitelist ---

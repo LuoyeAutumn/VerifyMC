@@ -39,6 +39,11 @@ export interface ConfigResponse {
     prefix: string
     usernameRegex: string
   }
+  sms?: {
+    enabled: boolean
+    phoneRegex?: string
+    countryCodes?: string[]
+  }
   emailDomainWhitelist?: string[]
   enableEmailDomainWhitelist?: boolean
   enableEmailAliasLimit?: boolean
@@ -117,9 +122,24 @@ export interface SendCodeResponse {
   remainingSeconds?: number
 }
 
+export interface SendSmsCodeRequest {
+  phone: string
+  countryCode: string
+  language: string
+}
+
+export interface SendSmsCodeResponse {
+  success: boolean
+  message: string
+  remainingSeconds?: number
+}
+
 export interface RegisterRequest {
   email: string
   code?: string
+  phone?: string
+  countryCode?: string
+  smsCode?: string
   username: string
   password: string
   captchaToken?: string
@@ -290,6 +310,13 @@ class ApiService {
   // 发送验证码
   async sendCode(data: SendCodeRequest): Promise<SendCodeResponse> {
     return this.request<SendCodeResponse>('/verify/send', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async sendSmsCode(data: SendSmsCodeRequest): Promise<SendSmsCodeResponse> {
+    return this.request<SendSmsCodeResponse>('/verify/sms/send', {
       method: 'POST',
       body: JSON.stringify(data),
     })

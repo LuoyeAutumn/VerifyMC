@@ -65,6 +65,12 @@ public class ConfigHandler implements HttpHandler {
         bedrockConfig.put("usernameRegex", ctx.getConfigManager().getBedrockUsernameRegex());
         config.put("bedrock", bedrockConfig);
 
+        JSONObject smsConfig = new JSONObject();
+        smsConfig.put("enabled", authMethods.contains("sms"));
+        smsConfig.put("phoneRegex", ctx.getConfigManager().getSmsPhoneRegex());
+        smsConfig.put("countryCodes", new JSONArray(ctx.getConfigManager().getCountryCodes()));
+        config.put("sms", smsConfig);
+
         if (ctx.getConfigManager().isEmailDomainWhitelistEnabled()) {
             config.put("emailDomainWhitelist", new JSONArray(ctx.getConfigManager().getEmailDomainWhitelist()));
         }

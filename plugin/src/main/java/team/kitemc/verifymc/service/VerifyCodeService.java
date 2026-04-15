@@ -4,12 +4,15 @@ import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import team.kitemc.verifymc.util.EmailAddressUtil;
+import team.kitemc.verifymc.web.handler.SmsVerifyCodeHandler;
 
 public class VerifyCodeService {
     private static final int MAX_ATTEMPTS = 5;
 
     private final ConcurrentHashMap<String, CodeEntry> codeMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> rateLimitMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, CodeEntry> smsCodeMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> smsRateLimitMap = new ConcurrentHashMap<>();
     private final long expireMillis = 5 * 60 * 1000;
     private final long rateLimitMillis = 60 * 1000;
     private final boolean debug;
@@ -71,7 +74,25 @@ public class VerifyCodeService {
             return expired;
         });
 
-        debugLog("Cleanup completed. Active codes: " + codeMap.size() + ", Active rate limits: " + rateLimitMap.size());
+        smsCodeMap.entrySet().removeIf(entry -> {
+            boolean expired = entry.getValue().expire < currentTime;
+            if (expired) {
+                debugLog("Removed expired SMS code for phone: " + entry.getKey());
+            }
+            return expired;
+        });
+
+        smsRateLimitMap.entrySet().removeIf(entry -> {
+            boolean expired = (currentTime - entry.getValue()) > rateLimitMillis;
+            if (expired) {
+                debugLog("Removed expired SMS rate limit for phone: " + entry.getKey());
+            }
+            return expired;
+        });
+
+        SmsVerifyCodeHandler.cleanup();
+
+        debugLog("Cleanup completed. Active codes: " + codeMap.size() + ", Active rate limits: " + rateLimitMap.size() + ", Active SMS codes: " + smsCodeMap.size() + ", Active SMS rate limits: " + smsRateLimitMap.size());
     }
 
     private void debugLog(String msg) {
@@ -179,6 +200,95 @@ public class VerifyCodeService {
         if (ok) {
             debugLog("Removing used code for key: " + normalizedKey);
             codeMap.remove(normalizedKey);
+        }
+        return ok;
+    }
+
+    public boolean canSendSmsCode(String phone) {
+        String normalizedPhone = phone == null ? "" : phone;
+        debugLog("canSendSmsCode called for phone: " + normalizedPhone);
+        Long lastSentTime = smsRateLimitMap.get(normalizedPhone);
+        if (lastSentTime == null) {
+            return true;
+        }
+        long currentTime = System.currentTimeMillis();
+        boolean canSend = (currentTime - lastSentTime) >= rateLimitMillis;
+        if (canSend) {
+            smsRateLimitMap.remove(normalizedPhone);
+        }
+        return canSend;
+    }
+
+    public long getSmsRemainingCooldownSeconds(String phone) {
+        String normalizedPhone = phone == null ? "" : phone;
+        Long lastSentTime = smsRateLimitMap.get(normalizedPhone);
+        if (lastSentTime == null) {
+            return 0;
+        }
+        long currentTime = System.currentTimeMillis();
+        long remainingMillis = rateLimitMillis - (currentTime - lastSentTime);
+        return toRemainingSeconds(remainingMillis);
+    }
+
+    public CodeIssueResult issueSmsCode(String phone) {
+        String normalizedPhone = phone == null ? "" : phone;
+        long currentTime = System.currentTimeMillis();
+        AtomicReference<CodeIssueResult> resultRef = new AtomicReference<>();
+
+        smsRateLimitMap.compute(normalizedPhone, (key, lastSentTime) -> {
+            if (lastSentTime != null) {
+                long remainingMillis = rateLimitMillis - (currentTime - lastSentTime);
+                long remainingSeconds = toRemainingSeconds(remainingMillis);
+                if (remainingSeconds > 0) {
+                    resultRef.set(CodeIssueResult.rateLimited(remainingSeconds));
+                    return lastSentTime;
+                }
+            }
+
+            String code = String.format("%06d", secureRandom.nextInt(1000000));
+            long expireTime = currentTime + expireMillis;
+            smsCodeMap.put(key, new CodeEntry(code, expireTime));
+            resultRef.set(CodeIssueResult.issued(code, toRemainingSeconds(rateLimitMillis)));
+            debugLog("Issued SMS code for phone: " + key + ", expires at: " + expireTime);
+            return currentTime;
+        });
+
+        return resultRef.get();
+    }
+
+    public void revokeSmsCode(String phone) {
+        String normalizedPhone = phone == null ? "" : phone;
+        smsCodeMap.remove(normalizedPhone);
+        smsRateLimitMap.remove(normalizedPhone);
+        debugLog("Revoked SMS code and cooldown for phone: " + normalizedPhone);
+    }
+
+    public boolean checkSmsCode(String phone, String code) {
+        String normalizedPhone = phone == null ? "" : phone;
+        debugLog("checkSmsCode called: phone=" + normalizedPhone + ", code=" + code);
+        CodeEntry entry = smsCodeMap.get(normalizedPhone);
+        if (entry == null) {
+            debugLog("No SMS code found for phone: " + normalizedPhone);
+            return false;
+        }
+
+        if (entry.attempts >= MAX_ATTEMPTS) {
+            debugLog("Too many attempts for phone: " + normalizedPhone);
+            smsCodeMap.remove(normalizedPhone);
+            return false;
+        }
+
+        if (entry.expire < System.currentTimeMillis()) {
+            debugLog("SMS code expired for phone: " + normalizedPhone);
+            smsCodeMap.remove(normalizedPhone);
+            return false;
+        }
+
+        entry.attempts++;
+        boolean ok = entry.code.equals(code);
+        debugLog("SMS code verification result: " + ok);
+        if (ok) {
+            smsCodeMap.remove(normalizedPhone);
         }
         return ok;
     }

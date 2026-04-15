@@ -37,6 +37,16 @@ smtp:
   password: your_email_password
   from: your_email@qq.com
   enable_ssl: true
+sms:
+  secret_id: ""
+  secret_key: ""
+  sdk_app_id: ""
+  sign_name: ""
+  template_id: ""
+  region: ap-guangzhou
+  country_codes: ["+86"]
+  phone_regex: "^\d{6,15}$"
+max_accounts_per_phone: 2
 email_subject: VerifyMC Verification Code
 auto_update_resources: true
 enable_email_domain_whitelist: true

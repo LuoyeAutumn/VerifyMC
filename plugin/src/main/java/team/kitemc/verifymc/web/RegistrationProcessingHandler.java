@@ -24,6 +24,7 @@ import team.kitemc.verifymc.service.RegistrationApplicationService;
 import team.kitemc.verifymc.service.VerifyCodeService;
 import team.kitemc.verifymc.util.EmailAddressUtil;
 import team.kitemc.verifymc.util.FoliaCompat;
+import team.kitemc.verifymc.util.PhoneUtil;
 
 public class RegistrationProcessingHandler implements HttpHandler {
     private static final long QUESTIONNAIRE_SUBMISSION_TTL_MS = 10 * 60 * 1000;
@@ -186,6 +187,14 @@ public class RegistrationProcessingHandler implements HttpHandler {
         if (emailCount >= maxAccounts) {
             return RegistrationValidationResult.reject("register.email_limit");
         }
+        if (plugin.getConfig().getStringList("auth_methods").contains("sms") && request.phone() != null && !request.phone().trim().isEmpty()) {
+            int maxPhoneAccounts = plugin.getConfig().getInt("max_accounts_per_phone", 2);
+            String fullPhone = PhoneUtil.buildFullPhoneNumber(request.countryCode(), request.phone());
+            int phoneCount = userDao.countUsersByPhone(fullPhone);
+            if (phoneCount >= maxPhoneAccounts) {
+                return RegistrationValidationResult.reject("sms.phone_limit");
+            }
+        }
         return RegistrationValidationResult.pass();
     }
 
@@ -239,9 +248,9 @@ public class RegistrationProcessingHandler implements HttpHandler {
         List<String> authMethods = plugin.getConfig().getStringList("auth_methods");
         boolean useCaptcha = authMethods.contains("captcha");
         boolean useEmail = authMethods.contains("email");
+        boolean useSms = authMethods.contains("sms");
 
-        // If no auth methods configured, skip verification
-        if (!useCaptcha && !useEmail) {
+        if (!useCaptcha && !useEmail && !useSms) {
             return RegistrationValidationResult.pass();
         }
 
@@ -256,6 +265,22 @@ public class RegistrationProcessingHandler implements HttpHandler {
 
         if (useEmail) {
             if (!codeService.checkCode(request.email(), request.code())) {
+                return RegistrationValidationResult.reject("verify.wrong_code");
+            }
+        }
+
+        if (useSms) {
+            if (request.phone() == null || request.phone().trim().isEmpty()) {
+                return RegistrationValidationResult.reject("sms.phone_required");
+            }
+            String fullPhone = PhoneUtil.buildFullPhoneNumber(request.countryCode(), request.phone());
+            if (!PhoneUtil.isValidPhoneNumber(fullPhone, plugin.getConfig().getString("sms.phone_regex", "^\\d{6,15}$"))) {
+                return RegistrationValidationResult.reject("sms.invalid_phone");
+            }
+            if (request.smsCode() == null || request.smsCode().trim().isEmpty()) {
+                return RegistrationValidationResult.reject("sms.code_required");
+            }
+            if (!codeService.checkSmsCode(fullPhone, request.smsCode())) {
                 return RegistrationValidationResult.reject("verify.wrong_code");
             }
         }
@@ -287,7 +312,8 @@ public class RegistrationProcessingHandler implements HttpHandler {
         String questionnaireReviewSummary = submissionRecord != null ? buildQuestionnaireReviewSummary(submissionRecord.details()) : null;
         Long questionnaireScoredAt = submissionRecord != null ? submissionRecord.submittedAt() : null;
 
-        boolean ok = userDao.registerUser(request.normalizedUsername(), request.email(), status, request.password(),
+        String fullPhone = PhoneUtil.buildFullPhoneNumber(request.countryCode(), request.phone());
+        boolean ok = userDao.registerUser(request.normalizedUsername(), request.email(), status, request.password(), fullPhone,
                 questionnaireScore, questionnairePassedValue, questionnaireReviewSummary, questionnaireScoredAt);
 
         RegistrationApplicationService.RegistrationDecision decision =

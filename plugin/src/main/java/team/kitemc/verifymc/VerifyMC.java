@@ -13,6 +13,7 @@ import team.kitemc.verifymc.web.ReviewWebSocketServer;
 import team.kitemc.verifymc.web.ServerSslContextFactory;
 import team.kitemc.verifymc.web.WebAuthHelper;
 import team.kitemc.verifymc.web.WebServer;
+import team.kitemc.verifymc.web.handler.SmsVerifyCodeHandler;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -115,6 +116,8 @@ public class VerifyMC extends JavaPlugin {
             if (context.getCaptchaService() != null) {
                 context.getCaptchaService().stop();
             }
+            SmsVerifyCodeHandler.cleanup();
+            context.shutdown();
         }
 
         // Save and close data access layer
@@ -174,6 +177,9 @@ public class VerifyMC extends JavaPlugin {
 
         // Verify code service
         context.setVerifyCodeService(new VerifyCodeService(this));
+        if (context.getConfigManager().isSmsAuthEnabled()) {
+            context.setSmsService(new SmsService(this, context.getConfigManager()));
+        }
 
         // AuthMe service
         AuthmeService authmeService = new AuthmeService(this);

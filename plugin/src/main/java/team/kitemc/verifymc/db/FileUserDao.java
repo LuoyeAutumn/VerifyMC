@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.Gson;
 import team.kitemc.verifymc.util.PasswordUtil;
+import team.kitemc.verifymc.util.PhoneUtil;
 
 public class FileUserDao implements UserDao {
     private final File file;
@@ -155,6 +156,11 @@ public class FileUserDao implements UserDao {
                             user.put("questionnaireScoredAt", user.remove("questionnaire_scored_at"));
                             hasUpgraded = true;
                         }
+
+                        if (!user.containsKey("phone")) {
+                            user.put("phone", null);
+                            hasUpgraded = true;
+                        }
                     }
                 }
 
@@ -241,6 +247,7 @@ public class FileUserDao implements UserDao {
             user.put("status", status);
             user.put("password", storedPassword);
             user.put("regTime", System.currentTimeMillis());
+            user.put("phone", null);
             applyQuestionnaireAuditFields(user, null, null, null, null);
             users.put(key, user);
             saveLater();
@@ -253,7 +260,7 @@ public class FileUserDao implements UserDao {
     }
 
     @Override
-    public boolean registerUser(String username, String email, String status, String password,
+    public boolean registerUser(String username, String email, String status, String password, String phone,
                                 Integer questionnaireScore, Boolean questionnairePassed,
                                 String questionnaireReviewSummary, Long questionnaireScoredAt) {
         debugLog("registerUser with password called: username=" + username + ", email=" + email + ", status=" + status);
@@ -270,6 +277,7 @@ public class FileUserDao implements UserDao {
             user.put("status", status);
             user.put("password", PasswordUtil.hash(password));
             user.put("regTime", System.currentTimeMillis());
+            user.put("phone", phone);
             applyQuestionnaireAuditFields(user, questionnaireScore, questionnairePassed, questionnaireReviewSummary, questionnaireScoredAt);
             debugLog("Adding user with password to map: username=" + username);
             users.put(key, user);
@@ -430,6 +438,23 @@ public class FileUserDao implements UserDao {
             }
         }
         debugLog("Found " + count + " users with email: " + email);
+        return count;
+    }
+
+    private String maskPhone(String phone) {
+        return PhoneUtil.maskPhone(phone);
+    }
+
+    @Override
+    public int countUsersByPhone(String phone) {
+        debugLog("Counting users by phone: " + maskPhone(phone));
+        int count = 0;
+        for (Map<String, Object> user : users.values()) {
+            if (user.get("phone") != null && user.get("phone").toString().equals(phone)) {
+                count++;
+            }
+        }
+        debugLog("Found " + count + " users with phone: " + maskPhone(phone));
         return count;
     }
 

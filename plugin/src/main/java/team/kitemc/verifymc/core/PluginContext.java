@@ -28,6 +28,7 @@ public class PluginContext {
 
     // Services
     private MailService mailService;
+    private SmsService smsService;
     private VerifyCodeService verifyCodeService;
     private AuthmeService authmeService;
     private CaptchaService captchaService;
@@ -64,6 +65,7 @@ public class PluginContext {
     public UserDao getUserDao() { return userDao; }
     public AuditDao getAuditDao() { return auditDao; }
     public MailService getMailService() { return mailService; }
+    public SmsService getSmsService() { return smsService; }
     public VerifyCodeService getVerifyCodeService() { return verifyCodeService; }
     public AuthmeService getAuthmeService() { return authmeService; }
     public CaptchaService getCaptchaService() { return captchaService; }
@@ -80,6 +82,7 @@ public class PluginContext {
     public void setUserDao(UserDao userDao) { this.userDao = userDao; }
     public void setAuditDao(AuditDao auditDao) { this.auditDao = auditDao; }
     public void setMailService(MailService mailService) { this.mailService = mailService; }
+    public void setSmsService(SmsService smsService) { this.smsService = smsService; }
     public void setVerifyCodeService(VerifyCodeService verifyCodeService) { this.verifyCodeService = verifyCodeService; }
     public void setAuthmeService(AuthmeService authmeService) { this.authmeService = authmeService; }
     public void setCaptchaService(CaptchaService captchaService) { this.captchaService = captchaService; }
@@ -108,5 +111,13 @@ public class PluginContext {
      */
     public String getMessage(String key, String language) {
         return i18nManager.getMessage(key, language);
+    }
+
+    public void shutdown() {
+        if (smsService != null) {
+            try {
+                smsService.close();
+            } catch (Exception ignored) {}
+        }
     }
 }

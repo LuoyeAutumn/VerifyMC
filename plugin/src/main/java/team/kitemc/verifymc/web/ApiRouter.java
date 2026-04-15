@@ -39,6 +39,7 @@ public class ApiRouter {
 
         // --- Email verification ---
         registerApiRoute(server, "/api/verify/send", new VerifyCodeHandler(ctx));
+        registerApiRoute(server, "/api/verify/sms/send", new SmsVerifyCodeHandler(ctx));
 
         // --- Questionnaire endpoints ---
         registerApiRoute(server, "/api/questionnaire/config", new QuestionnaireConfigHandler(ctx));

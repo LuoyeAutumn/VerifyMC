@@ -6,9 +6,15 @@ import java.util.Map;
 public interface UserDao {
     boolean registerUser(String username, String email, String status, String password);
 
-    boolean registerUser(String username, String email, String status, String password,
+    boolean registerUser(String username, String email, String status, String password, String phone,
                          Integer questionnaireScore, Boolean questionnairePassed,
                          String questionnaireReviewSummary, Long questionnaireScoredAt);
+
+    default boolean registerUser(String username, String email, String status, String password,
+                         Integer questionnaireScore, Boolean questionnairePassed,
+                         String questionnaireReviewSummary, Long questionnaireScoredAt) {
+        return registerUser(username, email, status, password, null, questionnaireScore, questionnairePassed, questionnaireReviewSummary, questionnaireScoredAt);
+    }
 
     boolean registerUserWithStoredPassword(String username, String email, String status, String storedPassword);
 
@@ -60,6 +66,8 @@ public interface UserDao {
     void save();
 
     int countUsersByEmail(String email);
+
+    int countUsersByPhone(String phone);
 
     List<Map<String, Object>> getPendingUsers();
 
