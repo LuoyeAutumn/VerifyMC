@@ -59,8 +59,8 @@ public class SmsService implements AutoCloseable {
         String templateId = configManager.getSmsTemplateId();
         String region = configManager.getSmsRegion();
 
-        if (secretId.isEmpty() || secretKey.isEmpty() || sdkAppId.isEmpty()) {
-            plugin.getLogger().warning("[VerifyMC] SMS configuration is incomplete. Please check sms.secret_id, sms.secret_key, and sms.sdk_app_id in config.yml");
+        if (secretId.isEmpty() || secretKey.isEmpty() || sdkAppId.isEmpty() || signName.isEmpty() || templateId.isEmpty()) {
+            plugin.getLogger().warning("[VerifyMC] SMS configuration is incomplete. Please check sms.secret_id, sms.secret_key, sms.sdk_app_id, sms.sign_name, and sms.template_id in config.yml");
             return CompletableFuture.completedFuture(false);
         }
 
