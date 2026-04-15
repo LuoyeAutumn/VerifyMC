@@ -224,7 +224,7 @@ import { useNotification } from '@/composables/useNotification'
 import { useCooldown } from '@/composables/useCooldown'
 import DiscordLink from '@/components/DiscordLink.vue'
 import QuestionnaireForm from '@/components/QuestionnaireForm.vue'
-import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest, SendSmsCodeResponse } from '@/services/api'
+import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest } from '@/services/api'
 
 import Button from './ui/Button.vue'
 import Input from './ui/Input.vue'
@@ -414,7 +414,7 @@ const validatePhone = () => {
   if (smsEnabled.value && !form.phone) {
     errors.phone = t('register.validation.phone_required')
   } else if (smsEnabled.value && form.phone && phoneRegex.value) {
-    const cleanPhone = form.phone.trim().replace(/[\s\-]/g, '')
+    const cleanPhone = form.phone.trim().replace(/[\s-]/g, '')
     if (!phoneRegex.value.test(cleanPhone)) {
       errors.phone = t('register.validation.phone_format')
     }
@@ -538,7 +538,7 @@ const sendSmsCode = async () => {
   if (errors.phone) return
   smsSending.value = true
   try {
-    const phone = form.phone.trim().replace(/[\s\-]/g, '')
+    const phone = form.phone.trim().replace(/[\s-]/g, '')
     const res = await apiService.sendSmsCode({ phone, countryCode: selectedCountryCode.value, language: locale.value })
     if (res.success) {
       success(t('register.sms_code_sent'))
@@ -574,7 +574,7 @@ const handleSubmit = async () => {
 
     if (emailEnabled.value) registerData.code = form.code
     if (smsEnabled.value) {
-      registerData.phone = form.phone.trim().replace(/[\s\-]/g, '')
+      registerData.phone = form.phone.trim().replace(/[\s-]/g, '')
       registerData.countryCode = selectedCountryCode.value
       registerData.smsCode = form.smsCode
     }

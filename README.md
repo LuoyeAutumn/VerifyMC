@@ -15,39 +15,45 @@ It is designed for communities that want something more structured than editing 
 ## 📝 Key Features
 
 1. 🖥️ **Web Registration Portal**: Players register from a browser instead of joining blind or sending manual applications.
-2. 🔐 **Flexible Verification Flow**: Combine email verification, self-hosted CAPTCHA, optional Discord linking, and optional questionnaires.
+2. 🔐 **Flexible Verification Flow**: Combine email verification, SMS verification (Tencent Cloud), self-hosted CAPTCHA, optional Discord linking, and optional questionnaires.
 3. ✅ **Auto or Manual Approval**: Run a lightweight private-server flow or require staff review for every application.
 4. 🎛️ **Admin Dashboard**: Review pending users, manage accounts, inspect audit logs, and check live server status in one place.
-5. 👤 **Player Self-Service Area**: Logged-in players can access their profile and server downloads from the same web UI.
+5. 👤 **Player Self-Service Area**: Logged-in players can access their profile, change their password, update their email, and download server files from the same web UI.
 6. 📦 **Download Center**: Publish modpacks, resource packs, or client files directly from the dashboard.
 7. 🔐 **AuthMe Integration**: Support password collection, synchronization, and admin password changes when AuthMe is part of your stack.
 8. 🌉 **Bedrock Support**: Works with Geyser/Floodgate style Bedrock prefixes for mixed-platform communities.
 9. 🔗 **Proxy Support**: Optional BungeeCord/Velocity plugin can check whitelist status before players enter your network.
 10. 💾 **Flexible Storage**: Store users in local files or MySQL, with audit records available in file or MySQL storage as well.
 11. 🌍 **Multi-language Support**: Web UI, plugin messages, and mail templates support English and Chinese, with custom i18n files supported.
-12. 🤖 **Questionnaire Scoring**: Score text answers through DeepSeek or Google-compatible LLM endpoints, with concurrency and circuit-breaker controls.
+12. 🤖 **Questionnaire Scoring**: Score text answers through any OpenAI-compatible LLM endpoint (DeepSeek, Google, etc.), with concurrency and circuit-breaker controls.
 13. 🎨 **Modern GlassX UI**: Clean default frontend with announcements, login, registration, player area, and admin area.
 14. 🌐 **External Frontend Hosting**: Serve the frontend from Pages/CDN/Nginx while keeping the plugin API on your Minecraft server.
 15. 🛠️ **In-Game Admin Commands**: Use `/vmc` commands for quick review and moderation tasks in-game.
 16. 🛡️ **Security Hardening**: Includes rate limits, audit trails, hashed passwords, and safer config validation.
+17. 📱 **SMS Verification**: Optional Tencent Cloud SMS verification for phone-based registration flows.
+18. ✉️ **User Notification Emails**: Automatically notify players via email when their application is approved or rejected.
+19. 🔗 **Discord Unlink**: Players can unlink their Discord account; admins can unlink Discord for other users.
+20. 🔔 **Version Check**: Automatic version checking with admin dashboard notifications when updates are available.
+21. 🔒 **Built-in SSL**: Optional HTTPS/WSS support via keystore configuration.
+22. 📧 **Email Domain Whitelist**: Restrict registration to specific email domains, with optional alias detection.
 
 ---
 
 ## 🖼️ Interface Overview
 
 - **Home page**: branding and announcement entry point for new players.
-- **Register page**: username, email/CAPTCHA, optional password, optional questionnaire, and optional Discord flow.
-- **Player dashboard**: profile area and download center.
-- **Admin dashboard**: pending reviews, user management, audit log, and server status.
+- **Register page**: username, email/SMS/CAPTCHA, optional password, optional questionnaire, and optional Discord flow.
+- **Player dashboard**: profile area, password change, email update, and download center.
+- **Admin dashboard**: pending reviews, user management, audit log, server status (TPS, memory, online players), and version update notifications.
 - **Screenshots**: the latest screenshots are maintained in the official documentation so the repository can stay lightweight.
 
 ---
 
 ## ⚙️ What You Configure
 
-- `config.yml`: authentication methods, whitelist mode, SMTP, theme, storage, Discord, downloads, Bedrock settings, and frontend hosting.
+- `config.yml`: authentication methods (email, SMS, CAPTCHA), whitelist mode, SMTP, SMS (Tencent Cloud), SSL, theme, storage, Discord, downloads, Bedrock settings, email domain whitelist, user notifications, frontend hosting, and more.
 - `questionnaire.yml`: question list, answer types (`single_choice`, `multiple_choice`, `text`), pass score, and text scoring rules.
-- `plugin-proxy/config.yml`: backend URL, registration URL, kick message, cache, and language when using the proxy plugin.
+- `plugin-proxy/config.yml`: backend URL, registration URL, kick message (with color codes), cache, timeout, language, auto-update, and backup settings when using the proxy plugin.
 
 ---
 
@@ -71,7 +77,7 @@ It is designed for communities that want something more structured than editing 
 
 ### ⚡ 5-Minute Quick Start
 
-1. Set `auth_methods: [captcha]` in `config.yml` for the fastest setup.
+1. Set `auth_methods: [captcha]` in `config.yml` for the fastest setup. Other options: `[email]`, `[sms]`, or any combination like `[email, captcha]`.
 2. Set `whitelist_mode: plugin` and `web_register_url: https://your-domain.com/`.
 3. If you do not use AuthMe, set `authme.enabled: false`.
 4. Start or restart the server.
@@ -133,6 +139,7 @@ If you want whitelist enforcement before players enter a proxy network:
 - `verifymc.admin.audit`: allow viewing admin audit logs in the web dashboard.
 - `verifymc.admin.sync`: allow triggering admin sync actions from the web dashboard.
 - `verifymc.admin.password`: allow changing user passwords from the web dashboard.
+- `verifymc.admin.unlink`: allow unlinking Discord accounts for other users from the web dashboard.
 
 ### ⚙️ Admin Auth Mode
 
