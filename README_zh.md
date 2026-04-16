@@ -15,7 +15,7 @@
 ## 📝 主要功能
 
 1. 🖥️ **网页注册门户**：玩家通过浏览器注册，无需盲入服务器或发送手动申请。
-2. 🔐 **灵活的验证流程**：组合使用邮箱验证、短信验证、自托管验证码、可选的 Discord 绑定和可选的问卷系统。
+2. 🔐 **灵活的验证流程**：组合使用邮箱验证、短信验证（腾讯云/阿里云）、自托管验证码、可选的 Discord 绑定和可选的问卷系统。
 3. ✅ **自动或手动审核**：运行轻量级私服流程，或要求管理员审核每份申请。
 4. 🎛️ **管理面板**：在一个地方审核待处理用户、管理账户、查看审计日志和实时服务器状态。
 5. 👤 **玩家自助区域**：已登录玩家可以在同一网页界面访问个人资料、修改密码、更新邮箱和下载服务器文件。
@@ -30,7 +30,7 @@
 14. 🌐 **外部前端托管**：从 Pages/CDN/Nginx 提供前端服务，同时将插件 API 保留在 Minecraft 服务器上。
 15. 🛠️ **游戏内管理命令**：使用 `/vmc` 命令在游戏内快速审核和管理。
 16. 🛡️ **安全加固**：包括速率限制、审计追踪、哈希密码和更安全的配置验证。
-17. 📱 **短信验证**：可选的腾讯云短信验证，支持手机号注册流程。
+17. 📱 **短信验证**：可选的腾讯云或阿里云短信验证，支持手机号注册流程。
 18. ✉️ **用户通知邮件**：当申请被审核通过或拒绝时，自动通过邮件通知玩家。
 19. 🔗 **Discord 解绑**：玩家可以解绑自己的 Discord 账号；管理员可以解绑其他用户的 Discord。
 20. 🔔 **版本检查**：自动检查最新版本，管理面板中显示更新通知。
@@ -51,7 +51,7 @@
 
 ## ⚙️ 配置项说明
 
-- `config.yml`：认证方式（邮箱、短信、验证码）、白名单模式、SMTP、短信（腾讯云）、SSL、主题、存储、Discord、下载、基岩版设置、邮箱域名白名单、用户通知、前端托管等。
+- `config.yml`：认证方式（邮箱、短信、验证码）、白名单模式、SMTP、短信（腾讯云/阿里云，支持服务商选择及阿里云 AccessKey 配置）、SSL、主题、存储、Discord、下载、基岩版设置、邮箱域名白名单、用户通知、前端托管等。
 - `questionnaire.yml`：问题列表、答案类型（`single_choice`、`multiple_choice`、`text`）、通过分数和文本评分规则。
 - `plugin-proxy/config.yml`：后端 URL、注册 URL、踢出消息（支持颜色代码）、缓存、超时、语言、自动更新和备份设置（使用代理插件时）。
 
@@ -83,6 +83,65 @@
 4. 启动或重启服务器。
 5. 访问 `http://你的服务器IP:8080`，注册账号，然后给该账号 OP 权限以访问管理面板。
 6. 可选：小型私服可开启 `register.auto_approve: true`。
+
+### 📱 短信验证配置
+
+要使用短信验证，需在 `config.yml` 的 `auth_methods` 列表中添加 `sms`：
+
+```yaml
+auth_methods: [sms]
+# 或与其他验证方式组合使用：
+auth_methods: [email, sms]
+```
+
+然后在 `sms:` 配置节中选择短信服务商并填写凭据。
+
+#### 腾讯云短信
+
+1. 注册 [腾讯云短信](https://cloud.tencent.com/product/sms) 并完成实名认证。
+2. 在短信控制台创建短信应用，获取 `SdkAppId`。
+3. 创建短信签名和验证码模板（模板变量应为纯数字验证码，如 `{1}`）。
+4. 在 [API 密钥管理](https://console.cloud.tencent.com/cam/capi) 获取 `SecretId` 和 `SecretKey`。
+
+配置示例：
+
+```yaml
+sms:
+  provider: tencent
+  secret_id: "your_secret_id"          # 腾讯云 SecretId
+  secret_key: "your_secret_key"        # 腾讯云 SecretKey
+  sdk_app_id: "your_sdk_app_id"        # 短信应用 SdkAppId
+  sign_name: "your_sign_name"          # 已审核通过的短信签名
+  template_id: "your_template_id"      # 已审核通过的模板 ID
+  region: ap-guangzhou                  # API 地域（ap-guangzhou, ap-beijing, ap-shanghai, ap-nanjing）
+```
+
+#### 阿里云短信
+
+1. 注册 [阿里云短信](https://www.aliyun.com/product/sms) 并完成企业认证（个人账号短信功能受限，推荐企业认证）。
+2. 申请短信资质，资质审核通过后创建短信签名和验证码模板。模板变量格式为 `${code}`。
+3. 创建 RAM 用户并授予 `AliyunDysmsFullAccess` 权限，在 RAM 控制台获取 `AccessKey ID` 和 `AccessKey Secret`。
+
+配置示例：
+
+```yaml
+sms:
+  provider: aliyun
+  access_key_id: "your_access_key_id"       # 阿里云 AccessKey ID
+  access_key_secret: "your_access_key_secret" # 阿里云 AccessKey Secret
+  sign_name: "your_sign_name"                # 已审核通过的短信签名
+  template_id: "your_template_code"          # 已审核通过的模板 Code（如 SMS_12345****）
+```
+
+#### 通用短信设置
+
+```yaml
+sms:
+  country_codes: ["+86"]          # 支持的国家/地区区号
+  phone_regex: "^\d{6,15}$"      # 手机号验证正则表达式
+```
+
+> **注意**：短信签名和模板需通过平台审核后方可使用。腾讯云审核通常约 2 小时；阿里云签名/模板审核约 2 小时，资质审核约 2 个工作日，签名实名报备还需额外 5–7 个工作日。
 
 ### 🌍 常见部署模式
 

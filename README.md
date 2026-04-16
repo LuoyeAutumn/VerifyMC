@@ -15,7 +15,7 @@ It is designed for communities that want something more structured than editing 
 ## 📝 Key Features
 
 1. 🖥️ **Web Registration Portal**: Players register from a browser instead of joining blind or sending manual applications.
-2. 🔐 **Flexible Verification Flow**: Combine email verification, SMS verification (Tencent Cloud), self-hosted CAPTCHA, optional Discord linking, and optional questionnaires.
+2. 🔐 **Flexible Verification Flow**: Combine email verification, SMS verification (Tencent Cloud / Alibaba Cloud), self-hosted CAPTCHA, optional Discord linking, and optional questionnaires.
 3. ✅ **Auto or Manual Approval**: Run a lightweight private-server flow or require staff review for every application.
 4. 🎛️ **Admin Dashboard**: Review pending users, manage accounts, inspect audit logs, and check live server status in one place.
 5. 👤 **Player Self-Service Area**: Logged-in players can access their profile, change their password, update their email, and download server files from the same web UI.
@@ -30,7 +30,7 @@ It is designed for communities that want something more structured than editing 
 14. 🌐 **External Frontend Hosting**: Serve the frontend from Pages/CDN/Nginx while keeping the plugin API on your Minecraft server.
 15. 🛠️ **In-Game Admin Commands**: Use `/vmc` commands for quick review and moderation tasks in-game.
 16. 🛡️ **Security Hardening**: Includes rate limits, audit trails, hashed passwords, and safer config validation.
-17. 📱 **SMS Verification**: Optional Tencent Cloud SMS verification for phone-based registration flows.
+17. 📱 **SMS Verification**: Optional SMS verification via Tencent Cloud or Alibaba Cloud for phone-based registration flows.
 18. ✉️ **User Notification Emails**: Automatically notify players via email when their application is approved or rejected.
 19. 🔗 **Discord Unlink**: Players can unlink their Discord account; admins can unlink Discord for other users.
 20. 🔔 **Version Check**: Automatic version checking with admin dashboard notifications when updates are available.
@@ -51,7 +51,7 @@ It is designed for communities that want something more structured than editing 
 
 ## ⚙️ What You Configure
 
-- `config.yml`: authentication methods (email, SMS, CAPTCHA), whitelist mode, SMTP, SMS (Tencent Cloud), SSL, theme, storage, Discord, downloads, Bedrock settings, email domain whitelist, user notifications, frontend hosting, and more.
+- `config.yml`: authentication methods (email, SMS, CAPTCHA), whitelist mode, SMTP, SMS (Tencent Cloud / Alibaba Cloud, with provider selection and Alibaba Cloud AccessKey), SSL, theme, storage, Discord, downloads, Bedrock settings, email domain whitelist, user notifications, frontend hosting, and more.
 - `questionnaire.yml`: question list, answer types (`single_choice`, `multiple_choice`, `text`), pass score, and text scoring rules.
 - `plugin-proxy/config.yml`: backend URL, registration URL, kick message (with color codes), cache, timeout, language, auto-update, and backup settings when using the proxy plugin.
 
@@ -83,6 +83,65 @@ It is designed for communities that want something more structured than editing 
 4. Start or restart the server.
 5. Open `http://your-server-ip:8080`, register an account, and grant that account OP to access the admin dashboard.
 6. Optional: enable `register.auto_approve: true` for a small private community.
+
+### 📱 SMS Verification Configuration
+
+To use SMS verification, add `sms` to the `auth_methods` list in `config.yml`:
+
+```yaml
+auth_methods: [sms]
+# Or combine with other methods:
+auth_methods: [email, sms]
+```
+
+Then configure the SMS provider and credentials under the `sms:` section.
+
+#### Tencent Cloud SMS
+
+1. Sign up for [Tencent Cloud SMS](https://cloud.tencent.com/product/sms) and complete identity verification.
+2. Create a SMS application in the SMS console to obtain `SdkAppId`.
+3. Create a SMS signature and a verification code template (the template variable should be a numeric code, e.g., `{1}`).
+4. Obtain your `SecretId` and `SecretKey` from [API Key Management](https://console.cloud.tencent.com/cam/capi).
+
+Configuration:
+
+```yaml
+sms:
+  provider: tencent
+  secret_id: "your_secret_id"          # Tencent Cloud SecretId
+  secret_key: "your_secret_key"        # Tencent Cloud SecretKey
+  sdk_app_id: "your_sdk_app_id"        # SMS application SdkAppId
+  sign_name: "your_sign_name"          # Approved SMS signature name
+  template_id: "your_template_id"      # Approved template ID
+  region: ap-guangzhou                  # API region (ap-guangzhou, ap-beijing, ap-shanghai, ap-nanjing)
+```
+
+#### Alibaba Cloud SMS
+
+1. Sign up for [Alibaba Cloud SMS](https://www.aliyun.com/product/sms) and complete enterprise certification (personal accounts have limited SMS capabilities).
+2. Apply for SMS qualification, then create a SMS signature and a verification code template. The template variable format is `${code}`.
+3. Create a RAM user with `AliyunDysmsFullAccess` permission and obtain `AccessKey ID` and `AccessKey Secret` from the RAM console.
+
+Configuration:
+
+```yaml
+sms:
+  provider: aliyun
+  access_key_id: "your_access_key_id"       # Alibaba Cloud AccessKey ID
+  access_key_secret: "your_access_key_secret" # Alibaba Cloud AccessKey Secret
+  sign_name: "your_sign_name"                # Approved SMS signature name
+  template_id: "your_template_code"          # Approved template Code (e.g., SMS_12345****)
+```
+
+#### Common SMS Settings
+
+```yaml
+sms:
+  country_codes: ["+86"]          # Supported country/region codes
+  phone_regex: "^\d{6,15}$"      # Phone number validation regex
+```
+
+> **Note**: SMS signatures and templates require platform review and approval before use. Tencent Cloud review typically takes about 2 hours; Alibaba Cloud review takes about 2 hours for signatures/templates, and qualification review takes about 2 business days. Alibaba Cloud signature real-name registration may take an additional 5–7 business days.
 
 ### 🌍 Common Deployment Modes
 

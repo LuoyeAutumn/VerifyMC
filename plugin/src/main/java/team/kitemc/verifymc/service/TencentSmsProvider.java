@@ -168,9 +168,5 @@ public class TencentSmsProvider implements SmsProvider {
 
     @Override
     public void close() {
-        try {
-            httpClient.close();
-        } catch (NoSuchMethodError ignored) {
-        }
     }
 }

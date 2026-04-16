@@ -130,10 +130,6 @@ public class AliyunSmsProvider implements SmsProvider {
 
     @Override
     public void close() {
-        try {
-            httpClient.close();
-        } catch (NoSuchMethodError ignored) {
-        }
     }
 
     private void debugLog(String msg) {
