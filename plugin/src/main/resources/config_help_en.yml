@@ -111,6 +111,17 @@ smtp:
 email_subject: VerifyMC Verification Code
 
 # ----------------------------------------
+# SMS
+# ----------------------------------------
+# SMS service provider, either tencent (Tencent Cloud) or aliyun (Alibaba Cloud), default tencent
+sms:
+  provider: tencent
+  # Alibaba Cloud AccessKey ID (used only when provider is aliyun)
+  access_key_id: ""
+  # Alibaba Cloud AccessKey Secret (used only when provider is aliyun)
+  access_key_secret: ""
+
+# ----------------------------------------
 # Auto Update Resources
 # ----------------------------------------
 # If true, automatically updates i18n files, email templates, and static theme files when the plugin starts.

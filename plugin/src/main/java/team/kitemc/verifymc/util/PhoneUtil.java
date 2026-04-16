@@ -1,8 +1,11 @@
 package team.kitemc.verifymc.util;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public class PhoneUtil {
+
+    private static final ConcurrentHashMap<String, Pattern> patternCache = new ConcurrentHashMap<>();
 
     public static String maskPhone(String phone) {
         if (phone == null || phone.length() < 7) return "****";
@@ -24,9 +27,14 @@ public class PhoneUtil {
         String cleaned = normalizePhoneNumber(phone);
         if (cleaned.isEmpty()) return false;
         try {
-            return Pattern.compile(phoneRegex).matcher(cleaned).matches();
+            Pattern pattern = patternCache.computeIfAbsent(phoneRegex, Pattern::compile);
+            return pattern.matcher(cleaned).matches();
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public static void clearPatternCache() {
+        patternCache.clear();
     }
 }

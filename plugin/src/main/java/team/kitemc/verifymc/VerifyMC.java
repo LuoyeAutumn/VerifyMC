@@ -178,7 +178,19 @@ public class VerifyMC extends JavaPlugin {
         // Verify code service
         context.setVerifyCodeService(new VerifyCodeService(this));
         if (context.getConfigManager().isSmsAuthEnabled()) {
-            context.setSmsService(new SmsService(this, context.getConfigManager()));
+            String smsProvider = context.getConfigManager().getSmsProvider();
+            SmsProvider provider;
+            if ("aliyun".equalsIgnoreCase(smsProvider)) {
+                provider = new AliyunSmsProvider(this, context.getConfigManager());
+                log.info("[VerifyMC] Using Aliyun SMS provider.");
+            } else {
+                if (!"tencent".equalsIgnoreCase(smsProvider)) {
+                    log.warning("[VerifyMC] Unknown SMS provider: " + smsProvider + ". Falling back to tencent.");
+                }
+                provider = new TencentSmsProvider(this, context.getConfigManager());
+                log.info("[VerifyMC] Using Tencent SMS provider.");
+            }
+            context.setSmsService(new SmsService(this, context.getConfigManager(), provider));
         }
 
         // AuthMe service
@@ -203,6 +215,13 @@ public class VerifyMC extends JavaPlugin {
 
         // Captcha service
         context.setCaptchaService(new CaptchaService(this));
+
+        // Schedule SMS IP rate limit cleanup
+        if (context.getConfigManager().isSmsAuthEnabled()) {
+            scheduledTasks.add(FoliaCompat.runTaskTimerAsync(this, () -> {
+                SmsVerifyCodeHandler.cleanup();
+            }, 6000L, 6000L));
+        }
 
         // Questionnaire service
         context.setQuestionnaireService(new QuestionnaireService(this));

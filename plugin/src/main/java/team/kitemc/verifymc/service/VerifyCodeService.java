@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import team.kitemc.verifymc.util.EmailAddressUtil;
-import team.kitemc.verifymc.web.handler.SmsVerifyCodeHandler;
 
 public class VerifyCodeService {
     private static final int MAX_ATTEMPTS = 5;
@@ -89,8 +88,6 @@ public class VerifyCodeService {
             }
             return expired;
         });
-
-        SmsVerifyCodeHandler.cleanup();
 
         debugLog("Cleanup completed. Active codes: " + codeMap.size() + ", Active rate limits: " + rateLimitMap.size() + ", Active SMS codes: " + smsCodeMap.size() + ", Active SMS rate limits: " + smsRateLimitMap.size());
     }

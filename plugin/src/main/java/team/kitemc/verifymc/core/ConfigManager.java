@@ -96,6 +96,15 @@ public class ConfigManager {
             }
         }
 
+        String smsProvider = getSmsProvider();
+        if (!"tencent".equalsIgnoreCase(smsProvider) && !"aliyun".equalsIgnoreCase(smsProvider)) {
+            plugin.getLogger().log(Level.WARNING,
+                "Invalid sms.provider: {0}. Must be one of: tencent, aliyun. Using default ''tencent''.",
+                smsProvider);
+            getConfig().set("sms.provider", "tencent");
+            plugin.saveConfig();
+        }
+
         plugin.getLogger().log(Level.INFO, "Configuration validated successfully");
     }
 
@@ -248,6 +257,18 @@ public class ConfigManager {
     }
 
     // --- SMS ---
+    public String getSmsProvider() {
+        return getConfig().getString("sms.provider", "tencent");
+    }
+
+    public String getSmsAccessKeyId() {
+        return getConfig().getString("sms.access_key_id", "");
+    }
+
+    public String getSmsAccessKeySecret() {
+        return getConfig().getString("sms.access_key_secret", "");
+    }
+
     public String getSmsSecretId() {
         return getConfig().getString("sms.secret_id", "");
     }

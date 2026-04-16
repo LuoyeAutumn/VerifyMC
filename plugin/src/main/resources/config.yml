@@ -38,8 +38,11 @@ smtp:
   from: your_email@qq.com
   enable_ssl: true
 sms:
+  provider: tencent
   secret_id: ""
   secret_key: ""
+  access_key_id: ""
+  access_key_secret: ""
   sdk_app_id: ""
   sign_name: ""
   template_id: ""

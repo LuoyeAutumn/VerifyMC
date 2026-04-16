@@ -121,6 +121,7 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
         ctx.getConfigManager().reloadConfig();
         ctx.getI18nManager().clearCache();
         ctx.getI18nManager().init(ctx.getConfigManager().getLanguage());
+        team.kitemc.verifymc.util.PhoneUtil.clearPatternCache();
         sender.sendMessage("§6[VerifyMC] §aConfiguration reloaded.");
     }
 
