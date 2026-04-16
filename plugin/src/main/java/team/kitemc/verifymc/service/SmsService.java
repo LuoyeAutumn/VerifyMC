@@ -196,9 +196,7 @@ public class SmsService implements AutoCloseable {
 
     @Override
     public void close() {
-        try {
-            httpClient.close();
-        } catch (Exception ignored) {}
+        // HttpClient.close() requires Java 21+; on Java 17 the JVM manages its lifecycle
     }
 
     private static String maskPhone(String phone) {
