@@ -18,36 +18,42 @@
 2. 🔐 **灵活的验证流程**：组合使用邮箱验证、自托管验证码、可选的 Discord 绑定和可选的问卷系统。
 3. ✅ **自动或手动审核**：运行轻量级私服流程，或要求管理员审核每份申请。
 4. 🎛️ **管理面板**：在一个地方审核待处理用户、管理账户、查看审计日志和实时服务器状态。
-5. 👤 **玩家自助区域**：已登录玩家可以在同一网页界面访问个人资料和服务器下载。
+5. 👤 **玩家自助区域**：已登录玩家可以在同一网页界面访问个人资料、修改密码、更新邮箱和下载服务器文件。
 6. 📦 **下载中心**：直接从管理面板发布整合包、资源包或客户端文件。
 7. 🔐 **AuthMe 集成**：当 AuthMe 是你技术栈的一部分时，支持密码收集、同步和管理员密码修改。
 8. 🌉 **基岩版支持**：支持 Geyser/Floodgate 风格的基岩版前缀，适用于混合平台社区。
 9. 🔗 **代理支持**：可选的 BungeeCord/Velocity 插件可在玩家进入网络之前检查白名单状态。
 10. 💾 **灵活存储**：将用户数据存储在本地文件或 MySQL 中，审计记录也可存储在文件或 MySQL 中。
 11. 🌍 **多语言支持**：网页界面、插件消息和邮件模板支持中英文，并支持自定义 i18n 文件。
-12. 🤖 **问卷评分**：通过 DeepSeek 或 Google 兼容的 LLM 端点对文本答案进行评分，内置并发和熔断器控制。
+12. 🤖 **问卷评分**：通过任何 OpenAI 兼容的 LLM 端点（DeepSeek、Google 等）对文本答案进行评分，内置并发和熔断器控制。
 13. 🎨 **现代 GlassX 界面**：简洁的默认前端，包含公告、登录、注册、玩家区域和管理区域。
 14. 🌐 **外部前端托管**：从 Pages/CDN/Nginx 提供前端服务，同时将插件 API 保留在 Minecraft 服务器上。
 15. 🛠️ **游戏内管理命令**：使用 `/vmc` 命令在游戏内快速审核和管理。
 16. 🛡️ **安全加固**：包括速率限制、审计追踪、哈希密码和更安全的配置验证。
+17. 📱 **短信验证**：可选的腾讯云或阿里云短信验证，支持手机号注册流程。
+18. ✉️ **用户通知邮件**：当申请被审核通过或拒绝时，自动通过邮件通知玩家。
+19. 🔗 **Discord 解绑**：玩家可以解绑自己的 Discord 账号；管理员可以解绑其他用户的 Discord。
+20. 🔔 **版本检查**：自动检查最新版本，管理面板中显示更新通知。
+21. 🔒 **内置 SSL**：通过 keystore 配置可选的 HTTPS/WSS 支持。
+22. 📧 **邮箱域名白名单**：限制特定邮箱域名注册，可选别名检测。
 
 ---
 
 ## 🖼️ 界面概览
 
 - **首页**：面向新玩家的品牌展示和公告入口。
-- **注册页**：用户名、邮箱/验证码、可选密码、可选问卷和可选 Discord 流程。
-- **玩家面板**：个人资料区域和下载中心。
-- **管理面板**：待审核列表、用户管理、审计日志和服务器状态。
+- **注册页**：用户名、邮箱/短信/验证码、可选密码、可选问卷和可选 Discord 流程。
+- **玩家面板**：个人资料区域、修改密码、更新邮箱和下载中心。
+- **管理面板**：待审核列表、用户管理、审计日志、服务器状态（TPS、内存、在线玩家）和版本更新通知。
 - **截图**：最新截图维护在官方文档中，以保持仓库轻量。
 
 ---
 
 ## ⚙️ 配置项说明
 
-- `config.yml`：认证方式、白名单模式、SMTP、主题、存储、Discord、下载、基岩版设置和前端托管。
+- `config.yml`：认证方式（邮箱、验证码）、白名单模式、SMTP、SSL、主题、存储、Discord、下载、基岩版设置、邮箱域名白名单、用户通知、前端托管等。
 - `questionnaire.yml`：问题列表、答案类型（`single_choice`、`multiple_choice`、`text`）、通过分数和文本评分规则。
-- `plugin-proxy/config.yml`：后端 URL、注册 URL、踢出消息、缓存和语言（使用代理插件时）。
+- `plugin-proxy/config.yml`：后端 URL、注册 URL、踢出消息（支持颜色代码）、缓存、超时、语言、自动更新和备份设置（使用代理插件时）。
 
 ---
 
@@ -71,7 +77,7 @@
 
 ### ⚡ 5 分钟快速开始
 
-1. 在 `config.yml` 中设置 `auth_methods: [captcha]`（最快启动方式）。
+1. 在 `config.yml` 中设置 `auth_methods: [captcha]`（最快启动方式）。其他选项：`[email]`，或组合如 `[email, captcha]`。
 2. 设置 `whitelist_mode: plugin` 和 `web_register_url: https://your-domain.com/`。
 3. 如果不使用 AuthMe，设置 `authme.enabled: false`。
 4. 启动或重启服务器。
@@ -89,10 +95,11 @@
 默认情况下，VerifyMC 自行提供构建的前端服务。如果你想将静态 `glassx` 文件托管在 Cloudflare Pages、GitHub Pages、CDN 或 Nginx 上，同时将 API 保留在插件服务器上：
 
 1. 在 `config.yml` 中设置 `frontend.serve_static: false`。
-2. 将 `frontend.allowed_origin` 设置为确切的前端源，例如 `https://your-pages-domain.pages.dev`。
-3. 在构建 `frontend/glassx` 之前，将 `VITE_BOOTSTRAP_API_BASE` 设置为插件 HTTP 基础 URL，例如 `https://mc.example.com:8080`。
-4. 不要在 `VITE_BOOTSTRAP_API_BASE` 后追加 `/api`；前端会自动派生 API 和 WebSocket URL。
-5. 构建 `frontend/glassx` 并将生成的 `dist/` 文件部署到你的静态主机。
+2. 将 `frontend.allowed_origins` 设置为前端源列表，例如 `['https://your-pages-domain.pages.dev']`。
+3. 如需匹配单层子域名，可使用 `https://*.example.com` 这种写法；所有匹配都会忽略端口。
+4. 在构建 `frontend/glassx` 之前，将 `VITE_BOOTSTRAP_API_BASE` 设置为插件 HTTP 基础 URL，例如 `https://mc.example.com:8080`。
+5. 不要在 `VITE_BOOTSTRAP_API_BASE` 后追加 `/api`；前端会自动派生 API 和 WebSocket URL。
+6. 构建 `frontend/glassx` 并将生成的 `dist/` 文件部署到你的静态主机。
 
 在此模式下，页面和资源从你的静态主机加载，而 API 和 WebSocket 流量仍然发送到 VerifyMC 插件服务器。
 
@@ -133,6 +140,7 @@
 - `verifymc.admin.audit`：允许在网页管理面板查看管理员审计日志。
 - `verifymc.admin.sync`：允许从网页管理面板触发管理员同步操作。
 - `verifymc.admin.password`：允许从网页管理面板修改用户密码。
+- `verifymc.admin.unlink`：允许从网页管理面板解绑其他用户的 Discord 账号。
 
 ### ⚙️ 管理员认证模式
 
@@ -177,8 +185,8 @@ mvn clean package
 
 构建产物：
 
-- 主插件 jar：`plugin/target/verifymc-1.7.5.jar`
-- 代理插件 jar：`plugin-proxy/target/verifymc-proxy-1.7.5.jar`
+- 主插件 jar：`plugin/target/verifymc-1.7.8.jar`
+- 代理插件 jar：`plugin-proxy/target/verifymc-proxy-1.7.8.jar`
 - 前端包：`frontend/glassx/dist/`
 
 ---

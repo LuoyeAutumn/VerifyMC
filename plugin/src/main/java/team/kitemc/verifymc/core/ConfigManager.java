@@ -7,6 +7,7 @@ import team.kitemc.verifymc.security.AdminAuthMode;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -175,7 +176,7 @@ public class ConfigManager {
 
     // --- Frontend ---
     public String getTheme() {
-        return getConfig().getString("frontend.theme", "default");
+        return getConfig().getString("frontend.theme", "glassx");
     }
 
     public String getLogoUrl() {
@@ -190,8 +191,15 @@ public class ConfigManager {
         return getConfig().getBoolean("frontend.serve_static", true);
     }
 
-    public String getAllowedOrigin() {
-        return getConfig().getString("frontend.allowed_origin", "").trim();
+    public List<String> getAllowedOrigins() {
+        List<String> origins = getConfig().getStringList("frontend.allowed_origins");
+        if (origins == null || origins.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return origins.stream()
+            .map(origin -> origin == null ? "" : origin.trim())
+            .filter(origin -> !origin.isEmpty())
+            .toList();
     }
 
     public String getUsernameRegex() {
@@ -281,7 +289,7 @@ public class ConfigManager {
     }
 
     public String getBedrockUsernameRegex() {
-        return getConfig().getString("bedrock.username_regex", "^\\\\.[a-zA-Z0-9_\\\\s]{3,16}$");
+        return getConfig().getString("bedrock.username_regex", "^[a-zA-Z0-9._-]{3,15}$");
     }
 
     // --- Registration ---

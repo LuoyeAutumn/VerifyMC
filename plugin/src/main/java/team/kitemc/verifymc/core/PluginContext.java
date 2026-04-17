@@ -109,4 +109,8 @@ public class PluginContext {
     public String getMessage(String key, String language) {
         return i18nManager.getMessage(key, language);
     }
+
+    public void shutdown() {
+        // No-op for now. Reserved for future shutdown hooks.
+    }
 }

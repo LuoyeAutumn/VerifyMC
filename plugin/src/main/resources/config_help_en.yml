@@ -90,12 +90,14 @@ frontend:
   # Whether the plugin should serve static frontend files itself.
   # Set this to false if you deploy frontend/glassx/dist on another origin.
   serve_static: true
-  # The exact frontend origin allowed to access the API cross-origin.
-  # Example: https://your-pages-domain.pages.dev
+  # List of frontend origins allowed to access the API cross-origin.
+  # Supports exact matches, for example: https://your-pages-domain.pages.dev
+  # Also supports single-level subdomain wildcards, for example: https://*.example.com
+  # All matching ignores ports; wildcards only match one subdomain level.
   # When using an external frontend, also build it with VITE_BOOTSTRAP_API_BASE
   # pointing to this plugin's HTTP base URL (without /api).
-  # Leave empty to disable cross-origin API access.
-  allowed_origin: ""
+  # Leave the list empty to allow all cross-origin access.
+  allowed_origins: []
 
 # ----------------------------------------
 # Email (SMTP)
@@ -146,6 +148,10 @@ mysql:
   database: verifymc
   user: root
   password: yourpassword 
+  # Whether to enable SSL for the main MySQL connection
+  useSSL: true
+  # Whether to allow public key retrieval (may be required in some MySQL 8 environments)
+  allowPublicKeyRetrieval: false
 
 # ----------------------------------------
 # Authme Integration Configuration
@@ -169,6 +175,10 @@ authme:
       database: authme
       user: root
       password: yourpassword
+      # Whether to enable SSL for the AuthMe MySQL connection
+      useSSL: true
+      # Whether to allow public key retrieval (may be required in some MySQL 8 environments)
+      allowPublicKeyRetrieval: false
     sqlite:
       path: plugins/AuthMe/authme.db
     columns:
@@ -233,7 +243,7 @@ bedrock:
   enabled: false
   # Prefix for bedrock players (commonly "." for Floodgate)
   prefix: "."
-  # Regex for bedrock usernames
+  # Regex for the raw bedrock username only, without the auto-prefixed marker
   username_regex: "^[a-zA-Z0-9._-]{3,15}$"
 
 # ----------------------------------------

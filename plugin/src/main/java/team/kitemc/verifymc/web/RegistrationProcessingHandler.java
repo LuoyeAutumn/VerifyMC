@@ -239,8 +239,6 @@ public class RegistrationProcessingHandler implements HttpHandler {
         List<String> authMethods = plugin.getConfig().getStringList("auth_methods");
         boolean useCaptcha = authMethods.contains("captcha");
         boolean useEmail = authMethods.contains("email");
-
-        // If no auth methods configured, skip verification
         if (!useCaptcha && !useEmail) {
             return RegistrationValidationResult.pass();
         }

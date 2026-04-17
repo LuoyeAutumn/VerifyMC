@@ -29,7 +29,7 @@ frontend:
   logo_url: /logo.png
   announcement: Welcome to [ Name ]!
   serve_static: true
-  allowed_origin: ""
+  allowed_origins: []
 smtp:
   host: smtp.qq.com
   port: 587
@@ -58,13 +58,15 @@ mysql:
     database: verifymc
     user: root
     password: yourpassword
+    useSSL: true
+    allowPublicKeyRetrieval: false
 authme:
   enabled: true
   password_regex: "^[a-zA-Z0-9_]{8,26}$"
   database:
     type: sqlite
     table: authme
-    # 直写密码格式仅支持 sha256，盐长度固定为 16
+    # 密码格式仅支持 sha256，盐长度固定为 16
     sync_interval_seconds: 30
     mysql:
       host: 127.0.0.1
@@ -72,6 +74,8 @@ authme:
       database: authme
       user: root
       password: yourpassword
+      useSSL: true
+      allowPublicKeyRetrieval: false
     sqlite:
       path: plugins/AuthMe/authme.db
     columns:

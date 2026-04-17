@@ -115,6 +115,7 @@ public class VerifyMC extends JavaPlugin {
             if (context.getCaptchaService() != null) {
                 context.getCaptchaService().stop();
             }
+            context.shutdown();
         }
 
         // Save and close data access layer
@@ -174,7 +175,6 @@ public class VerifyMC extends JavaPlugin {
 
         // Verify code service
         context.setVerifyCodeService(new VerifyCodeService(this));
-
         // AuthMe service
         AuthmeService authmeService = new AuthmeService(this);
         authmeService.setUserDao(context.getUserDao());

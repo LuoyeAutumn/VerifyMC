@@ -13,8 +13,6 @@ export default defineConfig({
   },
   plugins: [
     vue({
-      // Enable performance optimizations
-      reactivityTransform: true,
       template: {
         compilerOptions: {
           // Enable hoisting for better performance
@@ -49,8 +47,9 @@ export default defineConfig({
         },
         // Optimize asset naming
         assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split('.')
-          const ext = info[info.length - 1]
+          const name = assetInfo.name ?? ""
+          const info = name.split('.')
+          const ext = info[info.length - 1] ?? ""
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
             return `images/[name]-[hash][extname]`
           }

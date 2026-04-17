@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 import team.kitemc.verifymc.core.PluginContext;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Wraps API handlers with the configured CORS policy.
@@ -20,12 +21,12 @@ public class CorsHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String allowedOrigin = ctx.getConfigManager().getAllowedOrigin();
-        if (CorsSupport.handlePreflight(exchange, allowedOrigin)) {
+        List<String> allowedOrigins = ctx.getConfigManager().getAllowedOrigins();
+        if (CorsSupport.handlePreflight(ctx, exchange, allowedOrigins)) {
             return;
         }
 
-        CorsSupport.applyCorsHeaders(exchange, allowedOrigin);
+        CorsSupport.applyCorsHeaders(ctx, exchange, allowedOrigins);
         delegate.handle(exchange);
     }
 }

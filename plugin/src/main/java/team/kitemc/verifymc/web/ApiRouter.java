@@ -39,7 +39,6 @@ public class ApiRouter {
 
         // --- Email verification ---
         registerApiRoute(server, "/api/verify/send", new VerifyCodeHandler(ctx));
-
         // --- Questionnaire endpoints ---
         registerApiRoute(server, "/api/questionnaire/config", new QuestionnaireConfigHandler(ctx));
         registerApiRoute(server, "/api/questionnaire/submit", new QuestionnaireSubmitHandler(ctx, questionnaireSubmissionStore));
@@ -109,7 +108,7 @@ public class ApiRouter {
 
         // --- Static files (front-end) ---
         if (ctx.getConfigManager().isServeStaticEnabled()) {
-            server.createContext("/", new StaticFileHandler(ctx));
+            server.createContext("/", new CorsHandler(ctx, new StaticFileHandler(ctx)));
         }
     }
 

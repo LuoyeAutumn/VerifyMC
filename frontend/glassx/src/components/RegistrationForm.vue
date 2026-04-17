@@ -104,10 +104,10 @@
                   type="button"
                   variant="secondary"
                   @click="sendCode"
-                  :disabled="sending || !form.email || cooldownSeconds > 0"
+                  :disabled="sending || !form.email || emailCooldownSeconds > 0"
                   class="whitespace-nowrap"
                 >
-                  {{ sending ? $t('register.sending') : cooldownSeconds > 0 ? `${cooldownSeconds}s` : $t('register.sendCode') }}
+                  {{ sending ? $t('register.sending') : emailCooldownSeconds > 0 ? `${emailCooldownSeconds}s` : $t('register.sendCode') }}
                 </Button>
               </div>
               <p v-if="errors.code" class="mt-1 text-sm text-red-400">{{ errors.code }}</p>
@@ -175,6 +175,7 @@ import { ref, computed, reactive, onMounted, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { apiService } from '@/services/api'
 import { useNotification } from '@/composables/useNotification'
+import { useCooldown } from '@/composables/useCooldown'
 import DiscordLink from '@/components/DiscordLink.vue'
 import QuestionnaireForm from '@/components/QuestionnaireForm.vue'
 import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest } from '@/services/api'
@@ -411,29 +412,14 @@ const onQuestionnairePassed = async (result: QuestionnaireSubmission) => {
   await handleSubmit()
 }
 
-const cooldownSeconds = ref(0)
-const cooldownTimer = ref<ReturnType<typeof setInterval> | null>(null)
-const startCooldown = (seconds: number) => {
-  cooldownSeconds.value = seconds
-  if (cooldownTimer.value) clearInterval(cooldownTimer.value)
-  cooldownTimer.value = setInterval(() => {
-    cooldownSeconds.value--
-    if (cooldownSeconds.value <= 0) {
-      clearInterval(cooldownTimer.value!)
-      cooldownTimer.value = null
-    }
-  }, 1000)
-}
+const { cooldownSeconds: emailCooldownSeconds, startCooldown: startEmailCooldown, stopCooldown: stopEmailCooldown } = useCooldown()
 
 onUnmounted(() => {
-  if (cooldownTimer.value) {
-    clearInterval(cooldownTimer.value)
-    cooldownTimer.value = null
-  }
+  stopEmailCooldown()
 })
 
 const sendCode = async () => {
-  if (sending.value || cooldownSeconds.value > 0) return
+  if (sending.value || emailCooldownSeconds.value > 0) return
   validateEmail()
   if (errors.email) return
   sending.value = true
@@ -442,9 +428,9 @@ const sendCode = async () => {
     const res = await apiService.sendCode({ email, language: locale.value })
     if (res.success) {
       success(t('register.codeSent'))
-      startCooldown(60)
+      startEmailCooldown(60)
     } else if (res.remainingSeconds && res.remainingSeconds > 0) {
-      startCooldown(res.remainingSeconds)
+      startEmailCooldown(res.remainingSeconds)
       error(res.message || t('register.sendFailed'))
     } else {
       error(res.message || t('register.sendFailed'))
