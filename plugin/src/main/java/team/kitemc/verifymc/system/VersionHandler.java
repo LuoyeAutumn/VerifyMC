@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import org.bukkit.plugin.Plugin;
 import org.json.JSONObject;
-import team.kitemc.verifymc.system.VersionCheckService;
 import team.kitemc.verifymc.platform.WebResponseHelper;
 
 /**

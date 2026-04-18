@@ -1,7 +1,5 @@
 package team.kitemc.verifymc.platform;
 
-import team.kitemc.verifymc.platform.ConfigManager;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;

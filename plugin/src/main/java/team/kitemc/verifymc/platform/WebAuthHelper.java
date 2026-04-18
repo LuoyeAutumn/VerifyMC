@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.plugin.Plugin;
 import org.json.JSONObject;
-import team.kitemc.verifymc.platform.I18nManager;
 
 public class WebAuthHelper {
     private static final long TOKEN_EXPIRY_TIME = 3600000;
