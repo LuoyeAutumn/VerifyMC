@@ -18,6 +18,7 @@ whitelist_mode: plugin
 web_register_url: https://domain.com/
 register:
   auto_approve: false
+# Java 版用户名直接匹配该正则；基岩版会先去掉前缀，再用原始用户名匹配该正则。
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 username_case_sensitive: false
 user_notification:
@@ -105,7 +106,6 @@ captcha:
 bedrock:
   enabled: false
   prefix: "."
-  username_regex: "^[a-zA-Z0-9._-]{3,15}$"
 questionnaire:
   enabled: false
   pass_score: 60

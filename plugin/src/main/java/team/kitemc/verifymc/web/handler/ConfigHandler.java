@@ -62,7 +62,6 @@ public class ConfigHandler implements HttpHandler {
         JSONObject bedrockConfig = new JSONObject();
         bedrockConfig.put("enabled", ctx.getConfigManager().isBedrockEnabled());
         bedrockConfig.put("prefix", ctx.getConfigManager().getBedrockPrefix());
-        bedrockConfig.put("usernameRegex", ctx.getConfigManager().getBedrockUsernameRegex());
         config.put("bedrock", bedrockConfig);
 
         if (ctx.getConfigManager().isEmailDomainWhitelistEnabled()) {

@@ -12,13 +12,11 @@ import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 /**
  * Bans a user — updates status and removes from whitelist.
  */
 public class AdminUserBanHandler implements HttpHandler {
-    private static final Pattern VALID_USERNAME = Pattern.compile("^[a-zA-Z0-9_.\\-\\s]{1,32}$");
     private final PluginContext ctx;
 
     public AdminUserBanHandler(PluginContext ctx) {
@@ -52,7 +50,7 @@ public class AdminUserBanHandler implements HttpHandler {
         }
 
         // Validate username format to prevent command injection
-        if (!VALID_USERNAME.matcher(target).matches()) {
+        if (!ctx.getUsernameRuleService().canOperateAdminTarget(target, ctx.getUserDao())) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("admin.invalid_username", language)));
             return;

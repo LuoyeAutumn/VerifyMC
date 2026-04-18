@@ -4,7 +4,34 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.util.EmailAddressUtil;
-import team.kitemc.verifymc.web.handler.*;
+import team.kitemc.verifymc.web.handler.AdminAuditHandler;
+import team.kitemc.verifymc.web.handler.AdminSyncHandler;
+import team.kitemc.verifymc.web.handler.AdminUserApproveHandler;
+import team.kitemc.verifymc.web.handler.AdminUserBanHandler;
+import team.kitemc.verifymc.web.handler.AdminUserDeleteHandler;
+import team.kitemc.verifymc.web.handler.AdminUserListHandler;
+import team.kitemc.verifymc.web.handler.AdminUserPasswordHandler;
+import team.kitemc.verifymc.web.handler.AdminUserRejectHandler;
+import team.kitemc.verifymc.web.handler.AdminUserUnbanHandler;
+import team.kitemc.verifymc.web.handler.AdminVerifyHandler;
+import team.kitemc.verifymc.web.handler.CaptchaHandler;
+import team.kitemc.verifymc.web.handler.ConfigHandler;
+import team.kitemc.verifymc.web.handler.DiscordAuthHandler;
+import team.kitemc.verifymc.web.handler.DiscordCallbackHandler;
+import team.kitemc.verifymc.web.handler.DiscordStatusHandler;
+import team.kitemc.verifymc.web.handler.DiscordUnlinkHandler;
+import team.kitemc.verifymc.web.handler.DownloadsHandler;
+import team.kitemc.verifymc.web.handler.LoginHandler;
+import team.kitemc.verifymc.web.handler.QuestionnaireConfigHandler;
+import team.kitemc.verifymc.web.handler.QuestionnaireSubmitHandler;
+import team.kitemc.verifymc.web.handler.ReviewStatusHandler;
+import team.kitemc.verifymc.web.handler.ServerStatusHandler;
+import team.kitemc.verifymc.web.handler.StaticFileHandler;
+import team.kitemc.verifymc.web.handler.UserPasswordHandler;
+import team.kitemc.verifymc.web.handler.UserStatusHandler;
+import team.kitemc.verifymc.web.handler.UserUpdateHandler;
+import team.kitemc.verifymc.web.handler.VerifyCodeHandler;
+import team.kitemc.verifymc.web.handler.VersionHandler;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -56,11 +83,9 @@ public class ApiRouter {
                 questionnaireSubmissionStore,
                 () -> ctx.getConfigManager().getEmailDomainWhitelist(),
                 (key, lang) -> ctx.getMessage(key, lang),
-                (username, platform) -> resolveUsernameRegex(username, platform),
-                (username, platform) -> isValidUsername(username, platform),
                 (username) -> hasUsernameCaseConflict(username),
                 () -> ctx.getConfigManager().isUsernameCaseSensitive(),
-                (username, platform) -> normalizeUsername(username, platform),
+                ctx.getUsernameRuleService(),
                 (email) -> isValidEmail(email),
                 (msg) -> ctx.debugLog(msg)
         ));
@@ -118,19 +143,6 @@ public class ApiRouter {
 
     // --- Utility methods used by route wiring (delegated from WebServer) ---
 
-    private boolean isValidUsername(String username, String platform) {
-        if (username == null || username.trim().isEmpty()) return false;
-        String regex = resolveUsernameRegex(username, platform);
-        return username.matches(regex);
-    }
-
-    private String resolveUsernameRegex(String username, String platform) {
-        if ("bedrock".equalsIgnoreCase(platform) && ctx.getConfigManager().isBedrockEnabled()) {
-            return ctx.getConfigManager().getBedrockUsernameRegex();
-        }
-        return ctx.getConfigManager().getUsernameRegex();
-    }
-
     private boolean hasUsernameCaseConflict(String username) {
         // If username is case-sensitive, no conflict check needed
         if (ctx.getConfigManager().isUsernameCaseSensitive()) {
@@ -141,18 +153,6 @@ public class ApiRouter {
         if (existing == null) return false;
         String storedName = (String) existing.get("username");
         return storedName != null && !storedName.equals(username) && storedName.equalsIgnoreCase(username);
-    }
-
-    private String normalizeUsername(String username, String platform) {
-        if (username == null) return "";
-        String trimmed = username.trim();
-        if ("bedrock".equalsIgnoreCase(platform) && ctx.getConfigManager().isBedrockEnabled()) {
-            String prefix = ctx.getConfigManager().getBedrockPrefix();
-            if (!trimmed.startsWith(prefix)) {
-                trimmed = prefix + trimmed;
-            }
-        }
-        return trimmed;
     }
 
     private boolean isValidEmail(String email) {

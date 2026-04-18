@@ -1,8 +1,8 @@
 package team.kitemc.verifymc.web;
 
-import java.util.function.BiFunction;
 import org.json.JSONObject;
 import team.kitemc.verifymc.util.EmailAddressUtil;
+import team.kitemc.verifymc.util.UsernameRuleService;
 
 public record RegistrationRequest(
         String email,
@@ -16,7 +16,7 @@ public record RegistrationRequest(
         String platform,
         JSONObject questionnaire
 ) {
-    public static RegistrationRequest fromJson(JSONObject req, BiFunction<String, String, String> usernameNormalizer) {
+    public static RegistrationRequest fromJson(JSONObject req, UsernameRuleService usernameRules) {
         String email = EmailAddressUtil.normalize(req.optString("email", ""));
         String code = req.optString("code");
         String username = req.optString("username");
@@ -26,7 +26,7 @@ public record RegistrationRequest(
         String language = req.optString("language", "en");
         String platform = req.optString("platform", "java");
         JSONObject questionnaire = req.optJSONObject("questionnaire");
-        String normalizedUsername = usernameNormalizer.apply(username, platform);
+        String normalizedUsername = usernameRules.normalize(username, platform);
         return new RegistrationRequest(email, code, username, normalizedUsername, password, captchaToken, captchaAnswer, language, platform, questionnaire);
     }
 }

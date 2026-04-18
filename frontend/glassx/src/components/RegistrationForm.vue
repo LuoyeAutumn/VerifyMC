@@ -267,16 +267,16 @@ const validateDiscord = () => {
 }
 const validateUsername = () => {
   errors.username = ''
-  const username = form.username.trim()
-  if (!username) {
+  const rawUsername = getUsernameForValidation()
+  if (!rawUsername) {
     errors.username = t('register.validation.username_required')
     return
   }
 
-  const regex = getEffectiveUsernameRegex()
-  if (regex && !new RegExp(regex).test(getNormalizedUsername())) {
+  const regex = config.value.usernameRegex || '^[a-zA-Z0-9_-]{3,16}$'
+  if (regex && !new RegExp(regex).test(rawUsername)) {
     errors.username = t('register.validation.username_format', { regex })
-  } else if (!regex && !/^[a-zA-Z0-9_]+$/.test(username)) {
+  } else if (!regex && !/^[a-zA-Z0-9_]+$/.test(rawUsername)) {
     errors.username = t('register.validation.username_format', { regex: '^[a-zA-Z0-9_]+$' })
   }
 }
@@ -289,41 +289,52 @@ const selectPlatform = (platform: 'java' | 'bedrock') => {
 
 const normalizeUsernameForPlatform = () => {
   const trimmedUsername = form.username.trim()
-  if (!trimmedUsername) {
+  const rawUsername = bedrockEnabled.value ? stripBedrockPrefixes(trimmedUsername) : trimmedUsername
+  if (!rawUsername) {
     form.username = ''
     return
   }
 
   if (selectedPlatform.value === 'bedrock' && bedrockEnabled.value) {
-    form.username = trimmedUsername.startsWith(bedrockPrefix.value)
-      ? trimmedUsername
-      : `${bedrockPrefix.value}${trimmedUsername}`
+    form.username = `${bedrockPrefix.value}${rawUsername}`
     return
   }
 
-  if (bedrockEnabled.value && trimmedUsername.startsWith(bedrockPrefix.value)) {
-    form.username = trimmedUsername.slice(bedrockPrefix.value.length)
-    return
-  }
-
-  form.username = trimmedUsername
-}
-
-const getEffectiveUsernameRegex = () => {
-  if (selectedPlatform.value === 'bedrock' && bedrockEnabled.value) {
-    return config.value.bedrock?.usernameRegex || '^[a-zA-Z0-9._-]{3,16}$'
-  }
-  return config.value.usernameRegex
+  form.username = rawUsername
 }
 
 const getNormalizedUsername = () => {
-  const trimmedUsername = form.username.trim()
-  if (selectedPlatform.value === 'bedrock' && bedrockEnabled.value && trimmedUsername) {
-    return trimmedUsername.startsWith(bedrockPrefix.value)
-      ? trimmedUsername
-      : `${bedrockPrefix.value}${trimmedUsername}`
+  const rawUsername = getUsernameForValidation()
+  if (selectedPlatform.value === 'bedrock' && bedrockEnabled.value && rawUsername) {
+    return `${bedrockPrefix.value}${rawUsername}`
   }
+  return rawUsername
+}
+
+const getUsernameForValidation = () => {
+  const trimmedUsername = form.username.trim()
+  if (!trimmedUsername) {
+    return ''
+  }
+
+  if (selectedPlatform.value === 'bedrock' && bedrockEnabled.value) {
+    return stripBedrockPrefixes(trimmedUsername)
+  }
+
   return trimmedUsername
+}
+
+const stripBedrockPrefixes = (username: string) => {
+  const prefix = bedrockPrefix.value
+  if (!prefix) {
+    return username
+  }
+
+  let rawUsername = username
+  while (rawUsername.startsWith(prefix)) {
+    rawUsername = rawUsername.slice(prefix.length)
+  }
+  return rawUsername
 }
 
 watch(() => form.username, () => {

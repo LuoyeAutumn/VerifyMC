@@ -37,7 +37,6 @@ export interface ConfigResponse {
   bedrock?: {
     enabled: boolean
     prefix: string
-    usernameRegex: string
   }
   emailDomainWhitelist?: string[]
   enableEmailDomainWhitelist?: boolean

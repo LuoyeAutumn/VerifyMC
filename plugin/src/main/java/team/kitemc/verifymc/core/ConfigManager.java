@@ -288,10 +288,6 @@ public class ConfigManager {
         return getConfig().getString("bedrock.prefix", ".");
     }
 
-    public String getBedrockUsernameRegex() {
-        return getConfig().getString("bedrock.username_regex", "^[a-zA-Z0-9._-]{3,15}$");
-    }
-
     // --- Registration ---
     public boolean isAutoApprove() {
         return getConfig().getBoolean("register.auto_approve", false);

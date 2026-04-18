@@ -6,6 +6,7 @@ import team.kitemc.verifymc.db.AuditDao;
 import team.kitemc.verifymc.db.UserDao;
 import team.kitemc.verifymc.mail.MailService;
 import team.kitemc.verifymc.service.*;
+import team.kitemc.verifymc.util.UsernameRuleService;
 import team.kitemc.verifymc.web.ReviewWebSocketServer;
 import team.kitemc.verifymc.web.WebAuthHelper;
 
@@ -20,6 +21,7 @@ public class PluginContext {
     private final I18nManager i18nManager;
     private final ResourceManager resourceManager;
     private final AdminAccessManager adminAccessManager;
+    private final UsernameRuleService usernameRuleService;
     private OpsManager opsManager;
 
     // Data access
@@ -50,6 +52,7 @@ public class PluginContext {
         this.i18nManager = new I18nManager(plugin);
         this.resourceManager = new ResourceManager(plugin);
         this.adminAccessManager = new AdminAccessManager(this);
+        this.usernameRuleService = new UsernameRuleService(configManager);
         this.resourceManager.setConfigManager(configManager);
     }
 
@@ -59,6 +62,7 @@ public class PluginContext {
     public I18nManager getI18nManager() { return i18nManager; }
     public ResourceManager getResourceManager() { return resourceManager; }
     public AdminAccessManager getAdminAccessManager() { return adminAccessManager; }
+    public UsernameRuleService getUsernameRuleService() { return usernameRuleService; }
     public OpsManager getOpsManager() { return opsManager; }
 
     public UserDao getUserDao() { return userDao; }

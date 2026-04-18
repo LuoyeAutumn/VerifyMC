@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -24,6 +23,7 @@ import team.kitemc.verifymc.service.RegistrationApplicationService;
 import team.kitemc.verifymc.service.VerifyCodeService;
 import team.kitemc.verifymc.util.EmailAddressUtil;
 import team.kitemc.verifymc.util.FoliaCompat;
+import team.kitemc.verifymc.util.UsernameRuleService;
 
 public class RegistrationProcessingHandler implements HttpHandler {
     private static final long QUESTIONNAIRE_SUBMISSION_TTL_MS = 10 * 60 * 1000;
@@ -39,11 +39,9 @@ public class RegistrationProcessingHandler implements HttpHandler {
     private final Map<String, QuestionnaireSubmissionRecord> questionnaireSubmissionStore;
     private final Supplier<List<String>> emailDomainWhitelistProvider;
     private final BiFunction<String, String, String> messageResolver;
-    private final BiFunction<String, String, String> usernameRegexResolver;
-    private final BiPredicate<String, String> usernameValidator;
     private final Function<String, Boolean> usernameCaseConflictChecker;
     private final Supplier<Boolean> usernameCaseSensitiveProvider;
-    private final BiFunction<String, String, String> usernameNormalizer;
+    private final UsernameRuleService usernameRules;
     private final Function<String, Boolean> emailValidator;
     private final Consumer<String> debugLogger;
 
@@ -59,11 +57,9 @@ public class RegistrationProcessingHandler implements HttpHandler {
             Map<String, QuestionnaireSubmissionRecord> questionnaireSubmissionStore,
             Supplier<List<String>> emailDomainWhitelistProvider,
             BiFunction<String, String, String> messageResolver,
-            BiFunction<String, String, String> usernameRegexResolver,
-            BiPredicate<String, String> usernameValidator,
             Function<String, Boolean> usernameCaseConflictChecker,
             Supplier<Boolean> usernameCaseSensitiveProvider,
-            BiFunction<String, String, String> usernameNormalizer,
+            UsernameRuleService usernameRules,
             Function<String, Boolean> emailValidator,
             Consumer<String> debugLogger
     ) {
@@ -78,11 +74,9 @@ public class RegistrationProcessingHandler implements HttpHandler {
         this.questionnaireSubmissionStore = questionnaireSubmissionStore;
         this.emailDomainWhitelistProvider = emailDomainWhitelistProvider;
         this.messageResolver = messageResolver;
-        this.usernameRegexResolver = usernameRegexResolver;
-        this.usernameValidator = usernameValidator;
         this.usernameCaseConflictChecker = usernameCaseConflictChecker;
         this.usernameCaseSensitiveProvider = usernameCaseSensitiveProvider;
-        this.usernameNormalizer = usernameNormalizer;
+        this.usernameRules = usernameRules;
         this.emailValidator = emailValidator;
         this.debugLogger = debugLogger;
     }
@@ -104,7 +98,7 @@ public class RegistrationProcessingHandler implements HttpHandler {
                     messageResolver.apply("error.invalid_json", "en")), 400);
             return;
         }
-        RegistrationRequest request = RegistrationRequest.fromJson(req, usernameNormalizer);
+        RegistrationRequest request = RegistrationRequest.fromJson(req, usernameRules);
 
         RegistrationValidationResult basicResult = validateBasicInput(request, requestId);
         if (!basicResult.passed()) {
@@ -145,8 +139,8 @@ public class RegistrationProcessingHandler implements HttpHandler {
         }
 
         // 2. Format validation
-        if (!usernameValidator.test(request.normalizedUsername(), request.platform())) {
-            String usernameRegex = usernameRegexResolver.apply(request.normalizedUsername(), request.platform());
+        if (!usernameRules.isValid(request.normalizedUsername(), request.platform())) {
+            String usernameRegex = usernameRules.getUnifiedRegex();
             return RegistrationValidationResult.reject("username.invalid", new JSONObject().put("regex", usernameRegex));
         }
 

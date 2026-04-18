@@ -60,7 +60,8 @@ register:
 # ----------------------------------------
 # User & Security
 # ----------------------------------------
-# A regular expression to validate player names.
+# A unified regex used to validate player names.
+# Java usernames match it directly; bedrock usernames strip bedrock.prefix first and match their raw username.
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 # If false, usernames that only differ by case (e.g., "Player" and "player") are treated as the same.
 username_case_sensitive: false
@@ -243,8 +244,6 @@ bedrock:
   enabled: false
   # Prefix for bedrock players (commonly "." for Floodgate)
   prefix: "."
-  # Regex for the raw bedrock username only, without the auto-prefixed marker
-  username_regex: "^[a-zA-Z0-9._-]{3,15}$"
 
 # ----------------------------------------
 # Questionnaire Configuration

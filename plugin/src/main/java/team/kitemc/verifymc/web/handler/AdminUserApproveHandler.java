@@ -12,14 +12,12 @@ import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 /**
  * Approves a pending user — updates status to "approved" and whitelists in-game.
  * Extracted from WebServer.start() — the "/api/admin/user/approve" context.
  */
 public class AdminUserApproveHandler implements HttpHandler {
-    private static final Pattern VALID_USERNAME = Pattern.compile("^[a-zA-Z0-9_.\\-\\s]{1,32}$");
     private final PluginContext ctx;
 
     public AdminUserApproveHandler(PluginContext ctx) {
@@ -52,7 +50,7 @@ public class AdminUserApproveHandler implements HttpHandler {
         }
 
         // Validate username format to prevent command injection
-        if (!VALID_USERNAME.matcher(target).matches()) {
+        if (!ctx.getUsernameRuleService().canOperateAdminTarget(target, ctx.getUserDao())) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("admin.invalid_username", language)));
             return;
