@@ -7,7 +7,7 @@ softdepend: [Vault]
 commands:
   vmc:
     description: Main command for the whitelist verification system
-    usage: /vmc [reload|approve|reject|delete|ban|unban|list|info|version]
+    usage: /vmc [reload|approve|reject|delete|ban|unban|password|list|info|version]
     permission: verifymc.use
 permissions:
   verifymc.use:

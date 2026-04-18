@@ -43,3 +43,4 @@ public class RegistrationOutcomeResolver {
         return RegistrationOutcome.SUCCESS_PENDING;
     }
 }
+
