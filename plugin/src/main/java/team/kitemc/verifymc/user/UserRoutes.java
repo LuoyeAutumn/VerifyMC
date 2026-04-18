@@ -9,19 +9,28 @@ public class UserRoutes {
     private final HttpHandler userStatusHandler;
     private final HttpHandler userUpdateHandler;
     private final HttpHandler userPasswordHandler;
+    private final HttpHandler userPasswordCodeHandler;
+    private final HttpHandler forgotPasswordCodeHandler;
+    private final HttpHandler forgotPasswordResetHandler;
 
     public UserRoutes(
             HttpHandler loginHandler,
             HttpHandler adminLoginHandler,
             HttpHandler userStatusHandler,
             HttpHandler userUpdateHandler,
-            HttpHandler userPasswordHandler
+            HttpHandler userPasswordHandler,
+            HttpHandler userPasswordCodeHandler,
+            HttpHandler forgotPasswordCodeHandler,
+            HttpHandler forgotPasswordResetHandler
     ) {
         this.loginHandler = loginHandler;
         this.adminLoginHandler = adminLoginHandler;
         this.userStatusHandler = userStatusHandler;
         this.userUpdateHandler = userUpdateHandler;
         this.userPasswordHandler = userPasswordHandler;
+        this.userPasswordCodeHandler = userPasswordCodeHandler;
+        this.forgotPasswordCodeHandler = forgotPasswordCodeHandler;
+        this.forgotPasswordResetHandler = forgotPasswordResetHandler;
     }
 
     public void register(BiConsumer<String, HttpHandler> registerApiRoute) {
@@ -30,5 +39,8 @@ public class UserRoutes {
         registerApiRoute.accept("/api/user/status", userStatusHandler);
         registerApiRoute.accept("/api/user/update", userUpdateHandler);
         registerApiRoute.accept("/api/user/password", userPasswordHandler);
+        registerApiRoute.accept("/api/user/password/code", userPasswordCodeHandler);
+        registerApiRoute.accept("/api/password/forgot/code", forgotPasswordCodeHandler);
+        registerApiRoute.accept("/api/password/forgot/reset", forgotPasswordResetHandler);
     }
 }

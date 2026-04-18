@@ -226,6 +226,16 @@ public class FileUserDao implements UserRepository {
     }
 
     @Override
+    public List<UserRecord> findAllByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return List.of();
+        }
+        return users.values().stream()
+                .filter(user -> email.equalsIgnoreCase(user.email()))
+                .toList();
+    }
+
+    @Override
     public Optional<UserRecord> findByDiscordId(String discordId) {
         if (discordId == null || discordId.isBlank()) {
             return Optional.empty();

@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
+import team.kitemc.verifymc.user.PasswordResetMethod;
 
 /**
  * Type-safe configuration access, eliminating scattered getConfig().getString(...)
@@ -221,6 +222,20 @@ public class ConfigManager {
 
     public boolean isCaptchaAuthEnabled() {
         return getAuthMethods().contains("captcha");
+    }
+
+    public List<String> getUserPasswordResetMethods() {
+        return PasswordResetMethod.sanitize(getConfig().getStringList("user.password_reset_methods")).stream()
+                .map(PasswordResetMethod::key)
+                .toList();
+    }
+
+    public boolean isForgotPasswordEnabled() {
+        return getConfig().getBoolean("forgot_password.enabled", true);
+    }
+
+    public boolean isForgotPasswordCaptchaEnabled() {
+        return getConfig().getBoolean("forgot_password.captcha_enabled", false);
     }
 
     // --- Email ---

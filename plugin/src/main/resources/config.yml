@@ -13,6 +13,12 @@ ssl:
     type: PKCS12
 auth_methods:
   - email
+user:
+  password_reset_methods:
+    - current_password
+forgot_password:
+  enabled: true
+  captcha_enabled: false
 max_accounts_per_email: 2
 whitelist_mode: plugin
 web_register_url: https://domain.com/

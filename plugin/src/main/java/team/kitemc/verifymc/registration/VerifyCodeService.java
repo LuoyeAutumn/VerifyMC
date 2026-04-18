@@ -81,9 +81,14 @@ public class VerifyCodeService {
     }
 
     public boolean canSendCode(String email) {
+        return canSendCode(VerifyCodePurpose.REGISTER, email);
+    }
+
+    public boolean canSendCode(VerifyCodePurpose purpose, String email) {
         String normalizedEmail = EmailAddressUtil.normalize(email);
+        String normalizedKey = buildStorageKey(purpose, normalizedEmail);
         debugLog("canSendCode called for email: " + normalizedEmail);
-        Long lastSentTime = rateLimitMap.get(normalizedEmail);
+        Long lastSentTime = rateLimitMap.get(normalizedKey);
         if (lastSentTime == null) {
             debugLog("No previous send record for email: " + normalizedEmail);
             return true;
@@ -96,14 +101,18 @@ public class VerifyCodeService {
         debugLog("Email: " + normalizedEmail + ", last sent: " + lastSentTime + ", time since: " + timeSinceLastSent + "ms, can send: " + canSend);
 
         if (canSend) {
-            rateLimitMap.remove(normalizedEmail);
+            rateLimitMap.remove(normalizedKey);
         }
 
         return canSend;
     }
 
     public long getRemainingCooldownSeconds(String email) {
-        Long lastSentTime = rateLimitMap.get(EmailAddressUtil.normalize(email));
+        return getRemainingCooldownSeconds(VerifyCodePurpose.REGISTER, email);
+    }
+
+    public long getRemainingCooldownSeconds(VerifyCodePurpose purpose, String email) {
+        Long lastSentTime = rateLimitMap.get(buildStorageKey(purpose, EmailAddressUtil.normalize(email)));
         if (lastSentTime == null) {
             return 0;
         }
@@ -115,11 +124,16 @@ public class VerifyCodeService {
     }
 
     public CodeIssueResult issueCode(String email) {
+        return issueCode(VerifyCodePurpose.REGISTER, email);
+    }
+
+    public CodeIssueResult issueCode(VerifyCodePurpose purpose, String email) {
         String normalizedEmail = EmailAddressUtil.normalize(email);
+        String normalizedKey = buildStorageKey(purpose, normalizedEmail);
         long currentTime = System.currentTimeMillis();
         AtomicReference<CodeIssueResult> resultRef = new AtomicReference<>();
 
-        rateLimitMap.compute(normalizedEmail, (key, lastSentTime) -> {
+        rateLimitMap.compute(normalizedKey, (key, lastSentTime) -> {
             if (lastSentTime != null) {
                 long remainingMillis = rateLimitMillis - (currentTime - lastSentTime);
                 long remainingSeconds = toRemainingSeconds(remainingMillis);
@@ -131,7 +145,7 @@ public class VerifyCodeService {
 
             String code = String.format("%06d", secureRandom.nextInt(1000000));
             long expireTime = currentTime + expireMillis;
-            codeMap.put(key, new CodeEntry(code, expireTime));
+            codeMap.put(normalizedKey, new CodeEntry(code, expireTime));
             resultRef.set(CodeIssueResult.issued(code, toRemainingSeconds(rateLimitMillis)));
             debugLog("Issued code for key: " + key + ", expires at: " + expireTime + ", rate limit recorded at: " + currentTime);
             return currentTime;
@@ -146,30 +160,40 @@ public class VerifyCodeService {
     }
 
     public void revokeCode(String key) {
+        revokeCode(VerifyCodePurpose.REGISTER, key);
+    }
+
+    public void revokeCode(VerifyCodePurpose purpose, String key) {
         String normalizedKey = EmailAddressUtil.normalize(key);
-        codeMap.remove(normalizedKey);
-        rateLimitMap.remove(normalizedKey);
-        debugLog("Revoked code and cooldown for key: " + normalizedKey);
+        String storageKey = buildStorageKey(purpose, normalizedKey);
+        codeMap.remove(storageKey);
+        rateLimitMap.remove(storageKey);
+        debugLog("Revoked code and cooldown for key: " + storageKey);
     }
 
     public boolean checkCode(String key, String code) {
+        return checkCode(VerifyCodePurpose.REGISTER, key, code);
+    }
+
+    public boolean checkCode(VerifyCodePurpose purpose, String key, String code) {
         String normalizedKey = EmailAddressUtil.normalize(key);
-        debugLog("checkCode called: key=" + normalizedKey + ", code=" + code);
-        CodeEntry entry = codeMap.get(normalizedKey);
+        String storageKey = buildStorageKey(purpose, normalizedKey);
+        debugLog("checkCode called: key=" + storageKey + ", code=" + code);
+        CodeEntry entry = codeMap.get(storageKey);
         if (entry == null) {
-            debugLog("No code found for key: " + normalizedKey);
+            debugLog("No code found for key: " + storageKey);
             return false;
         }
 
         if (entry.attempts >= MAX_ATTEMPTS) {
-            debugLog("Too many attempts for key: " + normalizedKey + ", attempts: " + entry.attempts);
-            codeMap.remove(normalizedKey);
+            debugLog("Too many attempts for key: " + storageKey + ", attempts: " + entry.attempts);
+            codeMap.remove(storageKey);
             return false;
         }
 
         if (entry.expire < System.currentTimeMillis()) {
-            debugLog("Code expired for key: " + normalizedKey + ", expired at: " + entry.expire);
-            codeMap.remove(normalizedKey);
+            debugLog("Code expired for key: " + storageKey + ", expired at: " + entry.expire);
+            codeMap.remove(storageKey);
             return false;
         }
 
@@ -177,10 +201,15 @@ public class VerifyCodeService {
         boolean ok = entry.code.equals(code);
         debugLog("Code verification result: " + ok + " (attempts: " + entry.attempts + ")");
         if (ok) {
-            debugLog("Removing used code for key: " + normalizedKey);
-            codeMap.remove(normalizedKey);
+            debugLog("Removing used code for key: " + storageKey);
+            codeMap.remove(storageKey);
         }
         return ok;
+    }
+
+    private String buildStorageKey(VerifyCodePurpose purpose, String normalizedEmail) {
+        VerifyCodePurpose resolvedPurpose = purpose == null ? VerifyCodePurpose.REGISTER : purpose;
+        return resolvedPurpose.key() + ":" + normalizedEmail;
     }
 
     private long toRemainingSeconds(long remainingMillis) {

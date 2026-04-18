@@ -44,6 +44,15 @@ public class ConfigHandler implements HttpHandler {
         config.put("webServerPrefix", configManager.getWebServerPrefix());
         config.put("wsPort", configManager.getWsPort());
 
+        JSONObject userConfig = new JSONObject();
+        userConfig.put("passwordResetMethods", new JSONArray(configManager.getUserPasswordResetMethods()));
+        config.put("user", userConfig);
+
+        JSONObject forgotPasswordConfig = new JSONObject();
+        forgotPasswordConfig.put("enabled", configManager.isForgotPasswordEnabled());
+        forgotPasswordConfig.put("captchaEnabled", configManager.isForgotPasswordCaptchaEnabled());
+        config.put("forgotPassword", forgotPasswordConfig);
+
         JSONObject authmeConfig = new JSONObject();
         authmeConfig.put("enabled", configManager.isAuthmeEnabled());
         authmeConfig.put("passwordRegex", configManager.getAuthmePasswordRegex());

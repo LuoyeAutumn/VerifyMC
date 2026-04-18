@@ -43,9 +43,12 @@ import team.kitemc.verifymc.system.StaticFileHandler;
 import team.kitemc.verifymc.system.SystemRoutes;
 import team.kitemc.verifymc.system.VersionHandler;
 import team.kitemc.verifymc.user.ConfigUserPasswordPolicy;
+import team.kitemc.verifymc.user.ForgotPasswordCodeHandler;
+import team.kitemc.verifymc.user.ForgotPasswordResetHandler;
 import team.kitemc.verifymc.user.LoginHandler;
 import team.kitemc.verifymc.user.UserAccessSyncPort;
 import team.kitemc.verifymc.user.UserAccessSyncPortAdapter;
+import team.kitemc.verifymc.user.UserPasswordCodeHandler;
 import team.kitemc.verifymc.user.UserPasswordHandler;
 import team.kitemc.verifymc.user.UserPasswordPolicy;
 import team.kitemc.verifymc.user.UserRoutes;
@@ -131,10 +134,29 @@ public class WebBootstrap {
                 ),
                 new UserPasswordHandler(
                         integrationModule.authenticatedRequestContext(),
+                        platform.getConfigManager(),
                         userPasswordPolicy,
                         repositoryModule.userRepository(),
                         userAccessSyncPort,
-                        repositoryModule.auditService()
+                        repositoryModule.auditService(),
+                        integrationModule.verifyCodeService()
+                ),
+                new UserPasswordCodeHandler(
+                        integrationModule.authenticatedRequestContext(),
+                        platform.getConfigManager(),
+                        useCaseModule.sendUserPasswordCodeUseCase()
+                ),
+                new ForgotPasswordCodeHandler(
+                        platform.getConfigManager(),
+                        integrationModule.captchaService(),
+                        useCaseModule.sendForgotPasswordCodeUseCase(),
+                        platform::getMessage
+                ),
+                new ForgotPasswordResetHandler(
+                        platform.getConfigManager(),
+                        integrationModule.captchaService(),
+                        useCaseModule.forgotPasswordResetUseCase(),
+                        platform::getMessage
                 )
         );
 

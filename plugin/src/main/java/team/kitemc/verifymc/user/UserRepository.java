@@ -20,6 +20,8 @@ public interface UserRepository extends AutoCloseable {
 
     Optional<UserRecord> findByEmail(String email);
 
+    List<UserRecord> findAllByEmail(String email);
+
     Optional<UserRecord> findByDiscordId(String discordId);
 
     List<UserRecord> findAll();

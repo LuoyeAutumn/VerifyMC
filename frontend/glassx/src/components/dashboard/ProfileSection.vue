@@ -15,7 +15,6 @@
       </div>
     </Card>
 
-    <!-- Status Card -->
     <Card class="border-l-4 p-5 flex items-start gap-4" :class="statusCardClass">
       <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" :class="statusIconWrapperClass">
         <Clock v-if="userStatus === 'pending'" class="w-6 h-6" />
@@ -31,7 +30,6 @@
       </div>
     </Card>
 
-    <!-- Profile Form -->
     <Card class="p-6">
       <h3 class="text-lg font-semibold text-white mb-5">{{ $t('dashboard.profile.edit_profile') }}</h3>
 
@@ -59,12 +57,14 @@
       </div>
     </Card>
 
-    <!-- Change Password -->
     <Card class="p-6">
       <h3 class="text-lg font-semibold text-white mb-5">{{ $t('dashboard.profile.change_password') }}</h3>
+      <p v-if="passwordResetMethods.length > 1" class="mb-4 text-sm text-white/60">
+        {{ $t('dashboard.profile.verification_any_hint') }}
+      </p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-2">
+        <div v-if="showCurrentPasswordField" class="flex flex-col gap-2">
           <Label>{{ $t('dashboard.profile.current_password') }}</Label>
           <Input
             v-model="passwordForm.currentPassword"
@@ -85,6 +85,26 @@
         </div>
       </div>
 
+      <div v-if="showEmailCodeField" class="mt-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+        <div class="flex flex-col gap-2">
+          <Label>{{ $t('dashboard.profile.email_code') }}</Label>
+          <Input
+            v-model="passwordForm.code"
+            type="text"
+            :placeholder="$t('dashboard.profile.email_code_placeholder')"
+            :disabled="changingPassword || sendingPasswordCode"
+          />
+        </div>
+        <Button
+          @click="sendPasswordCode"
+          :disabled="changingPassword || sendingPasswordCode || passwordCodeCooldownSeconds > 0"
+          variant="secondary"
+        >
+          <div v-if="sendingPasswordCode" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+          {{ sendingPasswordCode ? $t('common.loading') : passwordCodeCooldownSeconds > 0 ? `${passwordCodeCooldownSeconds}s` : $t('dashboard.profile.send_code') }}
+        </Button>
+      </div>
+
       <div class="mt-5 flex justify-end">
         <Button @click="changePassword" :disabled="changingPassword" variant="outline">
           <div v-if="changingPassword" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
@@ -93,7 +113,6 @@
       </div>
     </Card>
 
-    <!-- Discord Status -->
     <Card v-if="discordEnabled" class="p-6">
       <h3 class="text-lg font-semibold text-white mb-5">{{ $t('discord.linked') }}</h3>
       <div class="flex items-center">
@@ -128,6 +147,7 @@ import { ref, computed, onMounted, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { User, Clock, CheckCircle, XCircle } from 'lucide-vue-next'
 import { useNotification } from '@/composables/useNotification'
+import { useCooldown } from '@/composables/useCooldown'
 import { sessionService } from '@/services/session'
 import { apiService, type ConfigResponse } from '@/services/api'
 import { getStatusColors } from '@/lib/utils'
@@ -146,7 +166,9 @@ const userStatus = ref<UserStatusType>('pending')
 const rejectReason = ref<string>('')
 const saving = ref(false)
 const changingPassword = ref(false)
+const sendingPasswordCode = ref(false)
 const discordStatus = ref<DiscordStatus | null>(null)
+const { cooldownSeconds: passwordCodeCooldownSeconds, startCooldown: startPasswordCodeCooldown } = useCooldown()
 
 const form = ref({
   email: '',
@@ -155,10 +177,14 @@ const form = ref({
 const passwordForm = ref({
   currentPassword: '',
   newPassword: '',
+  code: '',
 })
 
 const discordEnabled = computed(() => config.value?.discord?.enabled)
 const emailVerificationEnabled = computed(() => config.value?.authMethods?.includes('email') ?? false)
+const passwordResetMethods = computed(() => config.value?.user?.passwordResetMethods ?? ['current_password'])
+const showCurrentPasswordField = computed(() => passwordResetMethods.value.includes('current_password'))
+const showEmailCodeField = computed(() => passwordResetMethods.value.includes('email_code'))
 
 const statusClass = computed(() => {
   const colors = getStatusColors(userStatus.value)
@@ -235,8 +261,23 @@ const saveProfile = async () => {
 }
 
 const changePassword = async () => {
-  if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword) {
-    notification.error(t('dashboard.profile.password_required'))
+  const hasCurrentPassword = !!passwordForm.value.currentPassword
+  const hasEmailCode = !!passwordForm.value.code
+
+  if (!passwordForm.value.newPassword) {
+    notification.error(t('dashboard.profile.new_password_required'))
+    return
+  }
+  if (showCurrentPasswordField.value && !showEmailCodeField.value && !hasCurrentPassword) {
+    notification.error(t('dashboard.profile.current_password_required'))
+    return
+  }
+  if (showEmailCodeField.value && !showCurrentPasswordField.value && !hasEmailCode) {
+    notification.error(t('dashboard.profile.email_code_required'))
+    return
+  }
+  if (showCurrentPasswordField.value && showEmailCodeField.value && !hasCurrentPassword && !hasEmailCode) {
+    notification.error(t('dashboard.profile.verification_required'))
     return
   }
 
@@ -246,10 +287,11 @@ const changePassword = async () => {
       currentPassword: passwordForm.value.currentPassword,
       newPassword: passwordForm.value.newPassword,
       language: locale.value,
+      code: passwordForm.value.code,
     })
     if (response.success) {
       notification.success(t('dashboard.profile.password_change_success'))
-      passwordForm.value = { currentPassword: '', newPassword: '' }
+      passwordForm.value = { currentPassword: '', newPassword: '', code: '' }
     } else {
       notification.error(response.message || t('common.error'))
     }
@@ -257,6 +299,29 @@ const changePassword = async () => {
     notification.error(t('common.error'))
   } finally {
     changingPassword.value = false
+  }
+}
+
+const sendPasswordCode = async () => {
+  if (sendingPasswordCode.value || passwordCodeCooldownSeconds.value > 0 || !showEmailCodeField.value) {
+    return
+  }
+  sendingPasswordCode.value = true
+  try {
+    const response = await apiService.sendUserPasswordCode(locale.value)
+    if (response.success) {
+      notification.success(response.message || t('dashboard.profile.send_code_success'))
+      startPasswordCodeCooldown(response.remainingSeconds || 60)
+    } else if (response.remainingSeconds && response.remainingSeconds > 0) {
+      startPasswordCodeCooldown(response.remainingSeconds)
+      notification.error(response.message || t('dashboard.profile.send_code_failed'))
+    } else {
+      notification.error(response.message || t('dashboard.profile.send_code_failed'))
+    }
+  } catch {
+    notification.error(t('dashboard.profile.send_code_failed'))
+  } finally {
+    sendingPasswordCode.value = false
   }
 }
 

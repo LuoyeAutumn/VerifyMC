@@ -209,6 +209,14 @@ public class MysqlUserDao implements UserRepository {
     }
 
     @Override
+    public List<UserRecord> findAllByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return List.of();
+        }
+        return queryMany("SELECT * FROM users WHERE LOWER(email)=LOWER(?)", statement -> statement.setString(1, email));
+    }
+
+    @Override
     public Optional<UserRecord> findByDiscordId(String discordId) {
         if (discordId == null || discordId.isBlank()) {
             return Optional.empty();

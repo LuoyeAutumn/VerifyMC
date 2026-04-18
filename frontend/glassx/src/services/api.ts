@@ -21,6 +21,13 @@ export interface ConfigResponse {
     enabled: boolean
     passwordRegex: string
   }
+  user?: {
+    passwordResetMethods: string[]
+  }
+  forgotPassword?: {
+    enabled: boolean
+    captchaEnabled: boolean
+  }
   captcha?: {
     enabled: boolean
     emailEnabled: boolean
@@ -514,11 +521,45 @@ class ApiService {
 
   // 用户修改密码
   async userChangePassword(data: {
-    currentPassword: string
+    currentPassword?: string
     newPassword: string
     language: string
+    code?: string
   }): Promise<{ success: boolean; message?: string }> {
     return this.request('/user/password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async sendUserPasswordCode(language: string): Promise<{ success: boolean; message?: string; remainingSeconds?: number }> {
+    return this.request('/user/password/code', {
+      method: 'POST',
+      body: JSON.stringify({ language }),
+    })
+  }
+
+  async sendForgotPasswordCode(data: {
+    email: string
+    language: string
+    captchaToken?: string
+    captchaAnswer?: string
+  }): Promise<{ success: boolean; message?: string; remainingSeconds?: number; multipleAccounts?: boolean }> {
+    return this.request('/password/forgot/code', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async resetForgottenPassword(data: {
+    email: string
+    code: string
+    newPassword: string
+    language: string
+    captchaToken?: string
+    captchaAnswer?: string
+  }): Promise<{ success: boolean; message?: string }> {
+    return this.request('/password/forgot/reset', {
       method: 'POST',
       body: JSON.stringify(data),
     })
