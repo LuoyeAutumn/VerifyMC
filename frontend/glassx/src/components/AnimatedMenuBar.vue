@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Home, UserPlus, LogIn, Settings } from 'lucide-vue-next'
@@ -76,11 +76,15 @@ const route = useRoute()
 const hoveredIndex = ref<number | null>(null)
 const isNavHovered = ref(false)
 
-const isAdminLoggedIn = computed(() => {
-  // Bind route to ensure reactivity
-  route.fullPath
-  return sessionService.isAuthenticated()
-})
+const isAdminLoggedIn = ref(sessionService.isAuthenticated())
+
+watch(
+  () => route.fullPath,
+  () => {
+    isAdminLoggedIn.value = sessionService.isAuthenticated()
+  },
+  { immediate: true }
+)
 
 const menuItems = computed(() => {
   const items = [

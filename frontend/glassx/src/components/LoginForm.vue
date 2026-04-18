@@ -140,7 +140,7 @@ const handleSubmit = async () => {
       notification.error(response.message || t('login.messages.error'))
     }
     
-  } catch (error) {
+  } catch {
     notification.error(t('login.messages.invalid_credentials'))
   } finally {
     loading.value = false

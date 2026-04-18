@@ -227,7 +227,7 @@ const saveProfile = async () => {
     } else {
       notification.error(response.message || t('common.error'))
     }
-  } catch (error) {
+  } catch {
     notification.error(t('common.error'))
   } finally {
     saving.value = false
@@ -253,7 +253,7 @@ const changePassword = async () => {
     } else {
       notification.error(response.message || t('common.error'))
     }
-  } catch (error) {
+  } catch {
     notification.error(t('common.error'))
   } finally {
     changingPassword.value = false
@@ -267,7 +267,7 @@ const linkDiscord = async () => {
     if (response.success && response.authUrl) {
       window.open(response.authUrl, '_blank')
     }
-  } catch (error) {
+  } catch {
     notification.error(t('discord.link_failed'))
   }
 }

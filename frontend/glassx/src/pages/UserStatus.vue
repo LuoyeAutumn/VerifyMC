@@ -187,7 +187,7 @@ const loadStatus = async () => {
     } else {
       notifyError(t('common.error'), response.message && response.message !== t('common.error') ? response.message : '')
     }
-  } catch (error: unknown) {
+  } catch {
     notifyError(t('common.error'), t('errors.network'))
   } finally {
     loading.value = false
