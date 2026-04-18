@@ -31,7 +31,7 @@ public class RejectUserUseCase {
             return new ReviewUserResult(false, "review.failed");
         }
 
-        userRepository.findByUsername(command.username()).ifPresent(user -> {
+        userRepository.findByUsernameExact(command.username()).ifPresent(user -> {
             if (user.email() != null && !user.email().isBlank()) {
                 reviewNotificationPort.sendReviewResult(
                         user.email(),

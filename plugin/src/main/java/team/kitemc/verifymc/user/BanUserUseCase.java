@@ -18,7 +18,7 @@ public class BanUserUseCase {
     }
 
     public AdminUserResult execute(AdminUserCommand command) {
-        UserRecord user = userRepository.findByUsername(command.username()).orElse(null);
+        UserRecord user = userRepository.findByUsernameExact(command.username()).orElse(null);
         if (user == null || user.status() == UserStatus.BANNED) {
             return new AdminUserResult(false, "admin.ban_failed");
         }

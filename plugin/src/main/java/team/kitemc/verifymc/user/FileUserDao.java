@@ -28,13 +28,19 @@ public class FileUserDao implements UserRepository {
     private final Map<String, UserRecord> users = new ConcurrentHashMap<>();
     private final Gson gson = new Gson();
     private final boolean debug;
+    private final boolean usernameCaseSensitive;
     private final org.bukkit.plugin.Plugin plugin;
     private volatile boolean dirty = false;
     private volatile boolean running = true;
 
     public FileUserDao(File dataFile, org.bukkit.plugin.Plugin plugin) {
+        this(dataFile, plugin, plugin.getConfig().getBoolean("username_case_sensitive", false));
+    }
+
+    public FileUserDao(File dataFile, org.bukkit.plugin.Plugin plugin, boolean usernameCaseSensitive) {
         this.plugin = plugin;
         this.debug = plugin.getConfig().getBoolean("debug", false);
+        this.usernameCaseSensitive = usernameCaseSensitive;
 
         try {
             File dataFolder = plugin.getDataFolder();
@@ -50,6 +56,11 @@ public class FileUserDao implements UserRepository {
         this.file = dataFile;
         load();
         startFlushThread();
+    }
+
+    @Override
+    public boolean isUsernameCaseSensitive() {
+        return usernameCaseSensitive;
     }
 
     private void startFlushThread() {
@@ -174,11 +185,24 @@ public class FileUserDao implements UserRepository {
     }
 
     @Override
-    public Optional<UserRecord> findByUsername(String username) {
+    public Optional<UserRecord> findByUsernameConfigured(String username) {
         if (username == null || username.isBlank()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(users.get(normalizeKey(username)));
+        if (usernameCaseSensitive) {
+            return findByUsernameExact(username);
+        }
+        return findByUsernameIgnoreCase(username);
+    }
+
+    @Override
+    public Optional<UserRecord> findByUsernameIgnoreCase(String username) {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
+        return users.values().stream()
+                .filter(user -> username.equalsIgnoreCase(user.username()))
+                .findFirst();
     }
 
     @Override
@@ -379,6 +403,22 @@ public class FileUserDao implements UserRepository {
     }
 
     @Override
+    public List<List<String>> findUsernameCaseConflictGroups() {
+        return users.values().stream()
+                .map(UserRecord::username)
+                .filter(username -> username != null && !username.isBlank())
+                .collect(Collectors.groupingBy(
+                        username -> username.toLowerCase(Locale.ROOT),
+                        Collectors.toList()
+                ))
+                .values().stream()
+                .filter(group -> group.size() > 1)
+                .map(group -> group.stream().sorted(String.CASE_INSENSITIVE_ORDER).toList())
+                .sorted(Comparator.comparing(group -> group.get(0).toLowerCase(Locale.ROOT)))
+                .toList();
+    }
+
+    @Override
     public void close() {
         running = false;
         if (dirty) {
@@ -477,7 +517,10 @@ public class FileUserDao implements UserRepository {
     }
 
     private String normalizeKey(String username) {
-        return username == null ? "" : username.toLowerCase(Locale.ROOT);
+        if (username == null) {
+            return "";
+        }
+        return usernameCaseSensitive ? username : username.toLowerCase(Locale.ROOT);
     }
 
     private Object firstNonNull(Object primary, Object fallback) {

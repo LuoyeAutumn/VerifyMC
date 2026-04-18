@@ -16,6 +16,7 @@ export interface ConfigResponse {
   webServerPrefix: string
   wsPort?: number
   usernameRegex: string
+  usernameCaseSensitive?: boolean
   authme: {
     enabled: boolean
     passwordRegex: string

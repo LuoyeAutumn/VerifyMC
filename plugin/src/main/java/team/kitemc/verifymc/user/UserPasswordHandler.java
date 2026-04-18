@@ -66,7 +66,7 @@ public class UserPasswordHandler implements HttpHandler {
             return;
         }
 
-        UserRecord user = userRepository.findByUsername(username).orElse(null);
+        UserRecord user = userRepository.findByUsernameConfigured(username).orElse(null);
         if (user == null) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     authContext.getMessage("error.user_not_found", language)));

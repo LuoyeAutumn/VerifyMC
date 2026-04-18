@@ -281,7 +281,7 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             sendError(sender, message("command.invalid_username", "{username}", target));
             return;
         }
-        UserRecord user = userRepository.findByUsername(resolvedTarget).orElse(null);
+        UserRecord user = userRepository.findByUsernameExact(resolvedTarget).orElse(null);
         if (user == null) {
             sendError(sender, message("command.info_not_found", "{username}", target));
             return;

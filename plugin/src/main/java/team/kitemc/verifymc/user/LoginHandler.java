@@ -97,7 +97,7 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
-        UserRecord user = userRepository.findByUsername(identifier)
+        UserRecord user = userRepository.findByUsernameConfigured(identifier)
                 .or(() -> userRepository.findByEmail(identifier))
                 .orElse(null);
         if (user == null || user.username() == null || user.username().isBlank()) {

@@ -42,7 +42,7 @@ public class ReviewStatusHandler implements HttpHandler {
 
         JSONObject resp = new JSONObject();
         var user = username != null && !username.isBlank()
-                ? userRepository.findByUsername(username).orElse(null)
+                ? userRepository.findByUsernameConfigured(username).orElse(null)
                 : null;
         if (user != null) {
             resp.put("success", true);

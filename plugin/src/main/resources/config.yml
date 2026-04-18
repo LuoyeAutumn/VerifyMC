@@ -20,6 +20,8 @@ register:
   auto_approve: false
 # Java 版用户名直接匹配该正则；基岩版会先去掉前缀，再用原始用户名匹配该正则。
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
+# 控制用户名是否区分大小写，影响注册、登录、玩家进服、管理操作、Discord 绑定和 AuthMe 同步等所有用户名匹配链路。
+# 从 false 改为 true 时，如果历史数据中存在仅大小写不同的用户名冲突，插件会拒绝启动并要求先手动清理。
 username_case_sensitive: false
 user_notification:
   enabled: true

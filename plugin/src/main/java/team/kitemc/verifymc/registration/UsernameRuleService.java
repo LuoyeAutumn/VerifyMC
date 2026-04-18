@@ -155,7 +155,10 @@ public class UsernameRuleService {
         if (exact.isPresent()) {
             return exact;
         }
-        return userRepository.findByUsername(username);
+        if (configManager.isUsernameCaseSensitive()) {
+            return Optional.empty();
+        }
+        return userRepository.findByUsernameConfigured(username);
     }
 
     private Optional<UserRecord> findBedrockVariantUser(

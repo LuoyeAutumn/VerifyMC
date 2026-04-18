@@ -17,6 +17,7 @@ public class RepositoryBootstrap {
         if ("mysql".equalsIgnoreCase(platform.getConfigManager().getStorageType())) {
             try {
                 UserRepository userRepository = createMysqlUserRepository(plugin, platform);
+                validateUsernameCaseConfiguration(platform, userRepository);
                 AuditService auditService = createMysqlAuditService(plugin, platform);
                 log.info("[VerifyMC] Using MySQL storage.");
                 return new Result(userRepository, auditService);
@@ -28,6 +29,7 @@ public class RepositoryBootstrap {
 
         File dataDir = plugin.getDataFolder();
         UserRepository userRepository = createFileUserRepository(plugin, dataDir);
+        validateUsernameCaseConfiguration(platform, userRepository);
         AuditService auditService = createFileAuditService(dataDir);
         log.info("[VerifyMC] Using file storage.");
         return new Result(userRepository, auditService);
@@ -37,7 +39,8 @@ public class RepositoryBootstrap {
         return new MysqlUserDao(
                 platform.getConfigManager().getMysqlProperties(),
                 platform.getI18nManager().getResourceBundle(),
-                plugin
+                plugin,
+                platform.getConfigManager().isUsernameCaseSensitive()
         );
     }
 
@@ -46,11 +49,38 @@ public class RepositoryBootstrap {
     }
 
     protected UserRepository createFileUserRepository(JavaPlugin plugin, File dataDir) {
-        return new FileUserDao(new File(dataDir, "users.json"), plugin);
+        return new FileUserDao(
+                new File(dataDir, "users.json"),
+                plugin,
+                plugin.getConfig().getBoolean("username_case_sensitive", false)
+        );
     }
 
     protected AuditService createFileAuditService(File dataDir) {
         return new AuditService(new FileAuditDao(new File(dataDir, "audits.json")));
+    }
+
+    private void validateUsernameCaseConfiguration(PlatformServices platform, UserRepository userRepository) {
+        if (!platform.getConfigManager().isUsernameCaseSensitive()) {
+            return;
+        }
+
+        java.util.List<java.util.List<String>> conflicts = userRepository.findUsernameCaseConflictGroups();
+        if (conflicts.isEmpty()) {
+            return;
+        }
+
+        try {
+            userRepository.close();
+        } catch (Exception ignored) {
+        }
+
+        String detail = conflicts.stream()
+                .map(group -> String.join(", ", group))
+                .collect(java.util.stream.Collectors.joining(" | "));
+        throw new IllegalStateException(
+                "username_case_sensitive=true 时检测到仅大小写不同的历史用户名冲突，请先手动清理后再启动: " + detail
+        );
     }
 
     public record Result(

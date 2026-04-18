@@ -41,7 +41,7 @@ public class UserStatusHandler implements HttpHandler {
 
         JSONObject resp = new JSONObject();
         if (username != null && !username.isBlank()) {
-            UserRecord user = userRepository.findByUsername(username).orElse(null);
+            UserRecord user = userRepository.findByUsernameConfigured(username).orElse(null);
             if (user != null) {
                 resp.put("success", true);
                 JSONObject data = new JSONObject();

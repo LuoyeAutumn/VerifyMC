@@ -59,7 +59,8 @@ public class DiscordUnlinkHandler implements HttpHandler {
         }
 
         // Step 2: Check authorization - user must be the target user or an admin
-        boolean isSelf = authenticatedUser.equalsIgnoreCase(targetUsername);
+        String resolvedTargetUsername = discordService.resolveStoredUsername(targetUsername);
+        boolean isSelf = authenticatedUser.equals(resolvedTargetUsername);
 
         if (!isSelf && !authContext.getAdminAccessManager().canAccess(authenticatedUser, AdminAction.UNLINK)) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
@@ -67,7 +68,7 @@ public class DiscordUnlinkHandler implements HttpHandler {
             return;
         }
 
-        boolean ok = discordService.unlinkUser(targetUsername);
+        boolean ok = discordService.unlinkUser(resolvedTargetUsername);
         if (ok) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.success(
                     messageResolver.apply("discord.link_success", language)));

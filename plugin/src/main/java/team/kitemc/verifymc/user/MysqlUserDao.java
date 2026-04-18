@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 import org.bukkit.plugin.Plugin;
 import team.kitemc.verifymc.shared.PasswordUtil;
 
@@ -24,12 +25,18 @@ public class MysqlUserDao implements UserRepository {
     @SuppressWarnings("unused")
     private final ResourceBundle messages;
     private final boolean debug;
+    private final boolean usernameCaseSensitive;
     private final Plugin plugin;
 
     public MysqlUserDao(Properties mysqlConfig, ResourceBundle messages, Plugin plugin) throws SQLException {
+        this(mysqlConfig, messages, plugin, plugin.getConfig().getBoolean("username_case_sensitive", false));
+    }
+
+    public MysqlUserDao(Properties mysqlConfig, ResourceBundle messages, Plugin plugin, boolean usernameCaseSensitive) throws SQLException {
         this.messages = messages;
         this.plugin = plugin;
         this.debug = plugin.getConfig().getBoolean("debug", false);
+        this.usernameCaseSensitive = usernameCaseSensitive;
         String useSSL = mysqlConfig.getProperty("useSSL", "true");
         String allowPublicKeyRetrieval = mysqlConfig.getProperty("allowPublicKeyRetrieval", "false");
         this.jdbcUrl = "jdbc:mysql://" + mysqlConfig.getProperty("host") + ":" +
@@ -45,9 +52,14 @@ public class MysqlUserDao implements UserRepository {
     }
 
     public MysqlUserDao(Properties mysqlConfig) throws SQLException {
+        this(mysqlConfig, false);
+    }
+
+    public MysqlUserDao(Properties mysqlConfig, boolean usernameCaseSensitive) throws SQLException {
         this.messages = null;
         this.plugin = null;
         this.debug = false;
+        this.usernameCaseSensitive = usernameCaseSensitive;
         String useSSL = mysqlConfig.getProperty("useSSL", "true");
         String allowPublicKeyRetrieval = mysqlConfig.getProperty("allowPublicKeyRetrieval", "false");
         this.jdbcUrl = "jdbc:mysql://" + mysqlConfig.getProperty("host") + ":" +
@@ -80,7 +92,7 @@ public class MysqlUserDao implements UserRepository {
     private void initDatabase() throws SQLException {
         try (Statement stmt = getConnection().createStatement()) {
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS users (" +
-                    "username VARCHAR(32) PRIMARY KEY," +
+                    "username VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin PRIMARY KEY," +
                     "email VARCHAR(64)," +
                     "status VARCHAR(16)," +
                     "status_before_ban VARCHAR(16) NULL," +
@@ -111,7 +123,18 @@ public class MysqlUserDao implements UserRepository {
             ensureIndex(stmt, "idx_email", "CREATE INDEX idx_email ON users(email)");
             ensureIndex(stmt, "idx_discord_id", "CREATE INDEX idx_discord_id ON users(discord_id)");
             ensureIndex(stmt, "idx_status_regtime", "CREATE INDEX idx_status_regtime ON users(status, regTime)");
+
+            if (usernameCaseSensitive) {
+                stmt.executeUpdate(
+                        "ALTER TABLE users MODIFY username VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL"
+                );
+            }
         }
+    }
+
+    @Override
+    public boolean isUsernameCaseSensitive() {
+        return usernameCaseSensitive;
     }
 
     private void tryAddColumn(Statement stmt, String probeSql, String... ddlSqls) throws SQLException {
@@ -160,7 +183,15 @@ public class MysqlUserDao implements UserRepository {
     }
 
     @Override
-    public Optional<UserRecord> findByUsername(String username) {
+    public Optional<UserRecord> findByUsernameConfigured(String username) {
+        if (usernameCaseSensitive) {
+            return findByUsernameExact(username);
+        }
+        return findByUsernameIgnoreCase(username);
+    }
+
+    @Override
+    public Optional<UserRecord> findByUsernameIgnoreCase(String username) {
         return querySingle("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", username);
     }
 
@@ -241,7 +272,7 @@ public class MysqlUserDao implements UserRepository {
 
     @Override
     public boolean updateStatus(String username, UserStatus status, String operator) {
-        return executeUpdate("UPDATE users SET status=? WHERE LOWER(username)=LOWER(?)", statement -> {
+        return executeUpdate("UPDATE users SET status=? WHERE " + configuredUsernameMatchClause(), statement -> {
             statement.setString(1, status.value());
             statement.setString(2, username);
         });
@@ -250,7 +281,8 @@ public class MysqlUserDao implements UserRepository {
     @Override
     public boolean updateStatusForBan(String username, String operator) {
         return executeUpdate(
-                "UPDATE users SET status_before_ban = CASE WHEN status = ? THEN status_before_ban ELSE status END, status = ? WHERE LOWER(username)=LOWER(?)",
+                "UPDATE users SET status_before_ban = CASE WHEN status = ? THEN status_before_ban ELSE status END, status = ? WHERE "
+                        + configuredUsernameMatchClause(),
                 statement -> {
                     statement.setString(1, UserStatus.BANNED.value());
                     statement.setString(2, UserStatus.BANNED.value());
@@ -263,7 +295,8 @@ public class MysqlUserDao implements UserRepository {
     public boolean restoreStatusFromBan(String username, UserStatus fallbackStatus, String operator) {
         UserStatus restoredStatus = fallbackStatus == null ? UserStatus.APPROVED : fallbackStatus;
         return executeUpdate(
-                "UPDATE users SET status = COALESCE(status_before_ban, ?), status_before_ban = NULL WHERE LOWER(username)=LOWER(?)",
+                "UPDATE users SET status = COALESCE(status_before_ban, ?), status_before_ban = NULL WHERE "
+                        + configuredUsernameMatchClause(),
                 statement -> {
                     statement.setString(1, restoredStatus.value());
                     statement.setString(2, username);
@@ -278,7 +311,7 @@ public class MysqlUserDao implements UserRepository {
 
     @Override
     public boolean updateStoredPassword(String username, String storedPassword) {
-        return executeUpdate("UPDATE users SET password=? WHERE LOWER(username)=LOWER(?)", statement -> {
+        return executeUpdate("UPDATE users SET password=? WHERE " + configuredUsernameMatchClause(), statement -> {
             statement.setString(1, storedPassword);
             statement.setString(2, username);
         });
@@ -286,7 +319,7 @@ public class MysqlUserDao implements UserRepository {
 
     @Override
     public boolean updateEmail(String username, String email) {
-        return executeUpdate("UPDATE users SET email=? WHERE LOWER(username)=LOWER(?)", statement -> {
+        return executeUpdate("UPDATE users SET email=? WHERE " + configuredUsernameMatchClause(), statement -> {
             statement.setString(1, email);
             statement.setString(2, username);
         });
@@ -294,7 +327,7 @@ public class MysqlUserDao implements UserRepository {
 
     @Override
     public boolean updateDiscordId(String username, String discordId) {
-        return executeUpdate("UPDATE users SET discord_id=? WHERE LOWER(username)=LOWER(?)", statement -> {
+        return executeUpdate("UPDATE users SET discord_id=? WHERE " + configuredUsernameMatchClause(), statement -> {
             statement.setString(1, discordId);
             statement.setString(2, username);
         });
@@ -302,7 +335,22 @@ public class MysqlUserDao implements UserRepository {
 
     @Override
     public boolean delete(String username) {
-        return executeUpdate("DELETE FROM users WHERE LOWER(username)=LOWER(?)", statement -> statement.setString(1, username));
+        return executeUpdate("DELETE FROM users WHERE " + configuredUsernameMatchClause(), statement -> statement.setString(1, username));
+    }
+
+    @Override
+    public List<List<String>> findUsernameCaseConflictGroups() {
+        return listUsernames().stream()
+                .filter(username -> username != null && !username.isBlank())
+                .collect(Collectors.groupingBy(
+                        username -> username.toLowerCase(Locale.ROOT),
+                        Collectors.toList()
+                ))
+                .values().stream()
+                .filter(group -> group.size() > 1)
+                .map(group -> group.stream().sorted(String.CASE_INSENSITIVE_ORDER).toList())
+                .sorted(java.util.Comparator.comparing(group -> group.get(0).toLowerCase(Locale.ROOT)))
+                .toList();
     }
 
     @Override
@@ -406,8 +454,21 @@ public class MysqlUserDao implements UserRepository {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             debugLog("Error executing update: " + e.getMessage());
-            return false;
         }
+        return false;
+    }
+
+    private List<String> listUsernames() {
+        List<String> result = new ArrayList<>();
+        try (PreparedStatement ps = getConnection().prepareStatement("SELECT username FROM users");
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+        } catch (SQLException e) {
+            debugLog("Error listing usernames: " + e.getMessage());
+        }
+        return result;
     }
 
     private UserRecord mapUser(ResultSet rs) throws SQLException {
@@ -464,5 +525,9 @@ public class MysqlUserDao implements UserRepository {
     @FunctionalInterface
     interface SqlBinder {
         void bind(PreparedStatement statement) throws SQLException;
+    }
+
+    private String configuredUsernameMatchClause() {
+        return usernameCaseSensitive ? "BINARY username = ?" : "LOWER(username)=LOWER(?)";
     }
 }

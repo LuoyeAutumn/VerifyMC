@@ -85,7 +85,7 @@ public class AuthmeService {
             return false;
         }
 
-        UserRecord localUser = userRepository.findByUsername(username).orElse(null);
+        UserRecord localUser = userRepository.findByUsernameConfigured(username).orElse(null);
         return syncApprovedLocalUser(localUser, null, null);
     }
 
@@ -121,14 +121,16 @@ public class AuthmeService {
             for (UserRecord u : localUsers) {
                 String username = u.username();
                 if (username != null) {
-                    localByLowerName.put(username.toLowerCase(), u);
+                    localByLowerName.put(username.toLowerCase(java.util.Locale.ROOT), u);
                 }
             }
 
             Map<String, AuthmeProfile> authmeProfilesByName = listAuthmeProfiles();
-            Map<String, String> authmeByLowerName = new HashMap<>();
+            Map<String, java.util.List<String>> authmeByLowerName = new HashMap<>();
             for (Map.Entry<String, AuthmeProfile> entry : authmeProfilesByName.entrySet()) {
-                authmeByLowerName.put(entry.getKey().toLowerCase(), entry.getKey());
+                authmeByLowerName
+                        .computeIfAbsent(entry.getKey().toLowerCase(java.util.Locale.ROOT), key -> new java.util.ArrayList<>())
+                        .add(entry.getKey());
             }
 
             for (UserRecord local : localUsers) {
@@ -141,7 +143,12 @@ public class AuthmeService {
                 AuthmeProfile profile = entry.getValue();
                 String authPassword = profile != null ? profile.password : null;
                 String authEmail = profile != null ? profile.email : null;
-                UserRecord local = localByLowerName.get(authName.toLowerCase());
+                java.util.List<String> sameLowerNames = authmeByLowerName.get(authName.toLowerCase(java.util.Locale.ROOT));
+                if (sameLowerNames != null && sameLowerNames.size() > 1) {
+                    debugLog("Skipped ambiguous AuthMe usernames: " + String.join(", ", sameLowerNames));
+                    continue;
+                }
+                UserRecord local = localByLowerName.get(authName.toLowerCase(java.util.Locale.ROOT));
                 if (local == null) {
                     if (authPassword != null && !authPassword.trim().isEmpty()) {
                         String localEmail = authEmail != null ? authEmail : "";
@@ -188,7 +195,7 @@ public class AuthmeService {
 
     private boolean syncApprovedLocalUser(UserRecord localUser,
                                           Map<String, AuthmeProfile> authmeProfilesByName,
-                                          Map<String, String> authmeByLowerName) {
+                                          Map<String, java.util.List<String>> authmeByLowerName) {
         if (localUser == null) {
             return false;
         }
@@ -201,7 +208,7 @@ public class AuthmeService {
         }
 
         String authName = authmeByLowerName != null
-                ? authmeByLowerName.get(username.toLowerCase())
+                ? resolveAuthmeUsername(username, authmeByLowerName)
                 : findAuthmeUsername(username);
         if (authName == null) {
             if (password == null || password.trim().isEmpty()) {
@@ -250,6 +257,26 @@ public class AuthmeService {
         } catch (Exception e) {
             debugLog("Failed to find AuthMe user " + username + ": " + e.getMessage());
         }
+        return null;
+    }
+
+    private String resolveAuthmeUsername(String username, Map<String, java.util.List<String>> authmeByLowerName) {
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+        java.util.List<String> candidates = authmeByLowerName.get(username.toLowerCase(java.util.Locale.ROOT));
+        if (candidates == null || candidates.isEmpty()) {
+            return null;
+        }
+        if (candidates.size() == 1) {
+            return candidates.get(0);
+        }
+        for (String candidate : candidates) {
+            if (candidate.equals(username)) {
+                return candidate;
+            }
+        }
+        debugLog("Ambiguous AuthMe usernames for " + username + ": " + String.join(", ", candidates));
         return null;
     }
 

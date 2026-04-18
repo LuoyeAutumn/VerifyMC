@@ -115,11 +115,12 @@ public class RegisterUserUseCase {
             }
         }
 
-        if (userRepository.findByUsernameExact(request.normalizedUsername()).isPresent()) {
-            return RegistrationValidationResult.reject("register.username_exists");
-        }
-        if (!registrationPolicy.isUsernameCaseSensitive()) {
-            var caseInsensitiveUser = userRepository.findByUsername(request.normalizedUsername());
+        if (registrationPolicy.isUsernameCaseSensitive()) {
+            if (userRepository.findByUsernameExact(request.normalizedUsername()).isPresent()) {
+                return RegistrationValidationResult.reject("register.username_exists");
+            }
+        } else {
+            var caseInsensitiveUser = userRepository.findByUsernameIgnoreCase(request.normalizedUsername());
             if (caseInsensitiveUser.isPresent()) {
                 return RegistrationValidationResult.reject("username.case_conflict");
             }

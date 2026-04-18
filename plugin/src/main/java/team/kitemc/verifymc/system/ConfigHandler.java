@@ -40,6 +40,7 @@ public class ConfigHandler implements HttpHandler {
         config.put("logoUrl", configManager.getLogoUrl());
         config.put("announcement", configManager.getAnnouncement());
         config.put("usernameRegex", configManager.getUsernameRegex());
+        config.put("usernameCaseSensitive", configManager.isUsernameCaseSensitive());
         config.put("webServerPrefix", configManager.getWebServerPrefix());
         config.put("wsPort", configManager.getWsPort());
 

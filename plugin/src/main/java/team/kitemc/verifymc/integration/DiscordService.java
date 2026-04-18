@@ -211,7 +211,7 @@ public class DiscordService {
                 UserRecord existingUser = userRepository.findByDiscordId(user.id).orElse(null);
                 if (existingUser != null) {
                     String existingUsername = existingUser.username();
-                    if (!existingUsername.equalsIgnoreCase(username)) {
+                    if (!usernamesEqual(existingUsername, username)) {
                         debugLog("Discord account already linked to: " + existingUsername);
                         return new DiscordCallbackResult(false, "This Discord account is already linked to another user", username, user);
                     }
@@ -422,7 +422,7 @@ public class DiscordService {
     public boolean isLinked(String username) {
         // First check database
         if (userRepository != null) {
-            UserRecord user = userRepository.findByUsername(username).orElse(null);
+            UserRecord user = userRepository.findByUsernameConfigured(username).orElse(null);
             if (user != null && user.discordId() != null && !user.discordId().isEmpty()) {
                 return true;
             }
@@ -439,7 +439,7 @@ public class DiscordService {
      */
     public String getLinkedDiscordId(String username) {
         if (userRepository != null) {
-            UserRecord user = userRepository.findByUsername(username).orElse(null);
+            UserRecord user = userRepository.findByUsernameConfigured(username).orElse(null);
             if (user != null && user.discordId() != null && !user.discordId().isEmpty()) {
                 return user.discordId();
             }
@@ -479,7 +479,7 @@ public class DiscordService {
      */
     public boolean unlinkDiscord(String username) {
         tokenCache.remove(username.toLowerCase());
-        
+
         if (userRepository != null) {
             return userRepository.updateDiscordId(username, null);
         }
@@ -494,6 +494,15 @@ public class DiscordService {
      */
     public boolean unlinkUser(String username) {
         return unlinkDiscord(username);
+    }
+
+    public String resolveStoredUsername(String username) {
+        if (userRepository == null || username == null || username.isBlank()) {
+            return username;
+        }
+        return userRepository.findByUsernameConfigured(username)
+                .map(UserRecord::username)
+                .orElse(username);
     }
     
     /**
@@ -525,6 +534,16 @@ public class DiscordService {
         if (debug) {
             plugin.getLogger().info("[DEBUG] DiscordService: " + msg);
         }
+    }
+
+    private boolean usernamesEqual(String left, String right) {
+        if (left == null || right == null) {
+            return false;
+        }
+        if (userRepository != null && userRepository.isUsernameCaseSensitive()) {
+            return left.equals(right);
+        }
+        return left.equalsIgnoreCase(right);
     }
     
     /**

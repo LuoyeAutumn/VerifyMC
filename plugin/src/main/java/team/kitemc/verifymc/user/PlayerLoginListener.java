@@ -25,7 +25,7 @@ public class PlayerLoginListener implements Listener {
 
         String whitelistMode = platform.getConfigManager().getWhitelistMode();
         boolean pluginMode = "plugin".equalsIgnoreCase(whitelistMode);
-        UserRecord user = userRepository.findByUsername(username).orElse(null);
+        UserRecord user = userRepository.findByUsernameConfigured(username).orElse(null);
 
         if (user == null) {
             if (pluginMode) {

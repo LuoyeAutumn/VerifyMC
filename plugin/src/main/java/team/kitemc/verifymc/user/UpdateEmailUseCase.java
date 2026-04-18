@@ -24,7 +24,7 @@ public class UpdateEmailUseCase {
             return new UpdateEmailResult(false, "register.invalid_email");
         }
 
-        UserRecord user = userRepository.findByUsername(command.username()).orElse(null);
+        UserRecord user = userRepository.findByUsernameConfigured(command.username()).orElse(null);
         if (user == null) {
             return new UpdateEmailResult(false, "error.user_not_found");
         }

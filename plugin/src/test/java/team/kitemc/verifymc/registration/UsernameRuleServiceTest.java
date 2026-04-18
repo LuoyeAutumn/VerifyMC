@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.mockito.junit.jupiter.MockitoExtension;
 import team.kitemc.verifymc.platform.ConfigManager;
 import team.kitemc.verifymc.user.UserRecord;
@@ -18,6 +20,7 @@ import team.kitemc.verifymc.user.UserRepository;
 import team.kitemc.verifymc.user.UserStatus;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class UsernameRuleServiceTest {
     @Mock
     private ConfigManager configManager;
@@ -30,6 +33,7 @@ class UsernameRuleServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(configManager.getUsernameRegex()).thenReturn("^[a-zA-Z0-9_-]{3,16}$");
+        lenient().when(configManager.isUsernameCaseSensitive()).thenReturn(false);
         when(configManager.isBedrockEnabled()).thenReturn(true);
         when(configManager.getBedrockPrefix()).thenReturn(".");
         usernameRuleService = new UsernameRuleService(configManager);
@@ -87,6 +91,17 @@ class UsernameRuleServiceTest {
 
         assertEquals("", usernameRuleService.resolveAdminTarget("old.name", userRepository));
         assertFalse(usernameRuleService.canOperateAdminTarget("old.name", userRepository));
+    }
+
+    @Test
+    void shouldNotFoldAdminTargetCaseWhenCaseSensitiveModeEnabled() {
+        when(configManager.isUsernameCaseSensitive()).thenReturn(true);
+        UserRecord lowerUser = user("steve");
+        when(userRepository.findByUsernameExact("Steve")).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameExact(".Steve")).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameExact("steve")).thenReturn(Optional.of(lowerUser));
+
+        assertEquals("Steve", usernameRuleService.resolveAdminTarget("Steve", userRepository));
     }
 
     private UserRecord user(String username) {

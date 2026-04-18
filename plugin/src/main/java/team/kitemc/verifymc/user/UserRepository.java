@@ -4,11 +4,19 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends AutoCloseable {
+    boolean isUsernameCaseSensitive();
+
     boolean create(NewUserRecord user);
 
-    Optional<UserRecord> findByUsername(String username);
+    Optional<UserRecord> findByUsernameConfigured(String username);
+
+    Optional<UserRecord> findByUsernameIgnoreCase(String username);
 
     Optional<UserRecord> findByUsernameExact(String username);
+
+    default Optional<UserRecord> findByUsername(String username) {
+        return findByUsernameConfigured(username);
+    }
 
     Optional<UserRecord> findByEmail(String email);
 
@@ -39,6 +47,8 @@ public interface UserRepository extends AutoCloseable {
     boolean updateDiscordId(String username, String discordId);
 
     boolean delete(String username);
+
+    List<List<String>> findUsernameCaseConflictGroups();
 
     void save();
 
