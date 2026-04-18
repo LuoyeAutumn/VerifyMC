@@ -1,7 +1,6 @@
 package team.kitemc.verifymc.core;
 
 import org.bukkit.plugin.java.JavaPlugin;
-import team.kitemc.verifymc.audit.AuditService;
 import team.kitemc.verifymc.security.AdminAccessManager;
 import team.kitemc.verifymc.db.UserDao;
 import team.kitemc.verifymc.mail.MailService;

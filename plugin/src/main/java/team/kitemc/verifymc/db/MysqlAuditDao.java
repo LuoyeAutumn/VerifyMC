@@ -1,4 +1,4 @@
-package team.kitemc.verifymc.audit;
+package team.kitemc.verifymc.db;
 
 import org.bukkit.plugin.Plugin;
 
@@ -14,11 +14,11 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Level;
 
-public class MysqlAuditRepository implements AuditRepository {
+public class MysqlAuditDao implements AuditDao {
     private final Connection connection;
     private final Plugin plugin;
 
-    public MysqlAuditRepository(Properties mysqlConfig, Plugin plugin) throws SQLException {
+    public MysqlAuditDao(Properties mysqlConfig, Plugin plugin) throws SQLException {
         this.plugin = plugin;
         String useSSL = mysqlConfig.getProperty("useSSL", "true");
         String allowPublicKeyRetrieval = mysqlConfig.getProperty("allowPublicKeyRetrieval", "false");
@@ -47,14 +47,14 @@ public class MysqlAuditRepository implements AuditRepository {
     }
 
     @Override
-    public void append(AuditEntry entry) {
+    public void addAudit(AuditRecord audit) {
         String sql = "INSERT INTO audit_entries (event_type, operator_name, target_name, detail, occurred_at) VALUES (?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, entry.eventType().key());
-            statement.setString(2, entry.operator());
-            statement.setString(3, entry.target());
-            statement.setString(4, entry.detail());
-            statement.setLong(5, entry.occurredAt());
+            statement.setString(1, audit.eventType().key());
+            statement.setString(2, audit.operator());
+            statement.setString(3, audit.target());
+            statement.setString(4, audit.detail());
+            statement.setLong(5, audit.occurredAt());
             statement.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to append audit entry", e);
@@ -70,7 +70,7 @@ public class MysqlAuditRepository implements AuditRepository {
 
             List<Object> pageParams = new ArrayList<>();
             String pageWhereClause = buildWhereClause(query, pageParams);
-            List<AuditEntry> items = queryItems(pageWhereClause, pageParams, query);
+            List<AuditRecord> items = queryItems(pageWhereClause, pageParams, query);
             return new AuditPage(items, query.page(), query.size(), totalCount);
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Failed to query audit entries", e);
@@ -91,11 +91,11 @@ public class MysqlAuditRepository implements AuditRepository {
         return 0;
     }
 
-    private List<AuditEntry> queryItems(String whereClause, List<Object> params, AuditQuery query) throws SQLException {
+    private List<AuditRecord> queryItems(String whereClause, List<Object> params, AuditQuery query) throws SQLException {
         String sql = "SELECT id, event_type, operator_name, target_name, detail, occurred_at " +
                 "FROM audit_entries" + whereClause +
                 " ORDER BY occurred_at DESC, id DESC LIMIT ? OFFSET ?";
-        List<AuditEntry> items = new ArrayList<>();
+        List<AuditRecord> items = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             List<Object> allParams = new ArrayList<>(params);
             allParams.add(query.size());
@@ -103,7 +103,7 @@ public class MysqlAuditRepository implements AuditRepository {
             bindParams(statement, allParams);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    items.add(new AuditEntry(
+                    items.add(new AuditRecord(
                             resultSet.getLong("id"),
                             parseEventType(resultSet.getString("event_type")),
                             resultSet.getString("operator_name"),
@@ -150,7 +150,7 @@ public class MysqlAuditRepository implements AuditRepository {
         try {
             connection.close();
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.WARNING, "Failed to close audit repository connection", e);
+            plugin.getLogger().log(Level.WARNING, "Failed to close audit DAO connection", e);
         }
     }
 }

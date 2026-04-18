@@ -1,16 +1,22 @@
-package team.kitemc.verifymc.audit;
+package team.kitemc.verifymc.service;
+
+import team.kitemc.verifymc.db.AuditDao;
+import team.kitemc.verifymc.db.AuditEventType;
+import team.kitemc.verifymc.db.AuditPage;
+import team.kitemc.verifymc.db.AuditQuery;
+import team.kitemc.verifymc.db.AuditRecord;
 
 import java.util.List;
 
 public class AuditService implements AutoCloseable {
-    private final AuditRepository repository;
+    private final AuditDao auditDao;
 
-    public AuditService(AuditRepository repository) {
-        this.repository = repository;
+    public AuditService(AuditDao auditDao) {
+        this.auditDao = auditDao;
     }
 
     public void record(AuditEventType eventType, String operator, String target, String detail) {
-        repository.append(new AuditEntry(eventType, operator, target, detail, System.currentTimeMillis()));
+        auditDao.addAudit(new AuditRecord(eventType, operator, target, detail, System.currentTimeMillis()));
     }
 
     public void recordApproval(String operator, String target) {
@@ -55,7 +61,7 @@ public class AuditService implements AutoCloseable {
     }
 
     public AuditPage query(AuditQuery query) {
-        return repository.query(query);
+        return auditDao.query(query);
     }
 
     public List<String> getAvailableActions() {
@@ -64,6 +70,6 @@ public class AuditService implements AutoCloseable {
 
     @Override
     public void close() {
-        repository.close();
+        auditDao.close();
     }
 }

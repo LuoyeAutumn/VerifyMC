@@ -1,8 +1,8 @@
-package team.kitemc.verifymc.audit;
+package team.kitemc.verifymc.db;
 
 import java.util.List;
 
-public record AuditPage(List<AuditEntry> items, int currentPage, int pageSize, long totalCount) {
+public record AuditPage(List<AuditRecord> items, int currentPage, int pageSize, long totalCount) {
     public AuditPage {
         items = items == null ? List.of() : List.copyOf(items);
         currentPage = Math.max(1, currentPage);

@@ -1,4 +1,4 @@
-package team.kitemc.verifymc.audit;
+package team.kitemc.verifymc.db;
 
 public record AuditQuery(AuditEventType eventType, String keyword, int page, int size) {
     private static final int DEFAULT_PAGE = 1;

@@ -1,4 +1,4 @@
-package team.kitemc.verifymc.audit;
+package team.kitemc.verifymc.db;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -14,19 +14,19 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-public class FileAuditRepository implements AuditRepository {
+public class FileAuditDao implements AuditDao {
     private final File file;
-    private final List<AuditEntry> entries = new ArrayList<>();
+    private final List<AuditRecord> audits = new ArrayList<>();
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private long nextId = 1L;
 
-    public FileAuditRepository(File file) {
+    public FileAuditDao(File file) {
         this.file = file;
         load();
     }
 
     private synchronized void load() {
-        entries.clear();
+        audits.clear();
         nextId = 1L;
 
         if (!file.exists()) {
@@ -34,68 +34,69 @@ public class FileAuditRepository implements AuditRepository {
         }
 
         try (Reader reader = new FileReader(file)) {
-            List<AuditEntry> loaded = gson.fromJson(reader, new TypeToken<List<AuditEntry>>() {}.getType());
+            List<AuditRecord> loaded = gson.fromJson(reader, new TypeToken<List<AuditRecord>>() {}.getType());
             if (loaded != null) {
-                entries.addAll(loaded);
-                nextId = entries.stream()
-                        .map(AuditEntry::id)
+                audits.addAll(loaded);
+                nextId = audits.stream()
+                        .map(AuditRecord::id)
                         .filter(id -> id != null && id > 0)
                         .max(Long::compareTo)
                         .orElse(0L) + 1L;
             }
         } catch (Exception ignored) {
-            entries.clear();
+            audits.clear();
             nextId = 1L;
         }
     }
 
-    private synchronized void save() {
+    @Override
+    public synchronized void save() {
         File parent = file.getParentFile();
         if (parent != null && !parent.exists()) {
             parent.mkdirs();
         }
 
         try (Writer writer = new FileWriter(file)) {
-            gson.toJson(entries, writer);
+            gson.toJson(audits, writer);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to save audit entries", e);
         }
     }
 
     @Override
-    public synchronized void append(AuditEntry entry) {
-        AuditEntry persisted = new AuditEntry(
-                entry.id() != null ? entry.id() : nextId++,
-                entry.eventType(),
-                entry.operator(),
-                entry.target(),
-                entry.detail(),
-                entry.occurredAt()
+    public synchronized void addAudit(AuditRecord audit) {
+        AuditRecord persisted = new AuditRecord(
+                audit.id() != null ? audit.id() : nextId++,
+                audit.eventType(),
+                audit.operator(),
+                audit.target(),
+                audit.detail(),
+                audit.occurredAt()
         );
-        entries.add(persisted);
+        audits.add(persisted);
         save();
     }
 
     @Override
     public synchronized AuditPage query(AuditQuery query) {
         String keyword = query.keyword().toLowerCase(Locale.ROOT);
-        List<AuditEntry> filtered = entries.stream()
-                .filter(entry -> query.eventType() == null || entry.eventType() == query.eventType())
-                .filter(entry -> keyword.isBlank() || matchesKeyword(entry, keyword))
+        List<AuditRecord> filtered = audits.stream()
+                .filter(audit -> query.eventType() == null || audit.eventType() == query.eventType())
+                .filter(audit -> keyword.isBlank() || matchesKeyword(audit, keyword))
                 .sorted(Comparator
-                        .comparingLong(AuditEntry::occurredAt).reversed()
-                        .thenComparing(entry -> entry.id() == null ? 0L : entry.id(), Comparator.reverseOrder()))
+                        .comparingLong(AuditRecord::occurredAt).reversed()
+                        .thenComparing(audit -> audit.id() == null ? 0L : audit.id(), Comparator.reverseOrder()))
                 .toList();
 
         int startIndex = Math.min((query.page() - 1) * query.size(), filtered.size());
         int endIndex = Math.min(startIndex + query.size(), filtered.size());
-        List<AuditEntry> pageItems = filtered.subList(startIndex, endIndex);
+        List<AuditRecord> pageItems = filtered.subList(startIndex, endIndex);
         return new AuditPage(pageItems, query.page(), query.size(), filtered.size());
     }
 
-    private boolean matchesKeyword(AuditEntry entry, String keyword) {
-        return entry.operator().toLowerCase(Locale.ROOT).contains(keyword)
-                || entry.target().toLowerCase(Locale.ROOT).contains(keyword)
-                || entry.detail().toLowerCase(Locale.ROOT).contains(keyword);
+    private boolean matchesKeyword(AuditRecord audit, String keyword) {
+        return audit.operator().toLowerCase(Locale.ROOT).contains(keyword)
+                || audit.target().toLowerCase(Locale.ROOT).contains(keyword)
+                || audit.detail().toLowerCase(Locale.ROOT).contains(keyword);
     }
 }

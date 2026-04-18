@@ -4,11 +4,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import team.kitemc.verifymc.audit.AuditEntry;
-import team.kitemc.verifymc.audit.AuditEventType;
-import team.kitemc.verifymc.audit.AuditPage;
-import team.kitemc.verifymc.audit.AuditQuery;
 import team.kitemc.verifymc.core.PluginContext;
+import team.kitemc.verifymc.db.AuditEventType;
+import team.kitemc.verifymc.db.AuditPage;
+import team.kitemc.verifymc.db.AuditQuery;
+import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.security.AdminAction;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
@@ -37,7 +37,7 @@ public class AdminAuditHandler implements HttpHandler {
         AuditPage page = ctx.getAuditService().query(query);
 
         JSONArray items = new JSONArray();
-        for (AuditEntry audit : page.items()) {
+        for (AuditRecord audit : page.items()) {
             JSONObject obj = new JSONObject();
             if (audit.id() != null) obj.put("id", audit.id());
             obj.put("action", audit.eventType().key());

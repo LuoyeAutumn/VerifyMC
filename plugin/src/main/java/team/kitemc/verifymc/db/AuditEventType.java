@@ -1,9 +1,9 @@
-package team.kitemc.verifymc.audit;
+package team.kitemc.verifymc.db;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public enum AuditEventType {
     APPROVE("approve"),
@@ -32,13 +32,13 @@ public enum AuditEventType {
         }
 
         String normalized = key.trim().toLowerCase(Locale.ROOT);
-        return Arrays.stream(values())
-                .filter(value -> value.key.equals(normalized))
+        return Stream.of(values())
+                .filter(eventType -> eventType.key.equals(normalized))
                 .findFirst();
     }
 
     public static List<String> availableKeys() {
-        return Arrays.stream(values())
+        return Stream.of(values())
                 .map(AuditEventType::key)
                 .toList();
     }
