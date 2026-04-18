@@ -8,24 +8,32 @@ import org.json.JSONObject;
 import team.kitemc.verifymc.platform.ApiResponseFactory;
 import team.kitemc.verifymc.platform.WebResponseHelper;
 import java.io.IOException;
+import team.kitemc.verifymc.registration.UsernameRuleService;
 import team.kitemc.verifymc.user.AdminUserCommand;
 import team.kitemc.verifymc.user.AdminUserResult;
 import team.kitemc.verifymc.user.UnbanUserUseCase;
+import team.kitemc.verifymc.user.UserRepository;
 
 /**
  * Unbans a user — restores status and re-adds to whitelist.
  */
 public class AdminUserUnbanHandler implements HttpHandler {
     private final AuthenticatedRequestContext authContext;
+    private final UsernameRuleService usernameRuleService;
+    private final UserRepository userRepository;
     private final UnbanUserUseCase unbanUserUseCase;
     private final BiFunction<String, String, String> messageResolver;
 
     public AdminUserUnbanHandler(
             AuthenticatedRequestContext authContext,
+            UsernameRuleService usernameRuleService,
+            UserRepository userRepository,
             UnbanUserUseCase unbanUserUseCase,
             BiFunction<String, String, String> messageResolver
     ) {
         this.authContext = authContext;
+        this.usernameRuleService = usernameRuleService;
+        this.userRepository = userRepository;
         this.unbanUserUseCase = unbanUserUseCase;
         this.messageResolver = messageResolver;
     }
@@ -55,7 +63,14 @@ public class AdminUserUnbanHandler implements HttpHandler {
             return;
         }
 
-        AdminUserResult result = unbanUserUseCase.execute(new AdminUserCommand(operator, target, ""));
+        String resolvedTarget = usernameRuleService.resolveAdminTarget(target, userRepository);
+        if (resolvedTarget.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    messageResolver.apply("admin.invalid_username", language)));
+            return;
+        }
+
+        AdminUserResult result = unbanUserUseCase.execute(new AdminUserCommand(operator, resolvedTarget, ""));
         JSONObject response = result.success()
                 ? ApiResponseFactory.success(messageResolver.apply(result.messageKey(), language))
                 : ApiResponseFactory.failure(messageResolver.apply(result.messageKey(), language));

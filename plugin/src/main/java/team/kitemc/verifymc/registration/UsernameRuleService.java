@@ -70,17 +70,35 @@ public class UsernameRuleService {
     }
 
     public boolean canOperateAdminTarget(String username, UserRepository userRepository) {
+        return !resolveAdminTarget(username, userRepository).isEmpty();
+    }
+
+    public String resolveAdminTarget(String username, UserRepository userRepository) {
         String trimmed = normalizeWhitespace(username);
         if (trimmed.isEmpty()) {
-            return false;
+            return "";
         }
-        if (isValidForAdminTarget(trimmed)) {
-            return true;
+
+        Optional<UserRecord> existingUser = findExistingUser(userRepository, trimmed);
+        if (!isValidForAdminTarget(trimmed)) {
+            if (!LEGACY_ADMIN_USERNAME_PATTERN.matcher(trimmed).matches()) {
+                return "";
+            }
+            return existingUser.map(UserRecord::username).orElse("");
         }
-        if (!LEGACY_ADMIN_USERNAME_PATTERN.matcher(trimmed).matches()) {
-            return false;
+
+        String normalized = normalizeAdminTarget(trimmed);
+        Optional<UserRecord> normalizedUser = findExistingUser(userRepository, normalized);
+        if (normalizedUser.isPresent()) {
+            return normalizedUser.get().username();
         }
-        return findExistingUser(userRepository, trimmed).isPresent();
+
+        Optional<UserRecord> bedrockVariantUser = findBedrockVariantUser(userRepository, trimmed, normalized);
+        if (bedrockVariantUser.isPresent()) {
+            return bedrockVariantUser.get().username();
+        }
+
+        return normalized;
     }
 
     private boolean matchesUnifiedRegex(String username) {
@@ -97,6 +115,22 @@ public class UsernameRuleService {
                 && prefix != null
                 && !prefix.isEmpty()
                 && username.startsWith(prefix);
+    }
+
+    private String normalizeAdminTarget(String username) {
+        String trimmed = normalizeWhitespace(username);
+        if (trimmed.isEmpty()) {
+            return "";
+        }
+        if (!looksLikeBedrockStoredUsername(trimmed)) {
+            return trimmed;
+        }
+
+        String rawUsername = stripBedrockPrefixes(trimmed);
+        if (rawUsername.isEmpty()) {
+            return "";
+        }
+        return getBedrockPrefix() + rawUsername;
     }
 
     private String stripBedrockPrefixes(String username) {
@@ -122,6 +156,27 @@ public class UsernameRuleService {
             return exact;
         }
         return userRepository.findByUsername(username);
+    }
+
+    private Optional<UserRecord> findBedrockVariantUser(
+            UserRepository userRepository,
+            String originalUsername,
+            String normalizedUsername
+    ) {
+        if (!configManager.isBedrockEnabled() || looksLikeBedrockStoredUsername(originalUsername)) {
+            return Optional.empty();
+        }
+
+        String rawUsername = extractValidationUsernameForAdminTarget(originalUsername);
+        if (rawUsername.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String prefixedUsername = getBedrockPrefix() + rawUsername;
+        if (prefixedUsername.equals(normalizedUsername)) {
+            return Optional.empty();
+        }
+        return findExistingUser(userRepository, prefixedUsername);
     }
 }
 

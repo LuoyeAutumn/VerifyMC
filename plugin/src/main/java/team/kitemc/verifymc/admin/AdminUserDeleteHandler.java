@@ -63,13 +63,14 @@ public class AdminUserDeleteHandler implements HttpHandler {
             return;
         }
 
-        if (!usernameRuleService.canOperateAdminTarget(target, userRepository)) {
+        String resolvedTarget = usernameRuleService.resolveAdminTarget(target, userRepository);
+        if (resolvedTarget.isEmpty()) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     messageResolver.apply("admin.invalid_username", language)));
             return;
         }
 
-        AdminUserResult result = deleteUserUseCase.execute(new AdminUserCommand(operator, target, ""));
+        AdminUserResult result = deleteUserUseCase.execute(new AdminUserCommand(operator, resolvedTarget, ""));
         JSONObject response = result.success()
                 ? ApiResponseFactory.success(messageResolver.apply(result.messageKey(), language))
                 : ApiResponseFactory.failure(messageResolver.apply(result.messageKey(), language));

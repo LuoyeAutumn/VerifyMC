@@ -64,13 +64,14 @@ public class AdminUserApproveHandler implements HttpHandler {
             return;
         }
 
-        if (!usernameRuleService.canOperateAdminTarget(target, userRepository)) {
+        String resolvedTarget = usernameRuleService.resolveAdminTarget(target, userRepository);
+        if (resolvedTarget.isEmpty()) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     messageResolver.apply("admin.invalid_username", language)));
             return;
         }
 
-        ReviewUserResult result = approveUserUseCase.execute(new ReviewUserCommand(operator, target, ""));
+        ReviewUserResult result = approveUserUseCase.execute(new ReviewUserCommand(operator, resolvedTarget, ""));
         JSONObject response = result.success()
                 ? ApiResponseFactory.success(messageResolver.apply(result.messageKey(), language))
                 : ApiResponseFactory.failure(messageResolver.apply(result.messageKey(), language));

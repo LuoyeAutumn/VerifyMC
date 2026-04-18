@@ -150,6 +150,8 @@ public class WebBootstrap {
                 ),
                 new AdminUserRejectHandler(
                         integrationModule.authenticatedRequestContext(),
+                        platformModule.usernameRuleService(),
+                        repositoryModule.userRepository(),
                         useCaseModule.rejectUserUseCase(),
                         platform::getMessage
                 ),
@@ -169,11 +171,15 @@ public class WebBootstrap {
                 ),
                 new AdminUserUnbanHandler(
                         integrationModule.authenticatedRequestContext(),
+                        platformModule.usernameRuleService(),
+                        repositoryModule.userRepository(),
                         useCaseModule.unbanUserUseCase(),
                         platform::getMessage
                 ),
                 new AdminUserPasswordHandler(
                         integrationModule.authenticatedRequestContext(),
+                        platformModule.usernameRuleService(),
+                        repositoryModule.userRepository(),
                         useCaseModule.resetUserPasswordUseCase(),
                         platform::getMessage
                 ),

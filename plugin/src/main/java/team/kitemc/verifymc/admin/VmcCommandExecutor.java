@@ -159,11 +159,12 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             return;
         }
         String target = args[1];
-        if (!usernameRuleService.canOperateAdminTarget(target, userRepository)) {
+        String resolvedTarget = resolveAdminTarget(target);
+        if (resolvedTarget.isEmpty()) {
             sendError(sender, message("command.invalid_username", "{username}", target));
             return;
         }
-        ReviewUserResult result = approveUserUseCase.execute(new ReviewUserCommand(sender.getName(), target, ""));
+        ReviewUserResult result = approveUserUseCase.execute(new ReviewUserCommand(sender.getName(), resolvedTarget, ""));
         sendResult(sender, result.success(), message(result.messageKey()));
     }
 
@@ -173,8 +174,13 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             return;
         }
         String target = args[1];
+        String resolvedTarget = resolveAdminTarget(target);
+        if (resolvedTarget.isEmpty()) {
+            sendError(sender, message("command.invalid_username", "{username}", target));
+            return;
+        }
         String reason = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : "";
-        ReviewUserResult result = rejectUserUseCase.execute(new ReviewUserCommand(sender.getName(), target, reason));
+        ReviewUserResult result = rejectUserUseCase.execute(new ReviewUserCommand(sender.getName(), resolvedTarget, reason));
         sendResult(sender, result.success(), message(result.messageKey()));
     }
 
@@ -184,11 +190,12 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             return;
         }
         String target = args[1];
-        if (!usernameRuleService.canOperateAdminTarget(target, userRepository)) {
+        String resolvedTarget = resolveAdminTarget(target);
+        if (resolvedTarget.isEmpty()) {
             sendError(sender, message("command.invalid_username", "{username}", target));
             return;
         }
-        AdminUserResult result = deleteUserUseCase.execute(new AdminUserCommand(sender.getName(), target, ""));
+        AdminUserResult result = deleteUserUseCase.execute(new AdminUserCommand(sender.getName(), resolvedTarget, ""));
         sendResult(sender, result.success(), message(result.messageKey()));
     }
 
@@ -198,8 +205,13 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             return;
         }
         String target = args[1];
+        String resolvedTarget = resolveAdminTarget(target);
+        if (resolvedTarget.isEmpty()) {
+            sendError(sender, message("command.invalid_username", "{username}", target));
+            return;
+        }
         String reason = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : "";
-        AdminUserResult result = banUserUseCase.execute(new AdminUserCommand(sender.getName(), target, reason));
+        AdminUserResult result = banUserUseCase.execute(new AdminUserCommand(sender.getName(), resolvedTarget, reason));
         sendResult(sender, result.success(), message(result.messageKey()));
     }
 
@@ -209,7 +221,12 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             return;
         }
         String target = args[1];
-        AdminUserResult result = unbanUserUseCase.execute(new AdminUserCommand(sender.getName(), target, ""));
+        String resolvedTarget = resolveAdminTarget(target);
+        if (resolvedTarget.isEmpty()) {
+            sendError(sender, message("command.invalid_username", "{username}", target));
+            return;
+        }
+        AdminUserResult result = unbanUserUseCase.execute(new AdminUserCommand(sender.getName(), resolvedTarget, ""));
         sendResult(sender, result.success(), message(result.messageKey()));
     }
 
@@ -219,9 +236,14 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             return;
         }
         String target = args[1];
+        String resolvedTarget = resolveAdminTarget(target);
+        if (resolvedTarget.isEmpty()) {
+            sendError(sender, message("command.invalid_username", "{username}", target));
+            return;
+        }
         String password = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         AdminUserResult result = resetUserPasswordUseCase.execute(
-                new ResetUserPasswordCommand(sender.getName(), target, password)
+                new ResetUserPasswordCommand(sender.getName(), resolvedTarget, password)
         );
         sendResult(sender, result.success(), message(result.messageKey()));
     }
@@ -254,7 +276,12 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             return;
         }
         String target = args[1];
-        UserRecord user = userRepository.findByUsername(target).orElse(null);
+        String resolvedTarget = resolveAdminTarget(target);
+        if (resolvedTarget.isEmpty()) {
+            sendError(sender, message("command.invalid_username", "{username}", target));
+            return;
+        }
+        UserRecord user = userRepository.findByUsername(resolvedTarget).orElse(null);
         if (user == null) {
             sendError(sender, message("command.info_not_found", "{username}", target));
             return;
@@ -274,6 +301,10 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
         return SUBCOMMANDS.stream()
                 .filter(subcommand -> hasPermissionForSubcommand(sender, subcommand))
                 .collect(Collectors.toList());
+    }
+
+    private String resolveAdminTarget(String target) {
+        return usernameRuleService.resolveAdminTarget(target, userRepository);
     }
 
     private boolean hasPermissionForSubcommand(CommandSender sender, String subcommand) {

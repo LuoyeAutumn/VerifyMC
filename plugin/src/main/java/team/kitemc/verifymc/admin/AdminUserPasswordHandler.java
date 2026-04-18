@@ -8,24 +8,32 @@ import org.json.JSONObject;
 import team.kitemc.verifymc.platform.ApiResponseFactory;
 import team.kitemc.verifymc.platform.WebResponseHelper;
 import java.io.IOException;
+import team.kitemc.verifymc.registration.UsernameRuleService;
 import team.kitemc.verifymc.user.AdminUserResult;
 import team.kitemc.verifymc.user.ResetUserPasswordCommand;
 import team.kitemc.verifymc.user.ResetUserPasswordUseCase;
+import team.kitemc.verifymc.user.UserRepository;
 
 /**
  * Changes a user's password (stored and/or AuthMe).
  */
 public class AdminUserPasswordHandler implements HttpHandler {
     private final AuthenticatedRequestContext authContext;
+    private final UsernameRuleService usernameRuleService;
+    private final UserRepository userRepository;
     private final ResetUserPasswordUseCase resetUserPasswordUseCase;
     private final BiFunction<String, String, String> messageResolver;
 
     public AdminUserPasswordHandler(
             AuthenticatedRequestContext authContext,
+            UsernameRuleService usernameRuleService,
+            UserRepository userRepository,
             ResetUserPasswordUseCase resetUserPasswordUseCase,
             BiFunction<String, String, String> messageResolver
     ) {
         this.authContext = authContext;
+        this.usernameRuleService = usernameRuleService;
+        this.userRepository = userRepository;
         this.resetUserPasswordUseCase = resetUserPasswordUseCase;
         this.messageResolver = messageResolver;
     }
@@ -56,7 +64,16 @@ public class AdminUserPasswordHandler implements HttpHandler {
             return;
         }
 
-        AdminUserResult result = resetUserPasswordUseCase.execute(new ResetUserPasswordCommand(operator, target, password));
+        String resolvedTarget = usernameRuleService.resolveAdminTarget(target, userRepository);
+        if (resolvedTarget.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    messageResolver.apply("admin.invalid_username", language)));
+            return;
+        }
+
+        AdminUserResult result = resetUserPasswordUseCase.execute(
+                new ResetUserPasswordCommand(operator, resolvedTarget, password)
+        );
         JSONObject response = result.success()
                 ? ApiResponseFactory.success(messageResolver.apply(result.messageKey(), language))
                 : ApiResponseFactory.failure(messageResolver.apply(result.messageKey(), language));

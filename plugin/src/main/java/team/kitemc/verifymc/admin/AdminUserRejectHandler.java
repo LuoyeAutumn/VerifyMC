@@ -8,9 +8,11 @@ import org.json.JSONObject;
 import team.kitemc.verifymc.platform.ApiResponseFactory;
 import team.kitemc.verifymc.platform.WebResponseHelper;
 import java.io.IOException;
+import team.kitemc.verifymc.registration.UsernameRuleService;
 import team.kitemc.verifymc.review.RejectUserUseCase;
 import team.kitemc.verifymc.review.ReviewUserCommand;
 import team.kitemc.verifymc.review.ReviewUserResult;
+import team.kitemc.verifymc.user.UserRepository;
 
 /**
  * Rejects a pending user, optionally sending an email with reject reason.
@@ -18,15 +20,21 @@ import team.kitemc.verifymc.review.ReviewUserResult;
  */
 public class AdminUserRejectHandler implements HttpHandler {
     private final AuthenticatedRequestContext authContext;
+    private final UsernameRuleService usernameRuleService;
+    private final UserRepository userRepository;
     private final RejectUserUseCase rejectUserUseCase;
     private final BiFunction<String, String, String> messageResolver;
 
     public AdminUserRejectHandler(
             AuthenticatedRequestContext authContext,
+            UsernameRuleService usernameRuleService,
+            UserRepository userRepository,
             RejectUserUseCase rejectUserUseCase,
             BiFunction<String, String, String> messageResolver
     ) {
         this.authContext = authContext;
+        this.usernameRuleService = usernameRuleService;
+        this.userRepository = userRepository;
         this.rejectUserUseCase = rejectUserUseCase;
         this.messageResolver = messageResolver;
     }
@@ -57,7 +65,14 @@ public class AdminUserRejectHandler implements HttpHandler {
             return;
         }
 
-        ReviewUserResult result = rejectUserUseCase.execute(new ReviewUserCommand(operator, target, reason));
+        String resolvedTarget = usernameRuleService.resolveAdminTarget(target, userRepository);
+        if (resolvedTarget.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    messageResolver.apply("admin.invalid_username", language)));
+            return;
+        }
+
+        ReviewUserResult result = rejectUserUseCase.execute(new ReviewUserCommand(operator, resolvedTarget, reason));
         JSONObject response = result.success()
                 ? ApiResponseFactory.success(messageResolver.apply(result.messageKey(), language))
                 : ApiResponseFactory.failure(messageResolver.apply(result.messageKey(), language));
