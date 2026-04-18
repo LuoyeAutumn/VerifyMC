@@ -1,10 +1,14 @@
 package team.kitemc.verifymc;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import team.kitemc.verifymc.audit.AuditService;
+import team.kitemc.verifymc.audit.FileAuditRepository;
+import team.kitemc.verifymc.audit.MysqlAuditRepository;
 import team.kitemc.verifymc.core.ConfigManager;
 import team.kitemc.verifymc.core.OpsManager;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.*;
+import team.kitemc.verifymc.db.FileUserDao;
+import team.kitemc.verifymc.db.MysqlUserDao;
 import team.kitemc.verifymc.listener.PlayerLoginListener;
 import team.kitemc.verifymc.command.VmcCommandExecutor;
 import team.kitemc.verifymc.mail.MailService;
@@ -124,9 +128,8 @@ public class VerifyMC extends JavaPlugin {
                 context.getUserDao().save();
                 context.getUserDao().close();
             }
-            if (context.getAuditDao() != null) {
-                context.getAuditDao().save();
-                context.getAuditDao().close();
+            if (context.getAuditService() != null) {
+                context.getAuditService().close();
             }
         }
 
@@ -146,12 +149,12 @@ public class VerifyMC extends JavaPlugin {
             if ("mysql".equalsIgnoreCase(storageType)) {
                 var props = config.getMysqlProperties();
                 context.setUserDao(new MysqlUserDao(props, context.getI18nManager().getResourceBundle(), this));
-                context.setAuditDao(new MysqlAuditDao(props, this));
+                context.setAuditService(new AuditService(new MysqlAuditRepository(props, this)));
                 log.info("[VerifyMC] Using MySQL storage.");
             } else {
                 File dataDir = getDataFolder();
                 context.setUserDao(new FileUserDao(new File(dataDir, "users.json"), this));
-                context.setAuditDao(new FileAuditDao(new File(dataDir, "audits.json")));
+                context.setAuditService(new AuditService(new FileAuditRepository(new File(dataDir, "audits.json"))));
                 log.info("[VerifyMC] Using file storage.");
             }
         } catch (SQLException e) {
@@ -159,7 +162,7 @@ public class VerifyMC extends JavaPlugin {
             log.info("[VerifyMC] Falling back to file storage.");
             File dataDir = getDataFolder();
             context.setUserDao(new FileUserDao(new File(dataDir, "users.json"), this));
-            context.setAuditDao(new FileAuditDao(new File(dataDir, "audits.json")));
+            context.setAuditService(new AuditService(new FileAuditRepository(new File(dataDir, "audits.json"))));
         }
     }
 

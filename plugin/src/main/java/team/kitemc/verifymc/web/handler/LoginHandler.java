@@ -6,7 +6,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.OpsManager;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.db.UserDao;
 import team.kitemc.verifymc.service.AuthmeService;
 import team.kitemc.verifymc.security.AdminAuthMode;
@@ -162,11 +161,11 @@ public class LoginHandler implements HttpHandler {
                 ctx.getPlugin().getLogger().info("[VerifyMC] Password migration successful - User: " + username +
                         ", From: " + migrationType + ", To: salted-sha256");
 
-                if (ctx.getAuditDao() != null) {
-                    ctx.getAuditDao().addAudit(new AuditRecord(
-                            "password_migration", "system", username,
-                            "Migrated from " + migrationType + " to salted-sha256",
-                            System.currentTimeMillis()));
+                if (ctx.getAuditService() != null) {
+                    ctx.getAuditService().recordPasswordMigration(
+                            username,
+                            "Migrated from " + migrationType + " to salted-sha256"
+                    );
                 }
             } else {
                 ctx.getPlugin().getLogger().warning("[VerifyMC] Password migration failed - User: " + username);

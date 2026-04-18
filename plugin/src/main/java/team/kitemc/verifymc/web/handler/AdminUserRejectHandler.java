@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.security.AdminAction;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
@@ -60,7 +59,7 @@ public class AdminUserRejectHandler implements HttpHandler {
                 }
             }
 
-            ctx.getAuditDao().addAudit(new AuditRecord("reject", operator, target, reason, System.currentTimeMillis()));
+            ctx.getAuditService().recordRejection(operator, target, reason);
 
             if (ctx.getWsServer() != null) {
                 ctx.getWsServer().broadcastMessage(new JSONObject()

@@ -5,7 +5,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.security.AdminAction;
 
 import java.util.Arrays;
@@ -136,7 +135,7 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
                 ctx.getAuthmeService().syncApprovedUserToAuthme(target);
             }
-            ctx.getAuditDao().addAudit(new AuditRecord("approve", sender.getName(), target, "", System.currentTimeMillis()));
+            ctx.getAuditService().recordApproval(sender.getName(), target);
 
             // Send approval email
             var user = ctx.getUserDao().getUserByUsername(target);
@@ -163,7 +162,7 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
         String reason = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : "";
         boolean ok = ctx.getUserDao().updateUserStatus(target, "rejected", sender.getName());
         if (ok) {
-            ctx.getAuditDao().addAudit(new AuditRecord("reject", sender.getName(), target, reason, System.currentTimeMillis()));
+            ctx.getAuditService().recordRejection(sender.getName(), target, reason);
 
             var user = ctx.getUserDao().getUserByUsername(target);
             if (user != null) {
@@ -192,7 +191,7 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
                 ctx.getAuthmeService().removeUserFromAuthme(target);
             }
-            ctx.getAuditDao().addAudit(new AuditRecord("delete", sender.getName(), target, "", System.currentTimeMillis()));
+            ctx.getAuditService().recordDeletion(sender.getName(), target);
             sender.sendMessage("§6[VerifyMC] §aUser " + target + " deleted.");
         } else {
             sender.sendMessage("§6[VerifyMC] §cFailed to delete user " + target);
@@ -212,7 +211,7 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
                 ctx.getAuthmeService().removeUserFromAuthme(target);
             }
-            ctx.getAuditDao().addAudit(new AuditRecord("ban", sender.getName(), target, reason, System.currentTimeMillis()));
+            ctx.getAuditService().recordBan(sender.getName(), target, reason);
             sender.sendMessage("§6[VerifyMC] §cUser " + target + " banned.");
         } else {
             sender.sendMessage("§6[VerifyMC] §cFailed to ban user " + target);
@@ -231,7 +230,7 @@ public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
             if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
                 ctx.getAuthmeService().syncApprovedUserToAuthme(target);
             }
-            ctx.getAuditDao().addAudit(new AuditRecord("unban", sender.getName(), target, "", System.currentTimeMillis()));
+            ctx.getAuditService().recordUnban(sender.getName(), target);
             sender.sendMessage("§6[VerifyMC] §aUser " + target + " unbanned.");
         } else {
             sender.sendMessage("§6[VerifyMC] §cFailed to unban user " + target);

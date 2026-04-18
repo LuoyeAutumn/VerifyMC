@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.security.AdminAction;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
@@ -55,7 +54,7 @@ public class AdminUserPasswordHandler implements HttpHandler {
         }
 
         if (ok) {
-            ctx.getAuditDao().addAudit(new AuditRecord("password_change", operator, target, "", System.currentTimeMillis()));
+            ctx.getAuditService().recordPasswordChange(operator, target, "Admin changed user password");
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.success(
                     ctx.getMessage("admin.password_change_success", language)));
         } else {

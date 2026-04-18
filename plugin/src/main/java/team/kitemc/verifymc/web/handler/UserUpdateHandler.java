@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.util.EmailAddressUtil;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
@@ -99,10 +98,7 @@ public class UserUpdateHandler implements HttpHandler {
         boolean updated = ctx.getUserDao().updateUserEmail(username, newEmail);
         
         if (updated) {
-            ctx.getAuditDao().addAudit(new AuditRecord(
-                "email_update", username, username, 
-                "Email updated to: " + newEmail, System.currentTimeMillis()
-            ));
+            ctx.getAuditService().recordEmailUpdate(username, newEmail);
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.success(
                     ctx.getMessage("user.update_success", language)));
         } else {

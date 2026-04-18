@@ -1,8 +1,8 @@
 package team.kitemc.verifymc.core;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import team.kitemc.verifymc.audit.AuditService;
 import team.kitemc.verifymc.security.AdminAccessManager;
-import team.kitemc.verifymc.db.AuditDao;
 import team.kitemc.verifymc.db.UserDao;
 import team.kitemc.verifymc.mail.MailService;
 import team.kitemc.verifymc.service.*;
@@ -26,7 +26,7 @@ public class PluginContext {
 
     // Data access
     private UserDao userDao;
-    private AuditDao auditDao;
+    private AuditService auditService;
 
     // Services
     private MailService mailService;
@@ -66,7 +66,7 @@ public class PluginContext {
     public OpsManager getOpsManager() { return opsManager; }
 
     public UserDao getUserDao() { return userDao; }
-    public AuditDao getAuditDao() { return auditDao; }
+    public AuditService getAuditService() { return auditService; }
     public MailService getMailService() { return mailService; }
     public VerifyCodeService getVerifyCodeService() { return verifyCodeService; }
     public AuthmeService getAuthmeService() { return authmeService; }
@@ -82,7 +82,7 @@ public class PluginContext {
 
     // --- Setters (for initialization phase) ---
     public void setUserDao(UserDao userDao) { this.userDao = userDao; }
-    public void setAuditDao(AuditDao auditDao) { this.auditDao = auditDao; }
+    public void setAuditService(AuditService auditService) { this.auditService = auditService; }
     public void setMailService(MailService mailService) { this.mailService = mailService; }
     public void setVerifyCodeService(VerifyCodeService verifyCodeService) { this.verifyCodeService = verifyCodeService; }
     public void setAuthmeService(AuthmeService authmeService) { this.authmeService = authmeService; }

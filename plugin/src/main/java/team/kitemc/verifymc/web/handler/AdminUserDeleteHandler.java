@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.security.AdminAction;
 import team.kitemc.verifymc.util.FoliaCompat;
 import team.kitemc.verifymc.web.ApiResponseFactory;
@@ -64,7 +63,7 @@ public class AdminUserDeleteHandler implements HttpHandler {
                 ctx.getAuthmeService().removeUserFromAuthme(target);
             }
 
-            ctx.getAuditDao().addAudit(new AuditRecord("delete", operator, target, "", System.currentTimeMillis()));
+            ctx.getAuditService().recordDeletion(operator, target);
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.success(
                     ctx.getMessage("admin.delete_success", language)));
         } else {

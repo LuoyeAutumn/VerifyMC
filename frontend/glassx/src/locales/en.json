@@ -403,16 +403,17 @@
     "audit_log": {
       "title": "Audit Log",
       "all_actions": "All Actions",
+      "search_placeholder": "Search operator, target or detail...",
+      "load_error": "Failed to load audit logs",
       "actions": {
         "approve": "Approve",
         "reject": "Reject",
         "ban": "Ban",
         "unban": "Unban",
         "delete": "Delete",
-        "register": "Register",
-        "login": "Login",
-        "logout": "Logout",
         "password_change": "Password Change",
+        "password_migration": "Password Migration",
+        "email_update": "Email Update",
         "admin_access_denied": "Access Denied"
       },
       "table": {

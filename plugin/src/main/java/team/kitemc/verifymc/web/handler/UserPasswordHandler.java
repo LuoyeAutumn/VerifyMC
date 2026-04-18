@@ -5,7 +5,6 @@ import com.sun.net.httpserver.HttpHandler;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.util.PasswordUtil;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
@@ -80,10 +79,7 @@ public class UserPasswordHandler implements HttpHandler {
                 ctx.getAuthmeService().syncUserPasswordToAuthme(username, newPassword);
             }
 
-            ctx.getAuditDao().addAudit(new AuditRecord(
-                "password_change", username, username, 
-                "User changed own password", System.currentTimeMillis()
-            ));
+            ctx.getAuditService().recordPasswordChange(username, username, "User changed own password");
             
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.success(
                     ctx.getMessage("admin.password_change_success", language)));

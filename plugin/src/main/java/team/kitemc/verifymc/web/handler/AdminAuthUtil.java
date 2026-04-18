@@ -2,7 +2,6 @@ package team.kitemc.verifymc.web.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import team.kitemc.verifymc.core.PluginContext;
-import team.kitemc.verifymc.db.AuditRecord;
 import team.kitemc.verifymc.security.AdminAction;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
@@ -69,13 +68,7 @@ public final class AdminAuthUtil {
             String language = (acceptLanguage != null && acceptLanguage.startsWith("zh")) ? "zh" : "en";
 
             // Record audit log for unauthorized admin access attempt
-            ctx.getAuditDao().addAudit(new AuditRecord(
-                    "admin_access_denied",
-                    username,
-                    exchange.getRequestURI().getPath(),
-                    "Non-admin user attempted to access admin endpoint",
-                    System.currentTimeMillis()
-            ));
+            ctx.getAuditService().recordAdminAccessDenied(username, exchange.getRequestURI().getPath());
 
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("admin.forbidden", language)), 403);

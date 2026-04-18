@@ -1,6 +1,6 @@
 import { sessionService } from '@/services/session'
 import { buildApiUrl } from '@/services/runtime'
-import type { PendingUser, ServerStatusData } from '@/types'
+import type { AuditLogQuery, AuditLogsResponse, PendingUser, ServerStatusData } from '@/types'
 
 export interface ApiResponse<T = unknown> {
   success: boolean
@@ -169,21 +169,6 @@ export interface ChangePasswordRequest {
   username: string
   password: string
   language: string
-}
-
-export interface AuditRecord {
-  id?: number
-  action: string
-  operator: string
-  target: string
-  detail: string
-  timestamp: number
-}
-
-export interface AuditListResponse {
-  success: boolean
-  audits: AuditRecord[]
-  message?: string
 }
 
 export interface DownloadResource {
@@ -490,8 +475,15 @@ class ApiService {
   }
 
   // 获取审计日志
-  async getAuditLogs(): Promise<AuditListResponse> {
-    return this.request<AuditListResponse>('/admin/audits')
+  async getAuditLogs(query: AuditLogQuery = {}): Promise<AuditLogsResponse> {
+    const params = new URLSearchParams()
+    if (query.page) params.set('page', String(query.page))
+    if (query.size) params.set('size', String(query.size))
+    if (query.action) params.set('action', query.action)
+    if (query.keyword?.trim()) params.set('keyword', query.keyword.trim())
+
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    return this.request<AuditLogsResponse>(`/admin/audits${suffix}`)
   }
 
   // 获取下载资源列表（预留接口，后端可能未实现）

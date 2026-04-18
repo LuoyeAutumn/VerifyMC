@@ -1,0 +1,23 @@
+package team.kitemc.verifymc.audit;
+
+import java.util.Objects;
+
+public record AuditEntry(
+        Long id,
+        AuditEventType eventType,
+        String operator,
+        String target,
+        String detail,
+        long occurredAt
+) {
+    public AuditEntry {
+        Objects.requireNonNull(eventType, "eventType");
+        operator = operator == null ? "" : operator;
+        target = target == null ? "" : target;
+        detail = detail == null ? "" : detail;
+    }
+
+    public AuditEntry(AuditEventType eventType, String operator, String target, String detail, long occurredAt) {
+        this(null, eventType, operator, target, detail, occurredAt);
+    }
+}
