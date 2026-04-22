@@ -196,7 +196,7 @@ public class VerifyMC extends JavaPlugin {
         context.getResourceManager().setI18nManager(context.getI18nManager());
 
         // Mail service
-        context.setMailService(new MailService(this, context.getResourceManager()));
+        context.setMailService(new MailService(this, config, context.getResourceManager()));
 
         // Verify code service
         context.setVerifyCodeService(new VerifyCodeService(this));

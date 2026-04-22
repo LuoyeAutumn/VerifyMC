@@ -11,8 +11,6 @@ ssl:
     path: ""
     password: ""
     type: PKCS12
-auth_methods:
-  - email
 auth:
   must_auth_methods: []
   option_auth_methods: []
@@ -36,51 +34,50 @@ sms:
   aliyun:
     access_key_id: ""
     access_key_secret: ""
-max_accounts_per_email: 2
 whitelist_mode: plugin
 web_register_url: https://domain.com/
 register:
   auto_approve: false
-# Java 版用户名直接匹配该正则；基岩版会先去掉前缀，再用原始用户名匹配该正则。
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 username_case_sensitive: false
 user:
-  password_reset_methods:
-    - current_password
+  password_reset_methods: ["current_password"]
 forgot_password:
   enabled: true
   captcha_enabled: false
-user_notification:
-  enabled: true
-  on_approve: true
-  on_reject: true
 frontend:
   theme: glassx
   logo_url: /logo.png
   announcement: Welcome to [ Name ]!
   serve_static: true
   allowed_origins: []
-smtp:
-  host: smtp.qq.com
-  port: 587
-  username: your_email@qq.com
-  password: your_email_password
-  from: your_email@qq.com
-  enable_ssl: true
-email_subject: VerifyMC Verification Code
+email:
+  smtp:
+    host: smtp.qq.com
+    port: 587
+    username: your_email@qq.com
+    password: your_email_password
+    from: your_email@qq.com
+    enable_ssl: true
+  subject: VerifyMC Verification Code
+  max_accounts_per_email: 2
+  domain_whitelist_enabled: true
+  alias_limit_enabled: false
+  domain_whitelist:
+    - gmail.com
+    - 163.com
+    - 126.com
+    - qq.com
+    - outlook.com
+    - hotmail.com
+    - icloud.com
+    - yahoo.com
+    - foxmail.com
+  notification:
+    enabled: true
+    on_approve: true
+    on_reject: true
 auto_update_resources: true
-enable_email_domain_whitelist: true
-enable_email_alias_limit: false
-email_domain_whitelist:
-  - gmail.com
-  - 163.com
-  - 126.com
-  - qq.com
-  - outlook.com
-  - hotmail.com
-  - icloud.com
-  - yahoo.com
-  - foxmail.com
 storage: file
 mysql:
     host: localhost
@@ -96,7 +93,6 @@ authme:
   database:
     type: sqlite
     table: authme
-    # 密码格式仅支持 sha256，盐长度固定为 16
     sync_interval_seconds: 30
     mysql:
       host: 127.0.0.1

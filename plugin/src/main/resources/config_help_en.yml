@@ -12,7 +12,7 @@ admin_auth:
   mode: op
 
 # ----------------------------------------
-# Web Server
+# Web Server & Frontend
 # ----------------------------------------
 # The port for the web interface.
 web_port: 8080
@@ -31,20 +31,45 @@ ssl:
     # Keystore type, for example: PKCS12 or JKS.
     type: PKCS12
 
+frontend:
+  # The visual theme for the web interface. Options: 'glassx'.
+  theme: glassx
+  # URL for the logo. Can be a web link or a local file path (e.g., '/logo.png').
+  logo_url: /logo.png
+  # A message to display on the homepage.
+  announcement: Welcome to [ Name ]!
+  # Whether the plugin should serve static frontend files itself.
+  # Set this to false if you deploy frontend/glassx/dist on another origin.
+  serve_static: true
+  # List of frontend origins allowed to access the API cross-origin.
+  # Supports exact matches, for example: https://your-pages-domain.pages.dev
+  # Also supports single-level subdomain wildcards, for example: https://*.example.com
+  # All matching ignores ports; wildcards only match one subdomain level.
+  # When using an external frontend, also build it with VITE_BOOTSTRAP_API_BASE
+  # pointing to this plugin's HTTP base URL (without /api).
+  # Leave the list empty to allow all cross-origin access.
+  allowed_origins: []
+
 # ----------------------------------------
 # Verification & Whitelist
 # ----------------------------------------
 # Supported authentication methods. Options: 'email' (email verification), 'captcha' (graphical captcha), 'sms' (SMS verification).
-# You can use multiple methods, e.g.: [email, captcha]
 # 
-# [IMPORTANT] Configuring the captcha: section below does NOT enable captcha!
-# To enable captcha, you MUST add 'captcha' to this list:
-#   Captcha only: auth_methods: [captcha]
-#   Both email and captcha: auth_methods: [email, captcha]
-auth_methods:
-  - email
-
-# Advanced authentication configuration
+# Configuration guide:
+#   must_auth_methods: Required methods - users must pass all listed methods to register
+#   option_auth_methods: Optional methods - users can choose one or more
+#   min_option_auth_methods: Minimum number of optional methods users must complete
+# 
+# Examples:
+#   Email only: must_auth_methods: [email]
+#   Email + Captcha: must_auth_methods: [email, captcha]
+#   Email required, SMS or Captcha optional:
+#     must_auth_methods: [email]
+#     option_auth_methods: [sms, captcha]
+#     min_option_auth_methods: 1
+# 
+# [IMPORTANT] Configuring the captcha/sms section below does NOT enable verification!
+# You must add the method to must_auth_methods or option_auth_methods to enable it.
 auth:
   # List of authentication methods that must be completed. Users must pass all listed methods to register.
   must_auth_methods: []
@@ -57,8 +82,7 @@ auth:
 # SMS Verification Configuration
 # ----------------------------------------
 # SMS verification can be used as an alternative or supplement to email verification
-# Add 'sms' to auth_methods to enable: auth_methods: [sms]
-# Or use multiple methods: auth_methods: [email, sms]
+# Add 'sms' to must_auth_methods or option_auth_methods to enable
 sms:
   # Whether to enable SMS verification feature
   enabled: false
@@ -94,8 +118,6 @@ sms:
     # Alibaba Cloud AccessKeySecret
     access_key_secret: ""
 
-# Maximum number of game accounts that can be linked to a single email address.
-max_accounts_per_email: 2
 # Whitelist mode: 'bukkit' (syncs with server's whitelist.json) or 'plugin' (uses internal database).
 whitelist_mode: plugin
 # Registration URL displayed to non-whitelisted players when in 'plugin' mode.
@@ -121,8 +143,7 @@ username_case_sensitive: false
 user:
   # List of allowed password reset methods
   # Options: current_password, email, sms
-  password_reset_methods:
-    - current_password
+  password_reset_methods: ["current_password"]
 
 # Forgot password configuration
 forgot_password:
@@ -132,76 +153,56 @@ forgot_password:
   captcha_enabled: false
 
 # ----------------------------------------
-# User Notification
+# Email Configuration
 # ----------------------------------------
-# Send email notification to users when admin reviews their application.
-user_notification:
-  # Whether to enable user notification feature
-  enabled: true
-  # Whether to send notification when application is approved
-  on_approve: true
-  # Whether to send notification when application is rejected
-  on_reject: true
-
-# ----------------------------------------
-# Frontend (UI)
-# ----------------------------------------
-frontend:
-  # The visual theme for the web interface. Options: 'glassx'.
-  theme: glassx
-  # URL for the logo. Can be a web link or a local file path (e.g., '/logo.png').
-  logo_url: /logo.png
-  # A message to display on the homepage.
-  announcement: Welcome to [ Name ]!
-  # Whether the plugin should serve static frontend files itself.
-  # Set this to false if you deploy frontend/glassx/dist on another origin.
-  serve_static: true
-  # List of frontend origins allowed to access the API cross-origin.
-  # Supports exact matches, for example: https://your-pages-domain.pages.dev
-  # Also supports single-level subdomain wildcards, for example: https://*.example.com
-  # All matching ignores ports; wildcards only match one subdomain level.
-  # When using an external frontend, also build it with VITE_BOOTSTRAP_API_BASE
-  # pointing to this plugin's HTTP base URL (without /api).
-  # Leave the list empty to allow all cross-origin access.
-  allowed_origins: []
-
-# ----------------------------------------
-# Email (SMTP)
-# ----------------------------------------
-smtp:
-  host: smtp.qq.com
-  port: 587
-  username: your_email@qq.com
-  password: your_email_password
-  from: your_email@qq.com
-  enable_ssl: true
-# Subject (title) of the verification code email
-email_subject: VerifyMC Verification Code
+email:
+  # SMTP server configuration
+  smtp:
+    # SMTP server address
+    host: smtp.qq.com
+    # SMTP server port
+    port: 587
+    # SMTP login username (usually email address)
+    username: your_email@qq.com
+    # SMTP login password or authorization code
+    password: your_email_password
+    # Sender email address (usually same as username)
+    from: your_email@qq.com
+    # Whether to enable SSL/TLS encryption
+    enable_ssl: true
+  # Subject (title) of the verification code email
+  subject: VerifyMC Verification Code
+  # Maximum number of game accounts that can be linked to a single email address
+  max_accounts_per_email: 2
+  # Enable email domain whitelist
+  domain_whitelist_enabled: true
+  # Enable email alias limit (e.g. forbid user+xxx@gmail.com)
+  alias_limit_enabled: false
+  # Email domain whitelist. Leave empty to use default mainstream domains
+  domain_whitelist:
+    - gmail.com
+    - 163.com
+    - 126.com
+    - qq.com
+    - outlook.com
+    - hotmail.com
+    - icloud.com
+    - yahoo.com
+    - foxmail.com
+  # User notification configuration (review result email notification)
+  notification:
+    # Whether to enable user notification feature
+    enabled: true
+    # Whether to send notification when application is approved
+    on_approve: true
+    # Whether to send notification when application is rejected
+    on_reject: true
 
 # ----------------------------------------
 # Auto Update Resources
 # ----------------------------------------
 # If true, automatically updates i18n files, email templates, and static theme files when the plugin starts.
 auto_update_resources: true
-
-# ----------------------------------------
-# Email Registration Restrictions
-# ----------------------------------------
-# Enable email domain whitelist
-enable_email_domain_whitelist: true
-# Enable email alias limit (e.g. forbid user+xxx@gmail.com)
-enable_email_alias_limit: false
-# Email domain whitelist. Leave empty to use default mainstream domains
-email_domain_whitelist:
-  - gmail.com
-  - 163.com
-  - 126.com
-  - qq.com
-  - outlook.com
-  - hotmail.com
-  - icloud.com
-  - yahoo.com
-  - foxmail.com 
 
 # ----------------------------------------
 # Storage
@@ -290,8 +291,7 @@ authme:
 # Captcha Configuration
 # ----------------------------------------
 # Captcha can be used as an alternative or supplement to email verification
-# Add 'captcha' to auth_methods to enable: auth_methods: [captcha]
-# Or use both: auth_methods: [email, captcha]
+# Add 'captcha' to must_auth_methods or option_auth_methods to enable
 captcha:
   # Captcha type: math (math expression) or text (random characters)
   type: math

@@ -35,6 +35,7 @@ public class ConfigManager {
     public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
         migrateAuthMethodsConfig();
+        migrateEmailConfig();
         validateConfig();
     }
 
@@ -54,6 +55,83 @@ public class ConfigManager {
                 plugin.reloadConfig();
                 plugin.getLogger().log(Level.INFO, "Migration completed. Old auth_methods migrated to auth.must_auth_methods");
             }
+        }
+    }
+
+    private void migrateEmailConfig() {
+        boolean hasOldSmtp = getConfig().contains("smtp.host");
+        boolean hasNewSmtp = getConfig().contains("email.smtp.host");
+        boolean hasOldUserNotification = getConfig().contains("user_notification.enabled");
+        boolean hasNewNotification = getConfig().contains("email.notification.enabled");
+
+        if (hasOldSmtp && !hasNewSmtp) {
+            plugin.getLogger().log(Level.INFO, "Migrating email config to new format...");
+
+            if (getConfig().contains("smtp.host")) {
+                getConfig().set("email.smtp.host", getConfig().getString("smtp.host"));
+            }
+            if (getConfig().contains("smtp.port")) {
+                getConfig().set("email.smtp.port", getConfig().getInt("smtp.port"));
+            }
+            if (getConfig().contains("smtp.username")) {
+                getConfig().set("email.smtp.username", getConfig().getString("smtp.username"));
+            }
+            if (getConfig().contains("smtp.password")) {
+                getConfig().set("email.smtp.password", getConfig().getString("smtp.password"));
+            }
+            if (getConfig().contains("smtp.from")) {
+                getConfig().set("email.smtp.from", getConfig().getString("smtp.from"));
+            }
+            if (getConfig().contains("smtp.enable_ssl")) {
+                getConfig().set("email.smtp.enable_ssl", getConfig().getBoolean("smtp.enable_ssl"));
+            }
+
+            if (getConfig().contains("email_subject")) {
+                getConfig().set("email.subject", getConfig().getString("email_subject"));
+            }
+            if (getConfig().contains("max_accounts_per_email")) {
+                getConfig().set("email.max_accounts_per_email", getConfig().getInt("max_accounts_per_email"));
+            }
+            if (getConfig().contains("enable_email_domain_whitelist")) {
+                getConfig().set("email.domain_whitelist_enabled", getConfig().getBoolean("enable_email_domain_whitelist"));
+            }
+            if (getConfig().contains("enable_email_alias_limit")) {
+                getConfig().set("email.alias_limit_enabled", getConfig().getBoolean("enable_email_alias_limit"));
+            }
+            if (getConfig().contains("email_domain_whitelist")) {
+                getConfig().set("email.domain_whitelist", getConfig().getStringList("email_domain_whitelist"));
+            }
+
+            getConfig().set("smtp", null);
+            getConfig().set("email_subject", null);
+            getConfig().set("max_accounts_per_email", null);
+            getConfig().set("enable_email_domain_whitelist", null);
+            getConfig().set("enable_email_alias_limit", null);
+            getConfig().set("email_domain_whitelist", null);
+
+            plugin.saveConfig();
+            plugin.reloadConfig();
+            plugin.getLogger().log(Level.INFO, "Email config migration completed.");
+        }
+
+        if (hasOldUserNotification && !hasNewNotification) {
+            plugin.getLogger().log(Level.INFO, "Migrating user_notification to email.notification...");
+
+            if (getConfig().contains("user_notification.enabled")) {
+                getConfig().set("email.notification.enabled", getConfig().getBoolean("user_notification.enabled"));
+            }
+            if (getConfig().contains("user_notification.on_approve")) {
+                getConfig().set("email.notification.on_approve", getConfig().getBoolean("user_notification.on_approve"));
+            }
+            if (getConfig().contains("user_notification.on_reject")) {
+                getConfig().set("email.notification.on_reject", getConfig().getBoolean("user_notification.on_reject"));
+            }
+
+            getConfig().set("user_notification", null);
+
+            plugin.saveConfig();
+            plugin.reloadConfig();
+            plugin.getLogger().log(Level.INFO, "User notification migration completed.");
         }
     }
 
@@ -346,17 +424,27 @@ public class ConfigManager {
 
     // --- Email ---
     public String getEmailSubject() {
-        return getConfig().getString("email_subject", "VerifyMC Verification Code");
+        String subject = getConfig().getString("email.subject");
+        if (subject == null || subject.isEmpty()) {
+            subject = getConfig().getString("email_subject", "VerifyMC Verification Code");
+        }
+        return subject;
     }
 
     public boolean isEmailDomainWhitelistEnabled() {
+        if (getConfig().contains("email.domain_whitelist_enabled")) {
+            return getConfig().getBoolean("email.domain_whitelist_enabled", true);
+        }
         return getConfig().getBoolean("enable_email_domain_whitelist", true);
     }
 
     public List<String> getEmailDomainWhitelist() {
         List<String> list = null;
         try {
-            list = getConfig().getStringList("email_domain_whitelist");
+            list = getConfig().getStringList("email.domain_whitelist");
+            if (list == null || list.isEmpty()) {
+                list = getConfig().getStringList("email_domain_whitelist");
+            }
         } catch (Exception ignored) {}
         if (list == null || list.isEmpty()) {
             return DEFAULT_EMAIL_DOMAIN_WHITELIST;
@@ -365,11 +453,88 @@ public class ConfigManager {
     }
 
     public boolean isEmailAliasLimitEnabled() {
+        if (getConfig().contains("email.alias_limit_enabled")) {
+            return getConfig().getBoolean("email.alias_limit_enabled", false);
+        }
         return getConfig().getBoolean("enable_email_alias_limit", false);
     }
 
     public int getMaxAccountsPerEmail() {
-        return getConfig().getInt("max_accounts_per_email", 2);
+        int max = getConfig().getInt("email.max_accounts_per_email", -1);
+        if (max == -1) {
+            max = getConfig().getInt("max_accounts_per_email", 2);
+        }
+        return max;
+    }
+
+    // --- SMTP ---
+    public String getSmtpHost() {
+        String host = getConfig().getString("email.smtp.host");
+        if (host == null || host.isEmpty()) {
+            host = getConfig().getString("smtp.host", "smtp.qq.com");
+        }
+        return host;
+    }
+
+    public int getSmtpPort() {
+        int port = getConfig().getInt("email.smtp.port", -1);
+        if (port == -1) {
+            port = getConfig().getInt("smtp.port", 587);
+        }
+        return port;
+    }
+
+    public String getSmtpUsername() {
+        String username = getConfig().getString("email.smtp.username");
+        if (username == null || username.isEmpty()) {
+            username = getConfig().getString("smtp.username", "");
+        }
+        return username;
+    }
+
+    public String getSmtpPassword() {
+        String password = getConfig().getString("email.smtp.password");
+        if (password == null || password.isEmpty()) {
+            password = getConfig().getString("smtp.password", "");
+        }
+        return password;
+    }
+
+    public String getSmtpFrom() {
+        String from = getConfig().getString("email.smtp.from");
+        if (from == null || from.isEmpty()) {
+            from = getConfig().getString("smtp.from", getSmtpUsername());
+        }
+        return from;
+    }
+
+    public boolean isSmtpEnableSsl() {
+        if (getConfig().contains("email.smtp.enable_ssl")) {
+            return getConfig().getBoolean("email.smtp.enable_ssl", true);
+        }
+        return getConfig().getBoolean("smtp.enable_ssl", true);
+    }
+
+    // --- Email Notification ---
+    public boolean isEmailNotificationEnabled() {
+        if (getConfig().contains("email.notification.enabled")) {
+            return getConfig().getBoolean("email.notification.enabled", true);
+        }
+        return getConfig().getBoolean("user_notification.enabled", true);
+    }
+
+    public boolean isNotifyOnApprove() {
+        if (getConfig().contains("email.notification.on_approve")) {
+            return getConfig().getBoolean("email.notification.on_approve", true);
+        }
+        return getConfig().getBoolean("user_notification.on_approve", true);
+    }
+
+    public boolean isNotifyOnReject() {
+        if (getConfig().contains("email.notification.on_reject")) {
+            return getConfig().getBoolean("email.notification.on_reject", true);
+        }
+        return getConfig().getBoolean("user_notification.on_reject", true);
     }
 
     // --- Whitelist ---

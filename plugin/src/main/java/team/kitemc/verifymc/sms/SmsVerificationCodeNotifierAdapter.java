@@ -18,7 +18,8 @@ public class SmsVerificationCodeNotifierAdapter implements SmsVerificationCodeNo
     @Override
     public CompletableFuture<Boolean> notifyCode(String phoneNumber, String countryCode, String code, String language) {
         try {
-            boolean result = smsService.sendVerificationCode(phoneNumber, countryCode, code, language)
+            String fullPhoneNumber = team.kitemc.verifymc.util.PhoneUtil.buildFullPhoneNumber(countryCode, phoneNumber);
+            boolean result = smsService.sendVerificationCode(fullPhoneNumber, code, language)
                     .get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             return CompletableFuture.completedFuture(result);
         } catch (java.util.concurrent.TimeoutException e) {

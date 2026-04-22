@@ -1,7 +1,7 @@
 # ----------------------------------------
 # 全局设置
 # ----------------------------------------
-# 全局语言设置，影响插件消息和网页界面。(例如 'zh', 'en')
+# 全局语言设置，影响插件消息和网页界面。（例如 'zh', 'en'）
 language: en
 # 开启后，控制台会输出详细的日志，用于故障排查。
 debug: false
@@ -12,7 +12,7 @@ admin_auth:
   mode: op
 
 # ----------------------------------------
-# 网页服务器
+# 网页服务器与前端
 # ----------------------------------------
 # 网页服务使用的端口。
 web_port: 8080
@@ -20,9 +20,8 @@ web_port: 8080
 ws_port: 8081
 # 显示在网页界面上的服务器名称。
 web_server_prefix: '[ Name ]'
-
+# 是否启用内置 HTTPS 和 WSS 服务。
 ssl:
-  # 是否启用内置 HTTPS 和 WSS 服务。
   enabled: false
   keystore:
     # 密钥库文件路径。相对路径将基于插件数据目录解析。
@@ -32,34 +31,57 @@ ssl:
     # 密钥库类型，例如：PKCS12 或 JKS。
     type: PKCS12
 
+frontend:
+  # 网页界面的视觉主题。可选: 'glassx'。
+  theme: glassx
+  # Logo 的 URL。可以是网页链接或本地文件路径（例如 '/logo.png'）。
+  logo_url: /logo.png
+  # 显示在主页上的公告信息。
+  announcement: 欢迎来到[ Name ]!
+  # 是否由插件自身托管静态前端文件。
+  # 如果你把 frontend/glassx/dist 部署到其他域名，请设为 false。
+  serve_static: true
+  # 允许跨域访问 API 的前端来源列表。
+  # 支持完全匹配，例如: https://your-pages-domain.pages.dev
+  # 也支持子域名通配，例如: https://*.example.com
+  # 所有匹配都会忽略端口；通配仅匹配单层子域名。
+  # 当前端独立部署时，还需要在前端构建时设置 VITE_BOOTSTRAP_API_BASE，
+  # 指向本插件的 HTTP 基址（不要带 /api）。
+  # 留空列表表示允许所有跨域来源。
+  allowed_origins: []
+
 # ----------------------------------------
 # 验证与白名单
 # ----------------------------------------
 # 支持的验证方式。可选: 'email'（邮箱验证码）, 'captcha'（图形验证码）, 'sms'（短信验证）。
-# 可以同时使用多种方式，例如: [email, captcha]
 # 
-# 【重要】仅配置下方的 captcha: 部分不会启用图形验证码！
-# 要启用图形验证码，必须在此列表中添加 'captcha'：
-#   仅使用图形验证码: auth_methods: [captcha]
-#   同时使用邮箱和图形验证码: auth_methods: [email, captcha]
-auth_methods:
-  - email
-
-# 认证方式高级配置
+# 配置指南：
+#   must_auth_methods: 必须完成的验证方式 - 用户必须通过所有列出的方式才能注册
+#   option_auth_methods: 可选的验证方式 - 用户可以选择其中一种或多种
+#   min_option_auth_methods: 用户至少需要完成的可选验证方式数量
+# 
+# 示例：
+#   仅邮箱验证: must_auth_methods: [email]
+#   邮箱 + 图形验证码: must_auth_methods: [email, captcha]
+#   邮箱必须，短信或图形验证码可选：
+#     must_auth_methods: [email]
+#     option_auth_methods: [sms, captcha]
+#     min_option_auth_methods: 1
+# 
+# 【重要】仅配置下方的 captcha/sms 部分不会启用验证！
+# 必须将验证方式添加到 must_auth_methods 或 option_auth_methods 中才能启用。
 auth:
-  # 必须完成的认证方式列表。用户必须通过所有列出的方式才能注册。
+  # 必须完成的验证方式列表。用户必须通过所有列出的方式才能注册。
   must_auth_methods: []
-  # 可选的认证方式列表。用户可以选择其中一种或多种进行验证。
+  # 可选的验证方式列表。用户可以选择其中一种或多种进行验证。
   option_auth_methods: []
-  # 用户至少需要完成的可选认证方式数量。
+  # 用户至少需要完成的可选验证方式数量。
   min_option_auth_methods: 0
 
 # ----------------------------------------
 # 短信验证配置
 # ----------------------------------------
-# 短信验证可作为邮箱验证的替代或补充方案
-# 在 auth_methods 中添加 'sms' 来启用: auth_methods: [sms]
-# 或同时使用多种验证: auth_methods: [email, sms]
+# 在 must_auth_methods 或 option_auth_methods 中添加 'sms' 来启用
 sms:
   # 是否启用短信验证功能
   enabled: false
@@ -95,9 +117,7 @@ sms:
     # 阿里云 AccessKeySecret
     access_key_secret: ""
 
-# 单个邮箱最多可以绑定的游戏账号数量。
-max_accounts_per_email: 2
-# 白名单模式: 'bukkit' (与服务器的 whitelist.json 同步) 或 'plugin' (使用插件内部数据库)。
+# 白名单模式: 'bukkit'（与服务器的 whitelist.json 同步）或 'plugin'（使用插件内部数据库）。
 whitelist_mode: plugin
 # 在 'plugin' 模式下，向未在白名单中的玩家显示的注册URL。
 web_register_url: https://domain.com/
@@ -122,8 +142,7 @@ username_case_sensitive: false
 user:
   # 允许的密码重置方式列表
   # 可选值: current_password（当前密码）, email（邮箱验证）, sms（短信验证）
-  password_reset_methods:
-    - current_password
+  password_reset_methods: ["current_password"]
 
 # 忘记密码功能配置
 forgot_password:
@@ -133,76 +152,56 @@ forgot_password:
   captcha_enabled: false
 
 # ----------------------------------------
-# 用户通知
+# 邮箱配置
 # ----------------------------------------
-# 当管理员审核用户申请后，向用户发送邮件通知。
-user_notification:
-  # 是否启用用户通知功能
-  enabled: true
-  # 审核通过时是否发送通知邮件
-  on_approve: true
-  # 审核拒绝时是否发送通知邮件
-  on_reject: true
-
-# ----------------------------------------
-# 前端 (UI)
-# ----------------------------------------
-frontend:
-  # 网页界面的视觉主题。可选: 'glassx'。
-  theme: glassx
-  # Logo 的 URL。可以是网页链接或本地文件路径 (例如 '/logo.png')。
-  logo_url: /logo.png
-  # 显示在主页上的公告信息。
-  announcement: 欢迎来到[ Name ]!
-  # 是否由插件自身托管静态前端文件。
-  # 如果你把 frontend/glassx/dist 部署到其他域名，请设为 false。
-  serve_static: true
-  # 允许跨域访问 API 的前端来源列表。
-  # 支持完全匹配，例如: https://your-pages-domain.pages.dev
-  # 也支持子域名通配，例如: https://*.example.com
-  # 所有匹配都会忽略端口；通配仅匹配单层子域名。
-  # 当前端独立部署时，还需要在前端构建时设置 VITE_BOOTSTRAP_API_BASE，
-  # 指向本插件的 HTTP 基址（不要带 /api）。
-  # 留空列表表示允许所有跨域来源。
-  allowed_origins: []
-
-# ----------------------------------------
-# 邮箱 (SMTP)
-# ----------------------------------------
-smtp:
-  host: smtp.qq.com
-  port: 587
-  username: your_email@qq.com
-  password: your_email_password
-  from: your_email@qq.com
-  enable_ssl: true
-# 验证码邮件的主题（标题）
-email_subject: VerifyMC Verification Code
+email:
+  # SMTP 服务器配置
+  smtp:
+    # SMTP 服务器地址
+    host: smtp.qq.com
+    # SMTP 服务器端口
+    port: 587
+    # SMTP 登录用户名（通常是邮箱地址）
+    username: your_email@qq.com
+    # SMTP 登录密码或授权码
+    password: your_email_password
+    # 发件人邮箱地址（通常与 username 相同）
+    from: your_email@qq.com
+    # 是否启用 SSL/TLS 加密
+    enable_ssl: true
+  # 验证码邮件的主题（标题）
+  subject: VerifyMC Verification Code
+  # 单个邮箱最多可以绑定的游戏账号数量
+  max_accounts_per_email: 2
+  # 是否启用邮箱域名白名单
+  domain_whitelist_enabled: true
+  # 是否限制邮箱别名（如禁止 user+xxx@gmail.com）
+  alias_limit_enabled: false
+  # 邮箱域名白名单，留空则使用默认主流邮箱域
+  domain_whitelist:
+    - gmail.com
+    - 163.com
+    - 126.com
+    - qq.com
+    - outlook.com
+    - hotmail.com
+    - icloud.com
+    - yahoo.com
+    - foxmail.com
+  # 用户通知配置（审核结果邮件通知）
+  notification:
+    # 是否启用用户通知功能
+    enabled: true
+    # 审核通过时是否发送通知邮件
+    on_approve: true
+    # 审核拒绝时是否发送通知邮件
+    on_reject: true
 
 # ----------------------------------------
 # 自动更新资源
 # ----------------------------------------
 # 如果为 true，插件启动时会自动更新语言文件、邮件模板和主题文件。
 auto_update_resources: true
-
-# ----------------------------------------
-# 邮箱注册限制
-# ----------------------------------------
-# 是否启用邮箱域名白名单
-enable_email_domain_whitelist: true
-# 是否限制邮箱别名（如禁止 user+xxx@gmail.com）
-enable_email_alias_limit: false
-# 邮箱域名白名单，留空则使用默认主流邮箱域
-email_domain_whitelist:
-  - gmail.com
-  - 163.com
-  - 126.com
-  - qq.com
-  - outlook.com
-  - hotmail.com
-  - icloud.com
-  - yahoo.com
-  - foxmail.com 
 
 # ----------------------------------------
 # 存储
@@ -221,10 +220,10 @@ mysql:
   allowPublicKeyRetrieval: false
 
 # ----------------------------------------
-# Authme集成配置
+# Authme 集成配置
 # ----------------------------------------
 authme:
-  # 是否启用Authme集成功能
+  # 是否启用 Authme 集成功能
   enabled: true
   # 密码正则表达式
   password_regex: "^[a-zA-Z0-9_]{8,26}$"
@@ -233,8 +232,8 @@ authme:
     type: sqlite
     # AuthMe 表名
     table: authme
-    # 密码格式仅支持 sha256，盐长度固定为 16。如原先不是，请在 AuthMe 中切换（ AuthMe 支持惰性回退）。
-    # 在 AuthMe 中切换后，请先直接进服登录一次以触发惰性回退到 sha256，或者也可以直接在后台重置密码。
+    # 密码格式仅支持 SHA-256，盐长度固定为 16。如原先不是，请在 AuthMe 中切换（AuthMe 支持惰性回退）。
+    # 在 AuthMe 中切换后，请先直接进服登录一次以触发惰性回退到 SHA-256，或者也可以直接在后台重置密码。
     # VerifyMC 与 AuthMe 双向同步间隔（秒）
     sync_interval_seconds: 30
     mysql:
@@ -292,8 +291,7 @@ authme:
 # 图形验证码配置
 # ----------------------------------------
 # 图形验证码可作为邮箱验证的替代或补充方案
-# 在 auth_methods 中添加 'captcha' 来启用: auth_methods: [captcha]
-# 或同时使用两种验证: auth_methods: [email, captcha]
+# 在 must_auth_methods 或 option_auth_methods 中添加 'captcha' 来启用
 captcha:
   # 验证码类型: math（数学表达式）或 text（随机字符）
   type: math
@@ -382,7 +380,7 @@ llm:
   score_format: '{"score": number, "reason": string, "confidence": number}'
 
 # ----------------------------------------
-# Discord集成（OAuth2）
+# Discord 集成（OAuth2）
 # ----------------------------------------
 # 需要在 https://discord.com/developers/applications 创建 Discord 应用
 discord:

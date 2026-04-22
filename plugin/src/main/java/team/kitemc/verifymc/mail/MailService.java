@@ -14,20 +14,22 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Properties;
 import java.util.function.BiFunction;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
+import team.kitemc.verifymc.core.ConfigManager;
 
 public class MailService {
     private final Plugin plugin;
+    private final ConfigManager configManager;
     private final BiFunction<String, String, String> getMessage;
     private final boolean debug;
     private Session session;
     private String from;
 
-    public MailService(Plugin plugin, BiFunction<String, String, String> getMessage) {
+    public MailService(Plugin plugin, ConfigManager configManager, BiFunction<String, String, String> getMessage) {
         this.plugin = plugin;
+        this.configManager = configManager;
         this.getMessage = getMessage;
-        this.debug = plugin.getConfig().getBoolean("debug", false);
+        this.debug = configManager.isDebug();
         init();
     }
 
@@ -39,13 +41,12 @@ public class MailService {
 
     private void init() {
         debugLog("Initializing MailService");
-        FileConfiguration config = plugin.getConfig();
-        String host = config.getString("smtp.host", "smtp.qq.com");
-        int port = config.getInt("smtp.port", 587);
-        String username = config.getString("smtp.username");
-        String password = config.getString("smtp.password");
-        from = config.getString("smtp.from", username);
-        boolean enableSsl = config.getBoolean("smtp.enable_ssl", true);
+        String host = configManager.getSmtpHost();
+        int port = configManager.getSmtpPort();
+        String username = configManager.getSmtpUsername();
+        String password = configManager.getSmtpPassword();
+        from = configManager.getSmtpFrom();
+        boolean enableSsl = configManager.isSmtpEnableSsl();
 
         debugLog("SMTP Configuration: host=" + host + ", port=" + port + ", enableSsl=" + enableSsl);
 
@@ -115,7 +116,7 @@ public class MailService {
                     .replace("{server_name}", escapeHtml(serverName))
                     .replace("{expire_minutes}", String.valueOf(expireMinutes));
 
-            String subject = plugin.getConfig().getString("email_subject", "VerifyMC Verification Code");
+            String subject = configManager.getEmailSubject();
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(from));
             message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
@@ -158,15 +159,15 @@ public class MailService {
     }
 
     public boolean isUserNotificationEnabled() {
-        return plugin.getConfig().getBoolean("user_notification.enabled", true);
+        return configManager.isEmailNotificationEnabled();
     }
 
     public boolean isNotifyOnApprove() {
-        return plugin.getConfig().getBoolean("user_notification.on_approve", true);
+        return configManager.isNotifyOnApprove();
     }
 
     public boolean isNotifyOnReject() {
-        return plugin.getConfig().getBoolean("user_notification.on_reject", true);
+        return configManager.isNotifyOnReject();
     }
 
     public boolean sendReviewResultNotification(String email, String username, boolean approved, String reason, String language) {
