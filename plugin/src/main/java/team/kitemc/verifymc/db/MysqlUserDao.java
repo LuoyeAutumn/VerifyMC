@@ -127,6 +127,14 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
 
             ensureIndex(stmt, "idx_email", "CREATE INDEX idx_email ON users(email)");
             ensureIndex(stmt, "idx_discord_id", "CREATE INDEX idx_discord_id ON users(discord_id)");
+
+            try {
+                stmt.executeQuery("SELECT phone FROM users LIMIT 1");
+            } catch (SQLException e) {
+                stmt.executeUpdate("ALTER TABLE users ADD COLUMN phone VARCHAR(32)");
+            }
+
+            ensureIndex(stmt, "idx_phone", "CREATE INDEX idx_phone ON users(phone)");
         }
     }
 
@@ -183,7 +191,15 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
     public boolean registerUser(String username, String email, String status, String password,
             Integer questionnaireScore, Boolean questionnairePassed,
             String questionnaireReviewSummary, Long questionnaireScoredAt) {
-        String sql = "INSERT IGNORE INTO users (username, email, status, password, regTime, questionnaire_score, questionnaire_passed, questionnaire_review_summary, questionnaire_scored_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        return registerUser(username, email, status, password, questionnaireScore, questionnairePassed, questionnaireReviewSummary, questionnaireScoredAt, null);
+    }
+
+    @Override
+    public boolean registerUser(String username, String email, String status, String password,
+            Integer questionnaireScore, Boolean questionnairePassed,
+            String questionnaireReviewSummary, Long questionnaireScoredAt,
+            String phone) {
+        String sql = "INSERT IGNORE INTO users (username, email, status, password, regTime, questionnaire_score, questionnaire_passed, questionnaire_review_summary, questionnaire_scored_at, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, username);
             ps.setString(2, email);
@@ -203,6 +219,7 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
                 ps.setLong(9, questionnaireScoredAt);
             else
                 ps.setNull(9, Types.BIGINT);
+            ps.setString(10, phone);
             int rows = ps.executeUpdate();
             if (rows == 0) {
                 debugLog("User already exists with username: " + username + ", skipping registration");
@@ -312,6 +329,7 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
         user.put("password", rs.getString("password"));
         user.put("regTime", rs.getLong("regTime"));
         user.put("discordId", rs.getString("discord_id"));
+        user.put("phone", rs.getString("phone"));
         user.put("questionnaireScore", rs.getObject("questionnaire_score"));
         user.put("questionnairePassed", rs.getObject("questionnaire_passed"));
         user.put("questionnaireReviewSummary", rs.getString("questionnaire_review_summary"));
@@ -402,6 +420,67 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
             debugLog("Error counting users by email: " + e.getMessage());
         }
         return count;
+    }
+
+    @Override
+    public int countByPhone(String phone) {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM users WHERE phone=?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    count = rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            debugLog("Error counting users by phone: " + e.getMessage());
+        }
+        return count;
+    }
+
+    @Override
+    public Map<String, Object> getUserByPhone(String phone) {
+        debugLog("Getting user by phone: " + phone);
+        if (phone == null || phone.isEmpty()) {
+            return null;
+        }
+        String sql = "SELECT * FROM users WHERE phone=?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    debugLog("User found by phone: " + rs.getString("username"));
+                    return mapUserFromResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            debugLog("Error getting user by phone: " + e.getMessage());
+        }
+        debugLog("User not found by phone");
+        return null;
+    }
+
+    @Override
+    public List<Map<String, Object>> findAllByPhone(String phone) {
+        debugLog("Finding all users by phone: " + phone);
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (phone == null || phone.isEmpty()) {
+            return result;
+        }
+        String sql = "SELECT * FROM users WHERE phone=?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapUserFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            debugLog("Error finding users by phone: " + e.getMessage());
+        }
+        debugLog("Found " + result.size() + " users with phone: " + phone);
+        return result;
     }
 
     @Override

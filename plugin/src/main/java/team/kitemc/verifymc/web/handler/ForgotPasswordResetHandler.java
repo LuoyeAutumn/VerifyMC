@@ -9,7 +9,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.registration.VerifyCodePurpose;
+import team.kitemc.verifymc.sms.SmsService;
 import team.kitemc.verifymc.util.EmailAddressUtil;
+import team.kitemc.verifymc.util.PhoneUtil;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
@@ -32,7 +34,7 @@ public class ForgotPasswordResetHandler implements HttpHandler {
                     ctx.getMessage("error.invalid_json", "en")), 400);
             return;
         }
-        String email = EmailAddressUtil.normalize(req.optString("email", ""));
+        String account = req.optString("account", "");
         String code = req.optString("code", "");
         String newPassword = req.optString("password", "");
         String language = req.optString("language", "en");
@@ -43,7 +45,21 @@ public class ForgotPasswordResetHandler implements HttpHandler {
             return;
         }
 
-        if (!EmailAddressUtil.isValid(email)) {
+        boolean isEmail = EmailAddressUtil.isValid(account);
+        boolean isPhone = false;
+        String normalizedAccount = "";
+
+        if (isEmail) {
+            normalizedAccount = EmailAddressUtil.normalize(account);
+        } else {
+            normalizedAccount = PhoneUtil.normalizePhoneNumber(account);
+            SmsService smsService = ctx.getSmsService();
+            if (smsService != null && smsService.isValidPhoneNumber(normalizedAccount)) {
+                isPhone = true;
+            }
+        }
+
+        if (!isEmail && !isPhone) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("email.invalid_format", language)));
             return;
@@ -62,13 +78,19 @@ public class ForgotPasswordResetHandler implements HttpHandler {
             return;
         }
 
-        if (!ctx.getVerifyCodeService().checkCode(VerifyCodePurpose.FORGOT_PASSWORD, email, code)) {
+        if (!ctx.getVerifyCodeService().checkCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount, code)) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("email.invalid_code", language)));
             return;
         }
 
-        List<Map<String, Object>> users = ctx.getUserDao().findAllByEmail(email);
+        List<Map<String, Object>> users;
+        if (isEmail) {
+            users = ctx.getUserDao().findAllByEmail(normalizedAccount);
+        } else {
+            users = ctx.getUserDao().findAllByPhone(normalizedAccount);
+        }
+
         if (users.isEmpty()) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("forgot_password.email_not_found", language)));
@@ -83,7 +105,10 @@ public class ForgotPasswordResetHandler implements HttpHandler {
                 if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
                     ctx.getAuthmeService().syncUserPasswordToAuthme(username, newPassword);
                 }
-                ctx.getAuditService().recordPasswordChange("system", username, "Forgot password via email verification");
+                String auditMessage = isEmail
+                        ? "Forgot password via email verification"
+                        : "Forgot password via phone verification";
+                ctx.getAuditService().recordPasswordChange("system", username, auditMessage);
             }
         }
 

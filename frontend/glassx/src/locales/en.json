@@ -158,9 +158,15 @@
     "forgot_password": {
       "link": "Forgot password?",
       "title": "Reset Password",
-      "subtitle": "Enter your email to receive a verification code",
+      "subtitle": "Choose a verification method to receive code",
+      "verify_method": "Verification Method",
+      "method_email": "Email",
+      "method_phone": "Phone",
       "email": "Email Address",
       "email_placeholder": "Enter your email address",
+      "phone": "Phone Number",
+      "phone_placeholder": "Enter phone number",
+      "phone_required": "Please enter phone number",
       "code": "Verification Code",
       "code_placeholder": "Enter 6-digit code",
       "new_password": "New Password",
@@ -365,6 +371,29 @@
     "linked": "Discord Linked",
     "required_hint": "Discord account linking is required",
     "required": "You must link your Discord account to register"
+  },
+  "sms": {
+    "title": "SMS Verification",
+    "phone": "Phone Number",
+    "countryCode": "Country Code",
+    "sendCode": "Send Code",
+    "resend": "Resend ({seconds}s)",
+    "codePlaceholder": "Enter verification code",
+    "phonePlaceholder": "Enter phone number",
+    "sent": "Code sent",
+    "failed": "Failed to send",
+    "invalidPhone": "Invalid phone number format",
+    "phoneLimit": "Phone number reached registration limit",
+    "rateLimited": "Too many requests",
+    "notEnabled": "SMS verification not enabled",
+    "phoneNotFound": "Phone number not registered",
+    "selectCountryCode": "Select country code"
+  },
+  "auth": {
+    "required": "Required",
+    "optional": "Optional",
+    "verificationProgress": "Verification Progress",
+    "minOptionalRequired": "At least {count} optional verification(s) required"
   },
   "dashboard": {
     "title": "Dashboard",

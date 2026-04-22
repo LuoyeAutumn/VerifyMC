@@ -14,7 +14,10 @@ public record RegistrationRequest(
         String captchaAnswer,
         String language,
         String platform,
-        JSONObject questionnaire
+        JSONObject questionnaire,
+        String phone,
+        String countryCode,
+        String smsCode
 ) {
     public static RegistrationRequest fromJson(JSONObject req, UsernameRuleService usernameRules) {
         String email = EmailAddressUtil.normalize(req.optString("email", ""));
@@ -27,6 +30,9 @@ public record RegistrationRequest(
         String platform = req.optString("platform", "java");
         JSONObject questionnaire = req.optJSONObject("questionnaire");
         String normalizedUsername = usernameRules.normalize(username, platform);
-        return new RegistrationRequest(email, code, username, normalizedUsername, password, captchaToken, captchaAnswer, language, platform, questionnaire);
+        String phone = req.optString("phone", "");
+        String countryCode = req.optString("countryCode", "+86");
+        String smsCode = req.optString("smsCode", "");
+        return new RegistrationRequest(email, code, username, normalizedUsername, password, captchaToken, captchaAnswer, language, platform, questionnaire, phone, countryCode, smsCode);
     }
 }

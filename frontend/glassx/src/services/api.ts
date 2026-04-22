@@ -42,6 +42,8 @@ export interface ConfigResponse {
   enableEmailDomainWhitelist?: boolean
   enableEmailAliasLimit?: boolean
   language?: string
+  authMethodsConfig?: AuthMethodsConfig
+  sms?: SmsConfig
 }
 
 export interface QuestionnaireAnswer {
@@ -114,6 +116,28 @@ export interface SendCodeResponse {
   success: boolean
   message: string
   remainingSeconds?: number
+}
+
+export interface SendSmsCodeRequest {
+  phone: string
+  countryCode: string
+  language?: string
+}
+
+export interface SendSmsCodeResponse {
+  success: boolean
+  message?: string
+}
+
+export interface SmsConfig {
+  enabled: boolean
+  countryCodes: string[]
+}
+
+export interface AuthMethodsConfig {
+  mustAuthMethods: string[]
+  optionAuthMethods: string[]
+  minOptionAuthMethods: number
 }
 
 export interface RegisterRequest {
@@ -536,12 +560,27 @@ class ApiService {
 
   // 忘记密码 - 重置密码
   async forgotPasswordReset(data: {
-    email: string
+    account?: string
+    email?: string
     code: string
     password: string
     language: string
   }): Promise<{ success: boolean; message?: string; resetCount?: number }> {
     return this.request('/forgot-password/reset', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async sendSmsCode(data: SendSmsCodeRequest): Promise<SendSmsCodeResponse> {
+    return this.request<SendSmsCodeResponse>('/sms/send', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async sendSmsForgotPassword(data: SendSmsCodeRequest): Promise<SendSmsCodeResponse> {
+    return this.request<SendSmsCodeResponse>('/sms/forgot-password', {
       method: 'POST',
       body: JSON.stringify(data),
     })

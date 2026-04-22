@@ -85,6 +85,10 @@ public class VerifyCodeService {
         return purpose.key() + ":" + EmailAddressUtil.normalize(email);
     }
 
+    private String buildSmsStorageKey(VerifyCodePurpose purpose, String phone, String countryCode) {
+        return purpose.key() + ":sms:" + countryCode + ":" + phone;
+    }
+
     public CodeIssueResult issueCode(String email) {
         return issueCode(VerifyCodePurpose.REGISTER, email);
     }
@@ -164,6 +168,70 @@ public class VerifyCodeService {
             codeMap.remove(normalizedKey);
         }
         return ok;
+    }
+
+    public CodeIssueResult issueSmsCode(String phone, String countryCode, VerifyCodePurpose purpose) {
+        String key = buildSmsStorageKey(purpose, phone, countryCode);
+        long currentTime = System.currentTimeMillis();
+        AtomicReference<CodeIssueResult> resultRef = new AtomicReference<>();
+
+        rateLimitMap.compute(key, (k, lastSentTime) -> {
+            if (lastSentTime != null) {
+                long remainingMillis = rateLimitMillis - (currentTime - lastSentTime);
+                long remainingSeconds = toRemainingSeconds(remainingMillis);
+                if (remainingSeconds > 0) {
+                    resultRef.set(CodeIssueResult.rateLimited(remainingSeconds));
+                    return lastSentTime;
+                }
+            }
+
+            String code = String.format("%06d", secureRandom.nextInt(1000000));
+            long expireTime = currentTime + expireMillis;
+            codeMap.put(k, new CodeEntry(code, expireTime));
+            resultRef.set(CodeIssueResult.issued(code, toRemainingSeconds(rateLimitMillis)));
+            debugLog("Issued SMS code for key: " + k + ", expires at: " + expireTime + ", rate limit recorded at: " + currentTime);
+            return currentTime;
+        });
+
+        return resultRef.get();
+    }
+
+    public boolean checkSmsCode(String phone, String countryCode, String code, VerifyCodePurpose purpose) {
+        String normalizedKey = buildSmsStorageKey(purpose, phone, countryCode);
+        debugLog("checkSmsCode called: key=" + normalizedKey + ", code=" + code);
+        CodeEntry entry = codeMap.get(normalizedKey);
+        if (entry == null) {
+            debugLog("No SMS code found for key: " + normalizedKey);
+            return false;
+        }
+
+        if (entry.attempts >= MAX_ATTEMPTS) {
+            debugLog("Too many attempts for SMS key: " + normalizedKey + ", attempts: " + entry.attempts);
+            codeMap.remove(normalizedKey);
+            return false;
+        }
+
+        if (entry.expire < System.currentTimeMillis()) {
+            debugLog("SMS code expired for key: " + normalizedKey + ", expired at: " + entry.expire);
+            codeMap.remove(normalizedKey);
+            return false;
+        }
+
+        entry.attempts++;
+        boolean ok = entry.code.equals(code);
+        debugLog("SMS code verification result: " + ok + " (attempts: " + entry.attempts + ")");
+        if (ok) {
+            debugLog("Removing used SMS code for key: " + normalizedKey);
+            codeMap.remove(normalizedKey);
+        }
+        return ok;
+    }
+
+    public void revokeSmsCode(String phone, String countryCode, VerifyCodePurpose purpose) {
+        String normalizedKey = buildSmsStorageKey(purpose, phone, countryCode);
+        codeMap.remove(normalizedKey);
+        rateLimitMap.remove(normalizedKey);
+        debugLog("Revoked SMS code and cooldown for key: " + normalizedKey);
     }
 
     private long toRemainingSeconds(long remainingMillis) {

@@ -89,8 +89,20 @@
               <p v-if="authmeConfig.passwordRegex" class="mt-1 text-xs text-white/50">{{ $t('register.form.password_hint', { regex: authmeConfig.passwordRegex }) }}</p>
             </div>
 
-            <div v-if="emailEnabled">
-              <Label for="code" class="mb-1">{{ $t('register.form.code') }}</Label>
+            <VerificationProgress
+              :must-methods="authMethodsState.mustMethods"
+              :optional-methods="authMethodsState.optionalMethods"
+              :min-optional-required="authMethodsState.minOptionalRequired"
+              :completed-methods="completedMethods"
+              :is-method-enabled="isMethodEnabled"
+            />
+
+            <div v-if="isMethodEnabled('email') && showEmailVerification">
+              <Label for="code" class="mb-1 flex items-center gap-2">
+                {{ $t('register.form.code') }}
+                <span v-if="isMethodRequired('email')" class="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{{ $t('auth.required') }}</span>
+                <span v-else class="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">{{ $t('auth.optional') }}</span>
+              </Label>
               <div class="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="code"
@@ -99,6 +111,7 @@
                   :placeholder="$t('register.form.code_placeholder')"
                   :class="{ 'border-red-500 focus-visible:ring-red-500': errors.code }"
                   @blur="validateCode"
+                  @input="onEmailCodeChange"
                 />
                 <Button
                   type="button"
@@ -113,8 +126,29 @@
               <p v-if="errors.code" class="mt-1 text-sm text-red-400">{{ errors.code }}</p>
             </div>
 
-            <div v-if="captchaEnabled">
-              <Label for="captcha" class="mb-1">{{ $t('register.form.captcha') }}</Label>
+            <div v-if="isMethodEnabled('sms') && showSmsVerification">
+              <Label class="mb-1 flex items-center gap-2">
+                {{ $t('sms.title') }}
+                <span v-if="isMethodRequired('sms')" class="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{{ $t('auth.required') }}</span>
+                <span v-else class="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">{{ $t('auth.optional') }}</span>
+              </Label>
+              <PhoneInput
+                v-model="form.phone"
+                v-model:country-code="form.countryCode"
+                v-model:code="form.smsCode"
+                :country-codes="smsCountryCodes"
+                :error="errors.phone"
+                :code-error="errors.smsCode"
+                @update:code="onSmsCodeChange"
+              />
+            </div>
+
+            <div v-if="isMethodEnabled('captcha') && showCaptchaVerification">
+              <Label for="captcha" class="mb-1 flex items-center gap-2">
+                {{ $t('register.form.captcha') }}
+                <span v-if="isMethodRequired('captcha')" class="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{{ $t('auth.required') }}</span>
+                <span v-else class="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">{{ $t('auth.optional') }}</span>
+              </Label>
               <div class="flex flex-col sm:flex-row gap-2 items-center">
                 <Input
                   id="captcha"
@@ -123,6 +157,7 @@
                   :placeholder="$t('register.form.captcha_placeholder')"
                   :class="{ 'border-red-500 focus-visible:ring-red-500': errors.captcha }"
                   @blur="validateCaptcha"
+                  @input="onCaptchaChange"
                 />
                 <div class="cursor-pointer border border-white/10 rounded-lg overflow-hidden bg-white/5 backdrop-blur-sm hover:bg-white/15 hover:border-white/25 transition-all duration-300 flex-shrink-0 shadow-lg" @click="refreshCaptcha" :title="$t('register.form.captcha_refresh')">
                   <img v-if="captchaImage" :src="captchaImage" alt="captcha" class="h-10 w-auto" />
@@ -133,9 +168,13 @@
               <p class="mt-1 text-xs text-white/50">{{ $t('register.form.captcha_hint') }}</p>
             </div>
 
-            <div v-if="discordEnabled" class="pt-2">
-              <Label class="mb-2">Discord {{ discordRequired ? '*' : '' }}</Label>
-              <DiscordLink :username="getNormalizedUsername()" :required="discordRequired" @linked="onDiscordLinked" @unlinked="onDiscordUnlinked" />
+            <div v-if="isMethodEnabled('discord') && showDiscordVerification" class="pt-2">
+              <Label class="mb-2 flex items-center gap-2">
+                Discord
+                <span v-if="isMethodRequired('discord')" class="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{{ $t('auth.required') }}</span>
+                <span v-else class="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">{{ $t('auth.optional') }}</span>
+              </Label>
+              <DiscordLink :username="getNormalizedUsername()" :required="isMethodRequired('discord')" @linked="onDiscordLinked" @unlinked="onDiscordUnlinked" />
               <p v-if="errors.discord" class="mt-1 text-sm text-red-400">{{ errors.discord }}</p>
             </div>
           </div>
@@ -176,8 +215,11 @@ import { useI18n } from 'vue-i18n'
 import { apiService } from '@/services/api'
 import { useNotification } from '@/composables/useNotification'
 import { useCooldown } from '@/composables/useCooldown'
+import { useAuthMethods, type AuthMethodType } from '@/composables/useAuthMethods'
 import DiscordLink from '@/components/DiscordLink.vue'
 import QuestionnaireForm from '@/components/QuestionnaireForm.vue'
+import PhoneInput from '@/components/PhoneInput.vue'
+import VerificationProgress from '@/components/VerificationProgress.vue'
 import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest } from '@/services/api'
 
 import Button from './ui/Button.vue'
@@ -208,12 +250,8 @@ const config = ref<ConfigResponse>({
 
 const captchaImage = ref('')
 const captchaToken = ref('')
-const captchaEnabled = computed(() => config.value.captcha?.enabled || false)
-const emailEnabled = computed(() => config.value.captcha?.emailEnabled !== false)
 
 const discordLinked = ref(false)
-const discordEnabled = computed(() => config.value.discord?.enabled || false)
-const discordRequired = computed(() => config.value.discord?.required || false)
 
 const questionnaireResult = ref<QuestionnaireSubmission | null>(null)
 const questionnaireEnabled = computed(() => config.value.questionnaire?.enabled || false)
@@ -223,6 +261,33 @@ const bedrockPrefix = computed(() => config.value.bedrock?.prefix || '.')
 const selectedPlatform = ref<'java' | 'bedrock'>('java')
 
 const authmeConfig = computed(() => config.value.authme)
+
+const {
+  authState: authMethodsState,
+  isMethodEnabled,
+  isMethodRequired,
+  setMethodCompleted,
+  canSubmit: authCanSubmit,
+  getMissingRequiredMethods,
+  getOptionalMethodsProgress,
+  resetAll: resetAuthMethods
+} = useAuthMethods({ config })
+
+const smsCountryCodes = computed(() => config.value.sms?.countryCodes || ['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'])
+
+const showEmailVerification = computed(() => isMethodEnabled('email'))
+const showSmsVerification = computed(() => isMethodEnabled('sms'))
+const showCaptchaVerification = computed(() => isMethodEnabled('captcha'))
+const showDiscordVerification = computed(() => isMethodEnabled('discord'))
+
+const completedMethods = computed<AuthMethodType[]>(() => {
+  const completed: AuthMethodType[] = []
+  if (form.code && !errors.code) completed.push('email')
+  if (form.smsCode && !errors.smsCode) completed.push('sms')
+  if (form.captchaAnswer && !errors.captcha) completed.push('captcha')
+  if (discordLinked.value) completed.push('discord')
+  return completed
+})
 
 onMounted(async () => {
   try {
@@ -248,20 +313,64 @@ const refreshCaptcha = async () => {
   }
 }
 
-const form = reactive({ username: '', email: '', code: '', password: '', captchaAnswer: '' })
-const errors = reactive({ username: '', email: '', code: '', password: '', captcha: '', discord: '' })
+const form = reactive({
+  username: '',
+  email: '',
+  code: '',
+  password: '',
+  captchaAnswer: '',
+  phone: '',
+  countryCode: '+86',
+  smsCode: ''
+})
+const errors = reactive({
+  username: '',
+  email: '',
+  code: '',
+  password: '',
+  captcha: '',
+  discord: '',
+  phone: '',
+  smsCode: ''
+})
 
 const onDiscordLinked = () => {
   discordLinked.value = true
   errors.discord = ''
+  setMethodCompleted('discord', true)
 }
 const onDiscordUnlinked = () => {
   discordLinked.value = false
+  setMethodCompleted('discord', false)
+}
+
+const onEmailCodeChange = () => {
+  if (form.code && !errors.code) {
+    setMethodCompleted('email', true)
+  } else {
+    setMethodCompleted('email', false)
+  }
+}
+
+const onSmsCodeChange = () => {
+  if (form.smsCode && !errors.smsCode) {
+    setMethodCompleted('sms', true)
+  } else {
+    setMethodCompleted('sms', false)
+  }
+}
+
+const onCaptchaChange = () => {
+  if (form.captchaAnswer && !errors.captcha) {
+    setMethodCompleted('captcha', true)
+  } else {
+    setMethodCompleted('captcha', false)
+  }
 }
 
 const validateDiscord = () => {
   errors.discord = ''
-  if (discordRequired.value && !discordLinked.value) {
+  if (isMethodRequired('discord') && !discordLinked.value) {
     errors.discord = t('discord.required')
   }
 }
@@ -360,14 +469,28 @@ const validatePassword = () => {
 }
 const validateCode = () => {
   errors.code = ''
-  if (emailEnabled.value && !form.code) {
+  if (isMethodEnabled('email') && isMethodRequired('email') && !form.code) {
     errors.code = t('register.validation.code_required')
   }
 }
 const validateCaptcha = () => {
   errors.captcha = ''
-  if (captchaEnabled.value && !form.captchaAnswer) {
+  if (isMethodEnabled('captcha') && isMethodRequired('captcha') && !form.captchaAnswer) {
     errors.captcha = t('register.validation.captcha_required')
+  }
+}
+const validatePhone = () => {
+  errors.phone = ''
+  if (isMethodEnabled('sms') && isMethodRequired('sms')) {
+    if (!form.phone) {
+      errors.phone = t('sms.invalidPhone')
+    }
+  }
+}
+const validateSmsCode = () => {
+  errors.smsCode = ''
+  if (isMethodEnabled('sms') && isMethodRequired('sms') && !form.smsCode) {
+    errors.smsCode = t('register.validation.code_required')
   }
 }
 
@@ -378,14 +501,48 @@ const validateForm = () => {
   validateCode()
   validateCaptcha()
   validateDiscord()
+  validatePhone()
+  validateSmsCode()
 }
 
 const isBasicStepValid = computed(() => {
   let valid = form.username && form.email && !errors.username && !errors.email
-  if (emailEnabled.value) valid = valid && !!form.code && !errors.code
-  if (captchaEnabled.value) valid = valid && !!form.captchaAnswer && !errors.captcha
   valid = valid && !!form.password && !errors.password
-  if (discordRequired.value) valid = valid && discordLinked.value && !errors.discord
+
+  if (isMethodEnabled('email')) {
+    if (isMethodRequired('email')) {
+      valid = valid && !!form.code && !errors.code
+    }
+  }
+
+  if (isMethodEnabled('sms')) {
+    if (isMethodRequired('sms')) {
+      valid = valid && !!form.phone && !errors.phone && !!form.smsCode && !errors.smsCode
+    }
+  }
+
+  if (isMethodEnabled('captcha')) {
+    if (isMethodRequired('captcha')) {
+      valid = valid && !!form.captchaAnswer && !errors.captcha
+    }
+  }
+
+  if (isMethodEnabled('discord')) {
+    if (isMethodRequired('discord')) {
+      valid = valid && discordLinked.value && !errors.discord
+    }
+  }
+
+  const missingRequired = getMissingRequiredMethods()
+  if (missingRequired.length > 0) {
+    return false
+  }
+
+  const optionalProgress = getOptionalMethodsProgress()
+  if (optionalProgress.required > 0 && optionalProgress.completed < optionalProgress.required) {
+    return false
+  }
+
   return valid
 })
 
@@ -461,7 +618,7 @@ const handleSubmit = async () => {
   registrationSubmitted.value = false
   registrationSuccessMessage.value = ""
   try {
-    const registerData: RegisterRequest = {
+    const registerData: RegisterRequest & { phone?: string; countryCode?: string; smsCode?: string } = {
       username: getNormalizedUsername(),
       email: form.email.trim().toLowerCase(),
       password: form.password,
@@ -469,14 +626,19 @@ const handleSubmit = async () => {
       platform: selectedPlatform.value
     }
 
-    if (emailEnabled.value) registerData.code = form.code
-    if (captchaEnabled.value) {
+    if (isMethodEnabled('email') && form.code) registerData.code = form.code
+    if (isMethodEnabled('captcha') && form.captchaAnswer) {
       registerData.captchaToken = captchaToken.value
       registerData.captchaAnswer = form.captchaAnswer
     }
+    if (isMethodEnabled('sms') && form.smsCode) {
+      registerData.phone = form.phone
+      registerData.countryCode = form.countryCode
+      registerData.smsCode = form.smsCode
+    }
     if (questionnaireResult.value) registerData.questionnaire = questionnaireResult.value
 
-    const response = await apiService.register(registerData)
+    const response = await apiService.register(registerData as RegisterRequest)
     if (response.success) {
       registrationSubmitted.value = true
       registrationSuccessMessage.value = response.message || t('register.success')
@@ -484,12 +646,12 @@ const handleSubmit = async () => {
     } else {
       registrationSubmitted.value = false
       error(response.message || t('register.failed'))
-      if (captchaEnabled.value) await refreshCaptcha()
+      if (isMethodEnabled('captcha')) await refreshCaptcha()
     }
   } catch {
     registrationSubmitted.value = false
     error(t('register.failed'))
-    if (captchaEnabled.value) await refreshCaptcha()
+    if (isMethodEnabled('captcha')) await refreshCaptcha()
   } finally {
     loading.value = false
   }

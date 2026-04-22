@@ -5,6 +5,8 @@ import team.kitemc.verifymc.security.AdminAccessManager;
 import team.kitemc.verifymc.db.UserDao;
 import team.kitemc.verifymc.mail.MailService;
 import team.kitemc.verifymc.service.*;
+import team.kitemc.verifymc.sms.SmsService;
+import team.kitemc.verifymc.sms.SmsVerificationCodeNotifier;
 import team.kitemc.verifymc.util.UsernameRuleService;
 import team.kitemc.verifymc.web.ReviewWebSocketServer;
 import team.kitemc.verifymc.web.WebAuthHelper;
@@ -35,6 +37,8 @@ public class PluginContext {
     private QuestionnaireService questionnaireService;
     private DiscordService discordService;
     private VersionCheckService versionCheckService;
+    private SmsService smsService;
+    private SmsVerificationCodeNotifier smsNotifier;
 
     // Application services
     private RegistrationApplicationService registrationApplicationService;
@@ -73,6 +77,8 @@ public class PluginContext {
     public QuestionnaireService getQuestionnaireService() { return questionnaireService; }
     public DiscordService getDiscordService() { return discordService; }
     public VersionCheckService getVersionCheckService() { return versionCheckService; }
+    public SmsService getSmsService() { return smsService; }
+    public SmsVerificationCodeNotifier getSmsNotifier() { return smsNotifier; }
     public RegistrationApplicationService getRegistrationApplicationService() { return registrationApplicationService; }
     public ReviewApplicationService getReviewApplicationService() { return reviewApplicationService; }
     public QuestionnaireApplicationService getQuestionnaireApplicationService() { return questionnaireApplicationService; }
@@ -89,6 +95,8 @@ public class PluginContext {
     public void setQuestionnaireService(QuestionnaireService questionnaireService) { this.questionnaireService = questionnaireService; }
     public void setDiscordService(DiscordService discordService) { this.discordService = discordService; }
     public void setVersionCheckService(VersionCheckService versionCheckService) { this.versionCheckService = versionCheckService; }
+    public void setSmsService(SmsService smsService) { this.smsService = smsService; }
+    public void setSmsNotifier(SmsVerificationCodeNotifier smsNotifier) { this.smsNotifier = smsNotifier; }
     public void setRegistrationApplicationService(RegistrationApplicationService svc) { this.registrationApplicationService = svc; }
     public void setReviewApplicationService(ReviewApplicationService svc) { this.reviewApplicationService = svc; }
     public void setQuestionnaireApplicationService(QuestionnaireApplicationService svc) { this.questionnaireApplicationService = svc; }

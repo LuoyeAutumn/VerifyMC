@@ -28,6 +28,8 @@ import team.kitemc.verifymc.web.handler.QuestionnaireConfigHandler;
 import team.kitemc.verifymc.web.handler.QuestionnaireSubmitHandler;
 import team.kitemc.verifymc.web.handler.ReviewStatusHandler;
 import team.kitemc.verifymc.web.handler.ServerStatusHandler;
+import team.kitemc.verifymc.web.handler.SmsForgotPasswordHandler;
+import team.kitemc.verifymc.web.handler.SmsVerifyCodeHandler;
 import team.kitemc.verifymc.web.handler.StaticFileHandler;
 import team.kitemc.verifymc.web.handler.UserPasswordHandler;
 import team.kitemc.verifymc.web.handler.UserStatusHandler;
@@ -69,9 +71,13 @@ public class ApiRouter {
         // --- Email verification ---
         registerApiRoute(server, "/api/verify/send", new VerifyCodeHandler(ctx));
 
+        // --- SMS verification ---
+        registerApiRoute(server, "/api/sms/send", new SmsVerifyCodeHandler(ctx));
+
         // --- Forgot password ---
         registerApiRoute(server, "/api/forgot-password/code", new ForgotPasswordCodeHandler(ctx));
         registerApiRoute(server, "/api/forgot-password/reset", new ForgotPasswordResetHandler(ctx));
+        registerApiRoute(server, "/api/sms/forgot-password", new SmsForgotPasswordHandler(ctx));
 
         // --- Questionnaire endpoints ---
         registerApiRoute(server, "/api/questionnaire/config", new QuestionnaireConfigHandler(ctx));

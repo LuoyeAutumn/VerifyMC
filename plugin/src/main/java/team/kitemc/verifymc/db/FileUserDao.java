@@ -167,6 +167,10 @@ public class FileUserDao implements UserDao {
                             user.put("questionnaireScoredAt", user.remove("questionnaire_scored_at"));
                             hasUpgraded = true;
                         }
+                        if (!user.containsKey("phone")) {
+                            user.put("phone", null);
+                            hasUpgraded = true;
+                        }
                     }
                 }
 
@@ -268,7 +272,15 @@ public class FileUserDao implements UserDao {
     public boolean registerUser(String username, String email, String status, String password,
                                 Integer questionnaireScore, Boolean questionnairePassed,
                                 String questionnaireReviewSummary, Long questionnaireScoredAt) {
-        debugLog("registerUser with password called: username=" + username + ", email=" + email + ", status=" + status);
+        return registerUser(username, email, status, password, questionnaireScore, questionnairePassed, questionnaireReviewSummary, questionnaireScoredAt, null);
+    }
+
+    @Override
+    public boolean registerUser(String username, String email, String status, String password,
+                                Integer questionnaireScore, Boolean questionnairePassed,
+                                String questionnaireReviewSummary, Long questionnaireScoredAt,
+                                String phone) {
+        debugLog("registerUser with password called: username=" + username + ", email=" + email + ", status=" + status + ", phone=" + phone);
         try {
             String key = normalizeKey(username);
             if (users.containsKey(key)) {
@@ -282,6 +294,7 @@ public class FileUserDao implements UserDao {
             user.put("status", status);
             user.put("password", PasswordUtil.hash(password));
             user.put("regTime", System.currentTimeMillis());
+            user.put("phone", phone);
             applyQuestionnaireAuditFields(user, questionnaireScore, questionnairePassed, questionnaireReviewSummary, questionnaireScoredAt);
             debugLog("Adding user with password to map: username=" + username);
             users.put(key, user);
@@ -443,6 +456,54 @@ public class FileUserDao implements UserDao {
         }
         debugLog("Found " + count + " users with email: " + email);
         return count;
+    }
+
+    @Override
+    public int countByPhone(String phone) {
+        debugLog("Counting users by phone: " + phone);
+        int count = 0;
+        for (Map<String, Object> user : users.values()) {
+            Object userPhone = user.get("phone");
+            if (userPhone != null && userPhone.toString().equals(phone)) {
+                count++;
+            }
+        }
+        debugLog("Found " + count + " users with phone: " + phone);
+        return count;
+    }
+
+    @Override
+    public Map<String, Object> getUserByPhone(String phone) {
+        debugLog("Getting user by phone: " + phone);
+        if (phone == null || phone.isEmpty()) {
+            return null;
+        }
+        for (Map<String, Object> user : users.values()) {
+            Object userPhone = user.get("phone");
+            if (userPhone != null && userPhone.toString().equals(phone)) {
+                debugLog("User found by phone: " + user.get("username"));
+                return user;
+            }
+        }
+        debugLog("User not found by phone");
+        return null;
+    }
+
+    @Override
+    public List<Map<String, Object>> findAllByPhone(String phone) {
+        debugLog("Finding all users by phone: " + phone);
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (phone == null || phone.isEmpty()) {
+            return result;
+        }
+        for (Map<String, Object> user : users.values()) {
+            Object userPhone = user.get("phone");
+            if (userPhone != null && userPhone.toString().equals(phone)) {
+                result.add(user);
+            }
+        }
+        debugLog("Found " + result.size() + " users with phone: " + phone);
+        return result;
     }
 
     @Override

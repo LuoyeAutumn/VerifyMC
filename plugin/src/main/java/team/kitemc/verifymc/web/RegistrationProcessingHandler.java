@@ -14,7 +14,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.db.UserDao;
+import team.kitemc.verifymc.registration.AuthMethodValidator;
+import team.kitemc.verifymc.registration.AuthMethodValidator.AuthValidationContext;
+import team.kitemc.verifymc.registration.AuthMethodValidator.ValidationResult;
 import team.kitemc.verifymc.registration.RegistrationOutcome;
+import team.kitemc.verifymc.registration.VerifyCodePurpose;
 import team.kitemc.verifymc.service.AuthmeService;
 import team.kitemc.verifymc.service.CaptchaService;
 import team.kitemc.verifymc.service.DiscordService;
@@ -44,6 +48,7 @@ public class RegistrationProcessingHandler implements HttpHandler {
     private final UsernameRuleService usernameRules;
     private final Function<String, Boolean> emailValidator;
     private final Consumer<String> debugLogger;
+    private final AuthMethodValidator authMethodValidator;
 
     public RegistrationProcessingHandler(
             Plugin plugin,
@@ -79,6 +84,7 @@ public class RegistrationProcessingHandler implements HttpHandler {
         this.usernameRules = usernameRules;
         this.emailValidator = emailValidator;
         this.debugLogger = debugLogger;
+        this.authMethodValidator = new AuthMethodValidator(plugin.getConfig());
     }
 
     @Override
@@ -130,7 +136,6 @@ public class RegistrationProcessingHandler implements HttpHandler {
     private RegistrationValidationResult validateBasicInput(RegistrationRequest request, String requestId) {
         logRegistrationStage(requestId, "validate_basic_input", null);
 
-        // 1. Null/empty checks first to prevent NPE downstream
         if (request.normalizedUsername() == null || request.normalizedUsername().trim().isEmpty()) {
             return RegistrationValidationResult.reject("register.invalid_username");
         }
@@ -138,7 +143,6 @@ public class RegistrationProcessingHandler implements HttpHandler {
             return RegistrationValidationResult.reject("register.invalid_email");
         }
 
-        // 2. Format validation
         if (!usernameRules.isValid(request.normalizedUsername(), request.platform())) {
             String usernameRegex = usernameRules.getUnifiedRegex();
             return RegistrationValidationResult.reject("username.invalid", new JSONObject().put("regex", usernameRegex));
@@ -152,7 +156,6 @@ public class RegistrationProcessingHandler implements HttpHandler {
             return RegistrationValidationResult.reject("register.invalid_password", new JSONObject().put("regex", passwordRegex));
         }
 
-        // 3. Email policy checks
         if (plugin.getConfig().getBoolean("enable_email_alias_limit", false) && EmailAddressUtil.hasAlias(request.email())) {
             return RegistrationValidationResult.reject("register.alias_not_allowed");
         }
@@ -163,7 +166,6 @@ public class RegistrationProcessingHandler implements HttpHandler {
             }
         }
 
-        // 4. Uniqueness checks (require DB access)
         boolean caseSensitive = usernameCaseSensitiveProvider.get();
         var existingUser = caseSensitive
             ? userDao.getUserByUsernameExact(request.normalizedUsername())
@@ -180,6 +182,15 @@ public class RegistrationProcessingHandler implements HttpHandler {
         if (emailCount >= maxAccounts) {
             return RegistrationValidationResult.reject("register.email_limit");
         }
+
+        if (authMethodValidator.requiresSms() && request.phone() != null && !request.phone().isEmpty()) {
+            int maxPhoneAccounts = plugin.getConfig().getInt("sms.max_accounts_per_phone", 5);
+            int phoneCount = userDao.countByPhone(request.countryCode() + request.phone());
+            if (phoneCount >= maxPhoneAccounts) {
+                return RegistrationValidationResult.reject("register.phone_limit");
+            }
+        }
+
         return RegistrationValidationResult.pass();
     }
 
@@ -230,26 +241,64 @@ public class RegistrationProcessingHandler implements HttpHandler {
 
     private RegistrationValidationResult validateVerificationMethod(RegistrationRequest request, String requestId) {
         logRegistrationStage(requestId, "validate_verification_method", null);
-        List<String> authMethods = plugin.getConfig().getStringList("auth_methods");
-        boolean useCaptcha = authMethods.contains("captcha");
-        boolean useEmail = authMethods.contains("email");
-        if (!useCaptcha && !useEmail) {
-            return RegistrationValidationResult.pass();
+
+        boolean emailVerified = false;
+        boolean smsVerified = false;
+        boolean captchaVerified = false;
+
+        if (authMethodValidator.requiresEmail()) {
+            if (request.code() == null || request.code().isEmpty()) {
+                if (authMethodValidator.isEmailMust()) {
+                    return RegistrationValidationResult.reject("verify.email_required");
+                }
+            } else {
+                if (!codeService.checkCode(VerifyCodePurpose.REGISTER, request.email(), request.code())) {
+                    if (authMethodValidator.isEmailMust()) {
+                        return RegistrationValidationResult.reject("verify.wrong_code");
+                    }
+                } else {
+                    emailVerified = true;
+                }
+            }
         }
 
-        if (useCaptcha) {
-            if (request.captchaToken().isEmpty() || request.captchaAnswer().isEmpty()) {
-                return RegistrationValidationResult.reject("captcha.required");
-            }
-            if (!captchaService.validateCaptcha(request.captchaToken(), request.captchaAnswer())) {
-                return RegistrationValidationResult.reject("captcha.invalid");
+        if (authMethodValidator.requiresSms()) {
+            if (request.phone() == null || request.phone().isEmpty() || request.smsCode() == null || request.smsCode().isEmpty()) {
+                if (authMethodValidator.isSmsMust()) {
+                    return RegistrationValidationResult.reject("verify.sms_required");
+                }
+            } else {
+                if (!codeService.checkSmsCode(request.phone(), request.countryCode(), request.smsCode(), VerifyCodePurpose.SMS_REGISTER)) {
+                    if (authMethodValidator.isSmsMust()) {
+                        return RegistrationValidationResult.reject("verify.wrong_sms_code");
+                    }
+                } else {
+                    smsVerified = true;
+                }
             }
         }
 
-        if (useEmail) {
-            if (!codeService.checkCode(request.email(), request.code())) {
-                return RegistrationValidationResult.reject("verify.wrong_code");
+        if (authMethodValidator.requiresCaptcha()) {
+            if (request.captchaToken() == null || request.captchaToken().isEmpty() || request.captchaAnswer() == null || request.captchaAnswer().isEmpty()) {
+                if (authMethodValidator.isCaptchaMust()) {
+                    return RegistrationValidationResult.reject("captcha.required");
+                }
+            } else {
+                if (!captchaService.validateCaptcha(request.captchaToken(), request.captchaAnswer())) {
+                    if (authMethodValidator.isCaptchaMust()) {
+                        return RegistrationValidationResult.reject("captcha.invalid");
+                    }
+                } else {
+                    captchaVerified = true;
+                }
             }
+        }
+
+        AuthValidationContext context = AuthValidationContext.of(emailVerified, smsVerified, captchaVerified);
+        ValidationResult result = authMethodValidator.validate(context);
+
+        if (!result.passed()) {
+            return RegistrationValidationResult.reject(result.messageKey(), result.responseFields());
         }
 
         return RegistrationValidationResult.pass();
@@ -279,8 +328,13 @@ public class RegistrationProcessingHandler implements HttpHandler {
         String questionnaireReviewSummary = submissionRecord != null ? buildQuestionnaireReviewSummary(submissionRecord.details()) : null;
         Long questionnaireScoredAt = submissionRecord != null ? submissionRecord.submittedAt() : null;
 
+        String phone = null;
+        if (request.phone() != null && !request.phone().isEmpty()) {
+            phone = request.countryCode() + request.phone();
+        }
+
         boolean ok = userDao.registerUser(request.normalizedUsername(), request.email(), status, request.password(),
-                questionnaireScore, questionnairePassedValue, questionnaireReviewSummary, questionnaireScoredAt);
+                questionnaireScore, questionnairePassedValue, questionnaireReviewSummary, questionnaireScoredAt, phone);
 
         RegistrationApplicationService.RegistrationDecision decision =
                 registrationApplicationService.resolveDecision(ok, manualReviewRequired, questionnairePassed, registerAutoApprove, scoringServiceUnavailable);

@@ -13,6 +13,29 @@ ssl:
     type: PKCS12
 auth_methods:
   - email
+auth:
+  must_auth_methods: []
+  option_auth_methods: []
+  min_option_auth_methods: 0
+sms:
+  enabled: false
+  provider: tencent
+  region: ap-guangzhou
+  sign_name: ""
+  template_id: ""
+  sdk_app_id: ""
+  country_codes:
+    - "+86"
+  phone_regex: "^[0-9]{6,15}$"
+  max_accounts_per_phone: 5
+  
+  tencent:
+    secret_id: ""
+    secret_key: ""
+  
+  aliyun:
+    access_key_id: ""
+    access_key_secret: ""
 max_accounts_per_email: 2
 whitelist_mode: plugin
 web_register_url: https://domain.com/

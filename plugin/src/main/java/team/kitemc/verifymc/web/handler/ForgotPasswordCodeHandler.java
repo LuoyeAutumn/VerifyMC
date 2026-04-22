@@ -8,7 +8,9 @@ import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.registration.VerifyCodePurpose;
 import team.kitemc.verifymc.service.VerifyCodeService;
+import team.kitemc.verifymc.sms.SmsService;
 import team.kitemc.verifymc.util.EmailAddressUtil;
+import team.kitemc.verifymc.util.PhoneUtil;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
@@ -31,7 +33,7 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
                     ctx.getMessage("error.invalid_json", "en")), 400);
             return;
         }
-        String email = EmailAddressUtil.normalize(req.optString("email", ""));
+        String account = req.optString("account", "");
         String language = req.optString("language", "en");
 
         if (!ctx.getConfigManager().isForgotPasswordEnabled()) {
@@ -40,14 +42,28 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
             return;
         }
 
-        if (!EmailAddressUtil.isValid(email)) {
+        boolean isEmail = EmailAddressUtil.isValid(account);
+        boolean isPhone = false;
+        String normalizedAccount = "";
+
+        if (isEmail) {
+            normalizedAccount = EmailAddressUtil.normalize(account);
+        } else {
+            normalizedAccount = PhoneUtil.normalizePhoneNumber(account);
+            SmsService smsService = ctx.getSmsService();
+            if (smsService != null && smsService.isValidPhoneNumber(normalizedAccount)) {
+                isPhone = true;
+            }
+        }
+
+        if (!isEmail && !isPhone) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("email.invalid_format", language)));
             return;
         }
 
         VerifyCodeService verifyCodeService = ctx.getVerifyCodeService();
-        VerifyCodeService.CodeIssueResult issueResult = verifyCodeService.issueCode(VerifyCodePurpose.FORGOT_PASSWORD, email);
+        VerifyCodeService.CodeIssueResult issueResult = verifyCodeService.issueCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount);
         if (!issueResult.issued()) {
             long remainingSeconds = issueResult.remainingSeconds();
             String message = ctx.getMessage("email.rate_limited", language)
@@ -58,14 +74,22 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
             return;
         }
 
-        boolean sent = ctx.getMailService().sendVerificationCode(email, issueResult.code(), language);
+        boolean sent = false;
+        if (isEmail) {
+            sent = ctx.getMailService().sendVerificationCode(normalizedAccount, issueResult.code(), language);
+        } else if (isPhone) {
+            SmsService smsService = ctx.getSmsService();
+            if (smsService != null) {
+                sent = smsService.sendVerificationCode(normalizedAccount, issueResult.code(), language).join();
+            }
+        }
 
         if (sent) {
             JSONObject response = ApiResponseFactory.success(ctx.getMessage("forgot_password.code_sent", language));
             response.put("remainingSeconds", issueResult.remainingSeconds());
             WebResponseHelper.sendJson(exchange, response);
         } else {
-            verifyCodeService.revokeCode(VerifyCodePurpose.FORGOT_PASSWORD, email);
+            verifyCodeService.revokeCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount);
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("email.failed", language)));
         }

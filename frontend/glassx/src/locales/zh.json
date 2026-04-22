@@ -158,9 +158,15 @@
     "forgot_password": {
       "link": "忘记密码？",
       "title": "重置密码",
-      "subtitle": "输入您的邮箱以接收验证码",
+      "subtitle": "选择验证方式以接收验证码",
+      "verify_method": "验证方式",
+      "method_email": "邮箱验证",
+      "method_phone": "手机号验证",
       "email": "邮箱地址",
       "email_placeholder": "请输入您的邮箱地址",
+      "phone": "手机号",
+      "phone_placeholder": "请输入手机号",
+      "phone_required": "请输入手机号",
       "code": "验证码",
       "code_placeholder": "请输入6位验证码",
       "new_password": "新密码",
@@ -359,6 +365,29 @@
     "linked": "已绑定 Discord",
     "required_hint": "绑定 Discord 账户是必需的",
     "required": "需要绑定 Discord 账户才能注册"
+  },
+  "sms": {
+    "title": "短信验证",
+    "phone": "手机号",
+    "countryCode": "国家码",
+    "sendCode": "发送验证码",
+    "resend": "重新发送 ({seconds}s)",
+    "codePlaceholder": "请输入验证码",
+    "phonePlaceholder": "请输入手机号",
+    "sent": "验证码已发送",
+    "failed": "发送失败",
+    "invalidPhone": "手机号格式不正确",
+    "phoneLimit": "该手机号已达到最大注册数量",
+    "rateLimited": "请求过于频繁",
+    "notEnabled": "短信验证未启用",
+    "phoneNotFound": "该手机号未注册",
+    "selectCountryCode": "选择国家码"
+  },
+  "auth": {
+    "required": "必填",
+    "optional": "可选",
+    "verificationProgress": "验证进度",
+    "minOptionalRequired": "至少需要完成 {count} 个可选验证"
   },
   "dashboard": {
     "title": "控制面板",

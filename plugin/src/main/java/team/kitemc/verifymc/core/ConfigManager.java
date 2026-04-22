@@ -6,6 +6,7 @@ import team.kitemc.verifymc.security.AdminAuthMode;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,12 +28,33 @@ public class ConfigManager {
     );
 
     private static final Set<String> VALID_STORAGE_TYPES = new HashSet<>(Arrays.asList("file", "mysql"));
+    private static final Set<String> VALID_AUTH_METHODS = new HashSet<>(Arrays.asList("email", "captcha"));
     private static final int MIN_PORT = 1;
     private static final int MAX_PORT = 65535;
 
     public ConfigManager(JavaPlugin plugin) {
         this.plugin = plugin;
+        migrateAuthMethodsConfig();
         validateConfig();
+    }
+
+    private void migrateAuthMethodsConfig() {
+        boolean hasOldConfig = getConfig().contains("auth_methods");
+        boolean hasNewMustConfig = getConfig().contains("auth.must_auth_methods");
+        boolean hasNewOptionConfig = getConfig().contains("auth.option_auth_methods");
+
+        if (hasOldConfig && !hasNewMustConfig && !hasNewOptionConfig) {
+            List<String> oldMethods = getConfig().getStringList("auth_methods");
+            if (oldMethods != null && !oldMethods.isEmpty()) {
+                plugin.getLogger().log(Level.INFO, "Migrating auth_methods to new auth.must_auth_methods config...");
+                getConfig().set("auth.must_auth_methods", oldMethods);
+                getConfig().set("auth.option_auth_methods", new ArrayList<>());
+                getConfig().set("auth.min_option_auth_methods", 0);
+                plugin.saveConfig();
+                plugin.reloadConfig();
+                plugin.getLogger().log(Level.INFO, "Migration completed. Old auth_methods migrated to auth.must_auth_methods");
+            }
+        }
     }
 
     /**
@@ -97,7 +119,58 @@ public class ConfigManager {
             }
         }
 
+        validateAuthMethodsConfig();
+
         plugin.getLogger().log(Level.INFO, "Configuration validated successfully");
+    }
+
+    private void validateAuthMethodsConfig() {
+        List<String> mustMethods = getMustAuthMethodsRaw();
+        List<String> optionMethods = getOptionAuthMethodsRaw();
+        Set<String> conflictMethods = new HashSet<>();
+
+        for (String method : mustMethods) {
+            if (!VALID_AUTH_METHODS.contains(method.toLowerCase())) {
+                plugin.getLogger().log(Level.WARNING,
+                    "Unsupported auth method in must_auth_methods: {0}. Supported methods: {1}. Ignoring.",
+                    new Object[]{method, String.join(", ", VALID_AUTH_METHODS)});
+            }
+        }
+
+        for (String method : optionMethods) {
+            if (!VALID_AUTH_METHODS.contains(method.toLowerCase())) {
+                plugin.getLogger().log(Level.WARNING,
+                    "Unsupported auth method in option_auth_methods: {0}. Supported methods: {1}. Ignoring.",
+                    new Object[]{method, String.join(", ", VALID_AUTH_METHODS)});
+            }
+            if (mustMethods.contains(method)) {
+                conflictMethods.add(method);
+            }
+        }
+
+        for (String method : conflictMethods) {
+            plugin.getLogger().log(Level.WARNING,
+                "Auth method ''{0}'' is in both must_auth_methods and option_auth_methods. Treating as required.",
+                method);
+        }
+
+        int minOption = getMinOptionAuthMethods();
+        int validOptionCount = optionMethods.size();
+        if (minOption > validOptionCount) {
+            plugin.getLogger().log(Level.WARNING,
+                "min_option_auth_methods ({0}) is greater than option_auth_methods count ({1}). Adjusting to {1}.",
+                new Object[]{minOption, validOptionCount});
+        }
+    }
+
+    private List<String> getMustAuthMethodsRaw() {
+        List<String> methods = getConfig().getStringList("auth.must_auth_methods");
+        return methods != null ? methods : Collections.emptyList();
+    }
+
+    private List<String> getOptionAuthMethodsRaw() {
+        List<String> methods = getConfig().getStringList("auth.option_auth_methods");
+        return methods != null ? methods : Collections.emptyList();
     }
 
     public FileConfiguration getConfig() {
@@ -212,15 +285,63 @@ public class ConfigManager {
 
     // --- Auth methods ---
     public List<String> getAuthMethods() {
+        List<String> newMethods = getMustAuthMethods();
+        if (!newMethods.isEmpty()) {
+            return newMethods;
+        }
         return getConfig().getStringList("auth_methods");
     }
 
+    public List<String> getMustAuthMethods() {
+        List<String> methods = getConfig().getStringList("auth.must_auth_methods");
+        if (methods == null || methods.isEmpty()) {
+            return Collections.singletonList("email");
+        }
+        return methods.stream()
+            .filter(method -> VALID_AUTH_METHODS.contains(method.toLowerCase()))
+            .toList();
+    }
+
+    public List<String> getOptionAuthMethods() {
+        List<String> methods = getConfig().getStringList("auth.option_auth_methods");
+        if (methods == null || methods.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> mustMethods = getMustAuthMethodsRaw();
+        return methods.stream()
+            .filter(method -> VALID_AUTH_METHODS.contains(method.toLowerCase()))
+            .filter(method -> !mustMethods.contains(method))
+            .toList();
+    }
+
+    public int getMinOptionAuthMethods() {
+        int minOption = getConfig().getInt("auth.min_option_auth_methods", 0);
+        int maxOption = getOptionAuthMethods().size();
+        return Math.max(0, Math.min(minOption, maxOption));
+    }
+
+    public boolean isAuthMethodRequired(String method) {
+        if (method == null || method.isEmpty()) {
+            return false;
+        }
+        return getMustAuthMethods().stream()
+            .anyMatch(m -> m.equalsIgnoreCase(method));
+    }
+
+    public boolean isAuthMethodOptional(String method) {
+        if (method == null || method.isEmpty()) {
+            return false;
+        }
+        return getOptionAuthMethods().stream()
+            .anyMatch(m -> m.equalsIgnoreCase(method));
+    }
+
     public boolean isEmailAuthEnabled() {
-        return getAuthMethods().contains("email");
+        return isAuthMethodRequired("email") || isAuthMethodOptional("email");
     }
 
     public boolean isCaptchaAuthEnabled() {
-        return getAuthMethods().contains("captcha");
+        return isAuthMethodRequired("captcha") || isAuthMethodOptional("captcha");
     }
 
     // --- Email ---
@@ -376,5 +497,62 @@ public class ConfigManager {
             }
         }
         return resources;
+    }
+
+    // --- SMS ---
+    public String getSmsProvider() {
+        return getConfig().getString("sms.provider", "tencent");
+    }
+
+    public String getSmsSecretId() {
+        return getConfig().getString("sms.tencent.secret_id", "");
+    }
+
+    public String getSmsSecretKey() {
+        return getConfig().getString("sms.tencent.secret_key", "");
+    }
+
+    public String getSmsAccessKeyId() {
+        return getConfig().getString("sms.aliyun.access_key_id", "");
+    }
+
+    public String getSmsAccessKeySecret() {
+        return getConfig().getString("sms.aliyun.access_key_secret", "");
+    }
+
+    public String getSmsSdkAppId() {
+        return getConfig().getString("sms.sdk_app_id", "");
+    }
+
+    public String getSmsSignName() {
+        return getConfig().getString("sms.sign_name", "");
+    }
+
+    public String getSmsTemplateId() {
+        return getConfig().getString("sms.template_id", "");
+    }
+
+    public String getSmsRegion() {
+        return getConfig().getString("sms.region", "ap-guangzhou");
+    }
+
+    public List<String> getCountryCodes() {
+        List<String> codes = getConfig().getStringList("sms.country_codes");
+        if (codes == null || codes.isEmpty()) {
+            return Collections.singletonList("+86");
+        }
+        return codes;
+    }
+
+    public String getSmsPhoneRegex() {
+        return getConfig().getString("sms.phone_regex", "^[0-9]{6,15}$");
+    }
+
+    public int getMaxAccountsPerPhone() {
+        return getConfig().getInt("sms.max_accounts_per_phone", 5);
+    }
+
+    public boolean isSmsEnabled() {
+        return getConfig().getBoolean("sms.enabled", false);
     }
 }

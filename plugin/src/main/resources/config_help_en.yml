@@ -1,0 +1,430 @@
+# ----------------------------------------
+# General Settings
+# ----------------------------------------
+# Global language setting. Affects plugin messages and web UI. (e.g., 'zh', 'en')
+language: en
+# Enable detailed console logs for troubleshooting.
+debug: false
+# Unified admin authorization mode for both /vmc admin commands and web admin access.
+# op: require server operator status.
+# permission: require Bukkit permissions for commands and Vault-backed permission lookup for web/offline users.
+admin_auth:
+  mode: op
+
+# ----------------------------------------
+# Web Server
+# ----------------------------------------
+# The port for the web interface.
+web_port: 8080
+# The port for WebSocket service.
+ws_port: 8081
+# The server name displayed on the web interface.
+web_server_prefix: '[ Name ]'
+# Whether to enable the built-in HTTPS and WSS servers.
+ssl:
+  enabled: false
+  keystore:
+    # Path to the keystore file. Relative paths are resolved from the plugin data folder.
+    path: ""
+    # Password for the keystore and private key.
+    password: ""
+    # Keystore type, for example: PKCS12 or JKS.
+    type: PKCS12
+
+# ----------------------------------------
+# Verification & Whitelist
+# ----------------------------------------
+# Supported authentication methods. Options: 'email' (email verification), 'captcha' (graphical captcha), 'sms' (SMS verification).
+# You can use multiple methods, e.g.: [email, captcha]
+# 
+# [IMPORTANT] Configuring the captcha: section below does NOT enable captcha!
+# To enable captcha, you MUST add 'captcha' to this list:
+#   Captcha only: auth_methods: [captcha]
+#   Both email and captcha: auth_methods: [email, captcha]
+auth_methods:
+  - email
+
+# Advanced authentication configuration
+auth:
+  # List of authentication methods that must be completed. Users must pass all listed methods to register.
+  must_auth_methods: []
+  # List of optional authentication methods. Users can choose one or more to verify.
+  option_auth_methods: []
+  # Minimum number of optional authentication methods users must complete.
+  min_option_auth_methods: 0
+
+# ----------------------------------------
+# SMS Verification Configuration
+# ----------------------------------------
+# SMS verification can be used as an alternative or supplement to email verification
+# Add 'sms' to auth_methods to enable: auth_methods: [sms]
+# Or use multiple methods: auth_methods: [email, sms]
+sms:
+  # Whether to enable SMS verification feature
+  enabled: false
+  # SMS service provider: tencent (Tencent Cloud) or aliyun (Alibaba Cloud)
+  provider: tencent
+  # Region (used by Tencent Cloud, e.g., ap-guangzhou)
+  region: ap-guangzhou
+  # SMS signature name
+  sign_name: ""
+  # SMS template ID
+  template_id: ""
+  # SDK application ID (used by Tencent Cloud)
+  sdk_app_id: ""
+  # List of supported country/region codes
+  country_codes:
+    - "+86"
+  # Phone number validation regex
+  phone_regex: "^[0-9]{6,15}$"
+  # Maximum number of game accounts that can be linked to a single phone number
+  max_accounts_per_phone: 5
+  
+  # Tencent Cloud SMS configuration
+  tencent:
+    # Tencent Cloud SecretId
+    secret_id: ""
+    # Tencent Cloud SecretKey
+    secret_key: ""
+  
+  # Alibaba Cloud SMS configuration
+  aliyun:
+    # Alibaba Cloud AccessKeyId
+    access_key_id: ""
+    # Alibaba Cloud AccessKeySecret
+    access_key_secret: ""
+
+# Maximum number of game accounts that can be linked to a single email address.
+max_accounts_per_email: 2
+# Whitelist mode: 'bukkit' (syncs with server's whitelist.json) or 'plugin' (uses internal database).
+whitelist_mode: plugin
+# Registration URL displayed to non-whitelisted players when in 'plugin' mode.
+web_register_url: https://domain.com/
+
+# ----------------------------------------
+# Registration
+# ----------------------------------------
+# If true, new user registrations are automatically approved. If false, they require manual admin approval.
+register:
+  auto_approve: false
+
+# ----------------------------------------
+# User & Security
+# ----------------------------------------
+# A unified regex used to validate player names.
+# Java usernames match it directly; bedrock usernames strip bedrock.prefix first and match their raw username.
+username_regex: "^[a-zA-Z0-9_-]{3,16}$"
+# If false, usernames that only differ by case (e.g., "Player" and "player") are treated as the same.
+username_case_sensitive: false
+
+# User configuration
+user:
+  # List of allowed password reset methods
+  # Options: current_password, email, sms
+  password_reset_methods:
+    - current_password
+
+# Forgot password configuration
+forgot_password:
+  # Whether to enable forgot password feature
+  enabled: true
+  # Whether to enable captcha in forgot password flow
+  captcha_enabled: false
+
+# ----------------------------------------
+# User Notification
+# ----------------------------------------
+# Send email notification to users when admin reviews their application.
+user_notification:
+  # Whether to enable user notification feature
+  enabled: true
+  # Whether to send notification when application is approved
+  on_approve: true
+  # Whether to send notification when application is rejected
+  on_reject: true
+
+# ----------------------------------------
+# Frontend (UI)
+# ----------------------------------------
+frontend:
+  # The visual theme for the web interface. Options: 'glassx'.
+  theme: glassx
+  # URL for the logo. Can be a web link or a local file path (e.g., '/logo.png').
+  logo_url: /logo.png
+  # A message to display on the homepage.
+  announcement: Welcome to [ Name ]!
+  # Whether the plugin should serve static frontend files itself.
+  # Set this to false if you deploy frontend/glassx/dist on another origin.
+  serve_static: true
+  # List of frontend origins allowed to access the API cross-origin.
+  # Supports exact matches, for example: https://your-pages-domain.pages.dev
+  # Also supports single-level subdomain wildcards, for example: https://*.example.com
+  # All matching ignores ports; wildcards only match one subdomain level.
+  # When using an external frontend, also build it with VITE_BOOTSTRAP_API_BASE
+  # pointing to this plugin's HTTP base URL (without /api).
+  # Leave the list empty to allow all cross-origin access.
+  allowed_origins: []
+
+# ----------------------------------------
+# Email (SMTP)
+# ----------------------------------------
+smtp:
+  host: smtp.qq.com
+  port: 587
+  username: your_email@qq.com
+  password: your_email_password
+  from: your_email@qq.com
+  enable_ssl: true
+# Subject (title) of the verification code email
+email_subject: VerifyMC Verification Code
+
+# ----------------------------------------
+# Auto Update Resources
+# ----------------------------------------
+# If true, automatically updates i18n files, email templates, and static theme files when the plugin starts.
+auto_update_resources: true
+
+# ----------------------------------------
+# Email Registration Restrictions
+# ----------------------------------------
+# Enable email domain whitelist
+enable_email_domain_whitelist: true
+# Enable email alias limit (e.g. forbid user+xxx@gmail.com)
+enable_email_alias_limit: false
+# Email domain whitelist. Leave empty to use default mainstream domains
+email_domain_whitelist:
+  - gmail.com
+  - 163.com
+  - 126.com
+  - qq.com
+  - outlook.com
+  - hotmail.com
+  - icloud.com
+  - yahoo.com
+  - foxmail.com 
+
+# ----------------------------------------
+# Storage
+# ----------------------------------------
+# Storage type, options: file (local file), mysql (external database)
+storage: file
+mysql:
+  host: localhost
+  port: 3306
+  database: verifymc
+  user: root
+  password: yourpassword 
+  # Whether to enable SSL for the main MySQL connection
+  useSSL: true
+  # Whether to allow public key retrieval (may be required in some MySQL 8 environments)
+  allowPublicKeyRetrieval: false
+
+# ----------------------------------------
+# Authme Integration Configuration
+# ----------------------------------------
+authme:
+  # Whether to enable Authme integration functionality
+  enabled: true
+  # Password regex pattern
+  password_regex: "^[a-zA-Z0-9_]{8,26}$"
+  database:
+    # DB type in database mode: mysql / sqlite
+    type: sqlite
+    table: authme
+    # Password format only supports SHA-256 with fixed salt length of 16. If it was not previously using this format, please switch it in AuthMe (AuthMe supports lazy fallback).
+    # After switching in AuthMe, please log into the game once to trigger lazy fallback to SHA-256, or you can reset the password directly in the backend.
+    # VerifyMC ↔ AuthMe bidirectional sync interval (seconds)
+    sync_interval_seconds: 30
+    mysql:
+      host: 127.0.0.1
+      port: 3306
+      database: authme
+      user: root
+      password: yourpassword
+      # Whether to enable SSL for the AuthMe MySQL connection
+      useSSL: true
+      # Whether to allow public key retrieval (may be required in some MySQL 8 environments)
+      allowPublicKeyRetrieval: false
+    sqlite:
+      path: plugins/AuthMe/authme.db
+    columns:
+      mySQLColumnId: id
+      # Column for storing or checking players nickname
+      mySQLColumnName: username
+      # Column for storing or checking players RealName
+      mySQLRealName: realname
+      # Column for storing players passwords
+      mySQLColumnPassword: password
+      # Column for storing players passwords salts
+      mySQLColumnSalt: ''
+      # Column for storing players emails
+      mySQLColumnEmail: email
+      # Column for storing if a player is logged in or not
+      mySQLColumnLogged: isLogged
+      # Column for storing if a player has a valid session or not
+      mySQLColumnHasSession: hasSession
+      # Column for storing the player's last IP
+      mySQLColumnIp: ip
+      # Column for storing players lastlogins
+      mySQLColumnLastLogin: lastlogin
+      # Column storing the registration date
+      mySQLColumnRegisterDate: regdate
+      # Column for storing the IP address at the time of registration
+      mySQLColumnRegisterIp: regip
+      # Column for storing player LastLocation - X
+      mySQLlastlocX: x
+      # Column for storing player LastLocation - Y
+      mySQLlastlocY: y
+      # Column for storing player LastLocation - Z
+      mySQLlastlocZ: z
+      # Column for storing player LastLocation - World Name
+      mySQLlastlocWorld: world
+      # Column for storing player LastLocation - Yaw
+      mySQLlastlocYaw: yaw
+      # Column for storing player LastLocation - Pitch
+      mySQLlastlocPitch: pitch
+      # Column for storing players uuids (optional)
+      mySQLPlayerUUID: ''
+
+# ----------------------------------------
+# Captcha Configuration
+# ----------------------------------------
+# Captcha can be used as an alternative or supplement to email verification
+# Add 'captcha' to auth_methods to enable: auth_methods: [captcha]
+# Or use both: auth_methods: [email, captcha]
+captcha:
+  # Captcha type: math (math expression) or text (random characters)
+  type: math
+  # Length of text captcha (ignored for math type)
+  length: 4
+  # Captcha expiration time in seconds
+  expire_seconds: 300
+
+# ----------------------------------------
+# Bedrock Player Support
+# ----------------------------------------
+# For Geyser/Floodgate bedrock players
+bedrock:
+  # Whether to enable bedrock player support
+  enabled: false
+  # Prefix for bedrock players (commonly "." for Floodgate)
+  prefix: "."
+
+# ----------------------------------------
+# Questionnaire Configuration
+# ----------------------------------------
+# Detailed questions are configured in questionnaire.yml
+questionnaire:
+  # Whether to enable questionnaire feature
+  enabled: false
+  # Minimum score to pass
+  pass_score: 60
+  rate_limit:
+    # Time window for rate limiting in milliseconds
+    window_ms: 300000
+    ip:
+      # Maximum submissions allowed per IP within the time window
+      max: 20
+    uuid:
+      # Maximum submissions allowed per Minecraft UUID within the time window
+      max: 8
+    email:
+      # Maximum submissions allowed per email within the time window
+      max: 6
+
+# ----------------------------------------
+# LLM Essay Scoring (for text questions)
+# ----------------------------------------
+llm:
+  # Enable LLM auto scoring. When disabled, all text questions require manual review
+  enabled: true
+  # Scoring provider. Options: deepseek / google
+  provider: deepseek
+  # OpenAI-compatible API base URL, must use https (plugin appends /chat/completions automatically; http:// local proxy endpoints are rejected by ensureHttpsApiBase())
+  api_base: https://api.deepseek.com/v1
+  # API key
+  api_key: ""
+  # Model name
+  model: deepseek-chat
+  # Request timeout in milliseconds
+  timeout: 10000
+  # Retry count when parsing/network call fails
+  retry: 1
+  # Maximum concurrent LLM requests (protects API and server load)
+  max_concurrency: 4
+  # Max wait time to acquire a concurrency slot in milliseconds
+  acquire_timeout: 1500
+  # Base backoff delay for retries in milliseconds
+  retry_backoff_base: 300
+  # Maximum backoff delay for retries in milliseconds
+  retry_backoff_max: 5000
+  # Maximum input length sent to the model in characters
+  input_max_length: 2000
+  circuit_breaker:
+    # Threshold to open circuit breaker (consecutive failures)
+    failure_threshold: 5
+    # How long the circuit remains open in milliseconds
+    open_ms: 30000
+  # Fixed system prompt (combined with question, answer and scoring rule)
+  system_prompt: |
+    You are a fair Minecraft whitelist questionnaire grader.
+    Score strictly based on the question, candidate answer, and scoring rule.
+    Return JSON only.
+  # Scoring rule text appended into the user prompt (can be overridden by question-level scoring_rule in questionnaire.yml)
+  scoring_rule: |
+    Evaluate primarily:
+    1) Relevance to the question
+    2) Completeness and level of detail
+    3) Understanding of server rules and community norms
+  # Expected model output schema (JSON)
+  score_format: '{"score": number, "reason": string, "confidence": number}'
+
+# ----------------------------------------
+# Discord Integration (OAuth2)
+# ----------------------------------------
+# Requires creating a Discord application at https://discord.com/developers/applications
+discord:
+  # Whether to enable Discord integration
+  enabled: false
+  # Discord application client ID
+  client_id: ""
+  # Discord application client secret
+  client_secret: ""
+  # OAuth2 redirect URI
+  redirect_uri: "https://yourdomain.com/api/discord/callback"
+  # Optional: require users to be in specific guild/server
+  guild_id: ""
+  # Whether Discord linking is required for registration
+  required: false
+
+# ----------------------------------------
+# Downloads Configuration
+# ----------------------------------------
+# Configure server client resource downloads, displayed on the web interface downloads page
+downloads:
+  client-modpack:
+    # Download item name
+    name: "Client Modpack"
+    # Download item description
+    description: "Required modpack for the server. Includes all necessary mods and configurations."
+    # Version number
+    version: "1.0.0"
+    # File size (for display)
+    size: "256 MB"
+    # Download URL
+    url: "#"
+    # Icon name (options: gamepad, package, download, file, folder, etc.)
+    icon: "gamepad"
+  server-resource-pack:
+    # Download item name
+    name: "Server Resource Pack"
+    # Download item description
+    description: "Custom textures and assets for the server."
+    # Version number
+    version: "2.1.0"
+    # File size (for display)
+    size: "64 MB"
+    # Download URL
+    url: "#"
+    # Icon name
+    icon: "package"

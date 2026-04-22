@@ -11,6 +11,11 @@ public interface UserDao {
                          Integer questionnaireScore, Boolean questionnairePassed,
                          String questionnaireReviewSummary, Long questionnaireScoredAt);
 
+    boolean registerUser(String username, String email, String status, String password,
+                         Integer questionnaireScore, Boolean questionnairePassed,
+                         String questionnaireReviewSummary, Long questionnaireScoredAt,
+                         String phone);
+
     boolean registerUserWithStoredPassword(String username, String email, String status, String storedPassword);
 
     boolean updateUserStatus(String username, String status);
@@ -50,6 +55,12 @@ public interface UserDao {
     void save();
 
     int countUsersByEmail(String email);
+
+    int countByPhone(String phone);
+
+    Map<String, Object> getUserByPhone(String phone);
+
+    List<Map<String, Object>> findAllByPhone(String phone);
 
     List<Map<String, Object>> getPendingUsers();
 

@@ -64,6 +64,17 @@ public class ConfigHandler implements HttpHandler {
         bedrockConfig.put("prefix", ctx.getConfigManager().getBedrockPrefix());
         config.put("bedrock", bedrockConfig);
 
+        JSONObject authMethodsConfig = new JSONObject();
+        authMethodsConfig.put("mustAuthMethods", new JSONArray(ctx.getConfigManager().getMustAuthMethods()));
+        authMethodsConfig.put("optionAuthMethods", new JSONArray(ctx.getConfigManager().getOptionAuthMethods()));
+        authMethodsConfig.put("minOptionAuthMethods", ctx.getConfigManager().getMinOptionAuthMethods());
+        config.put("authMethodsConfig", authMethodsConfig);
+
+        JSONObject smsConfig = new JSONObject();
+        smsConfig.put("enabled", ctx.getConfigManager().isSmsEnabled());
+        smsConfig.put("countryCodes", new JSONArray(ctx.getConfigManager().getCountryCodes()));
+        config.put("sms", smsConfig);
+
         if (ctx.getConfigManager().isEmailDomainWhitelistEnabled()) {
             config.put("emailDomainWhitelist", new JSONArray(ctx.getConfigManager().getEmailDomainWhitelist()));
         }

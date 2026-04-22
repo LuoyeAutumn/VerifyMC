@@ -9,6 +9,11 @@ import team.kitemc.verifymc.listener.PlayerLoginListener;
 import team.kitemc.verifymc.command.VmcCommandExecutor;
 import team.kitemc.verifymc.mail.MailService;
 import team.kitemc.verifymc.service.*;
+import team.kitemc.verifymc.sms.AliyunSmsProvider;
+import team.kitemc.verifymc.sms.SmsService;
+import team.kitemc.verifymc.sms.SmsProvider;
+import team.kitemc.verifymc.sms.SmsVerificationCodeNotifierAdapter;
+import team.kitemc.verifymc.sms.TencentSmsProvider;
 import team.kitemc.verifymc.web.ReviewWebSocketServer;
 import team.kitemc.verifymc.web.ServerSslContextFactory;
 import team.kitemc.verifymc.web.WebAuthHelper;
@@ -229,6 +234,9 @@ public class VerifyMC extends JavaPlugin {
         // Version check service
         context.setVersionCheckService(new VersionCheckService(this));
 
+        // SMS service
+        initSmsService(log);
+
         // Registration application service
         context.setRegistrationApplicationService(new RegistrationApplicationService());
 
@@ -274,6 +282,26 @@ public class VerifyMC extends JavaPlugin {
         // HTTP server
         webServer = new WebServer(context, sslContext);
         webServer.start();
+    }
+
+    private void initSmsService(Logger log) {
+        ConfigManager config = context.getConfigManager();
+        String providerType = config.getSmsProvider();
+
+        SmsProvider provider;
+        if ("aliyun".equalsIgnoreCase(providerType)) {
+            provider = new AliyunSmsProvider(this, config);
+            log.info("[VerifyMC] Using Aliyun SMS provider.");
+        } else {
+            provider = new TencentSmsProvider(this, config);
+            log.info("[VerifyMC] Using Tencent SMS provider.");
+        }
+
+        SmsService smsService = new SmsService(this, config, provider);
+        context.setSmsService(smsService);
+
+        SmsVerificationCodeNotifierAdapter notifier = new SmsVerificationCodeNotifierAdapter(this, smsService);
+        context.setSmsNotifier(notifier);
     }
 
     /**

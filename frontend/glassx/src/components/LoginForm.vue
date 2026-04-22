@@ -1,6 +1,5 @@
 <template>
   <div class="flex flex-col gap-6">
-    <!-- 登录表单 -->
     <Card v-if="!showForgotPassword">
       <CardHeader>
         <CardTitle class="text-2xl">{{ $t('login.title') }}</CardTitle>
@@ -52,7 +51,6 @@
       </CardContent>
     </Card>
 
-    <!-- 忘记密码表单 -->
     <Card v-else>
       <CardHeader>
         <CardTitle class="text-2xl">{{ $t('login.forgot_password.title') }}</CardTitle>
@@ -62,6 +60,30 @@
         <form @submit.prevent="handleForgotPassword">
           <div class="flex flex-col gap-6">
             <div class="grid gap-2">
+              <Label>{{ $t('login.forgot_password.verify_method') }}</Label>
+              <div class="inline-flex w-full rounded-lg bg-white/5 border border-white/10 p-1 gap-1" role="radiogroup">
+                <Button
+                  type="button"
+                  variant="outline"
+                  class="flex-1 border-transparent focus:ring-offset-0"
+                  :class="forgotForm.verifyMethod === 'email' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
+                  @click="forgotForm.verifyMethod = 'email'"
+                >
+                  {{ $t('login.forgot_password.method_email') }}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  class="flex-1 border-transparent focus:ring-offset-0"
+                  :class="forgotForm.verifyMethod === 'phone' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
+                  @click="forgotForm.verifyMethod = 'phone'"
+                >
+                  {{ $t('login.forgot_password.method_phone') }}
+                </Button>
+              </div>
+            </div>
+
+            <div v-if="forgotForm.verifyMethod === 'email'" class="grid gap-2">
               <Label for="forgot-email">{{ $t('login.forgot_password.email') }}</Label>
               <Input
                 id="forgot-email"
@@ -69,6 +91,27 @@
                 :placeholder="$t('login.forgot_password.email_placeholder')"
                 v-model="forgotForm.email"
               />
+            </div>
+
+            <div v-else class="grid gap-2">
+              <Label for="forgot-phone">{{ $t('login.forgot_password.phone') }}</Label>
+              <div class="flex gap-2">
+                <select
+                  v-model="forgotForm.countryCode"
+                  class="h-10 px-3 rounded-md border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option v-for="code in countryCodes" :key="code" :value="code">
+                    {{ code }}
+                  </option>
+                </select>
+                <Input
+                  id="forgot-phone"
+                  type="tel"
+                  :placeholder="$t('login.forgot_password.phone_placeholder')"
+                  v-model="forgotForm.phone"
+                  class="flex-1"
+                />
+              </div>
             </div>
 
             <div class="grid gap-2">
@@ -160,13 +203,18 @@ let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const redirectTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
+const countryCodes = ref<string[]>(['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'])
+
 const form = reactive({
   username: '',
   password: ''
 })
 
 const forgotForm = reactive({
+  verifyMethod: 'email' as 'email' | 'phone',
   email: '',
+  phone: '',
+  countryCode: '+86',
   code: '',
   password: ''
 })
@@ -261,49 +309,94 @@ const startCooldown = (seconds: number) => {
 }
 
 const handleSendCode = async () => {
-  if (!forgotForm.email.trim()) {
-    notification.error(t('register.validation.email_required'))
-    return
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(forgotForm.email.trim())) {
-    notification.error(t('register.validation.email_format'))
-    return
-  }
-
-  sendCodeLoading.value = true
-
-  try {
-    const response = await apiService.forgotPasswordSendCode({
-      email: forgotForm.email.trim(),
-      language: locale.value
-    })
-
-    if (response.success) {
-      notification.success(t('login.forgot_password.code_sent'))
-      if (response.remainingSeconds) {
-        startCooldown(response.remainingSeconds)
-      } else {
-        startCooldown(60)
-      }
-    } else {
-      notification.error(response.message || t('register.sendFailed'))
-      if (response.remainingSeconds) {
-        startCooldown(response.remainingSeconds)
-      }
+  if (forgotForm.verifyMethod === 'email') {
+    if (!forgotForm.email.trim()) {
+      notification.error(t('register.validation.email_required'))
+      return
     }
-  } catch {
-    notification.error(t('register.sendFailed'))
-  } finally {
-    sendCodeLoading.value = false
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(forgotForm.email.trim())) {
+      notification.error(t('register.validation.email_format'))
+      return
+    }
+
+    sendCodeLoading.value = true
+
+    try {
+      const response = await apiService.forgotPasswordSendCode({
+        email: forgotForm.email.trim(),
+        language: locale.value
+      })
+
+      if (response.success) {
+        notification.success(t('login.forgot_password.code_sent'))
+        if (response.remainingSeconds) {
+          startCooldown(response.remainingSeconds)
+        } else {
+          startCooldown(60)
+        }
+      } else {
+        notification.error(response.message || t('register.sendFailed'))
+        if (response.remainingSeconds) {
+          startCooldown(response.remainingSeconds)
+        }
+      }
+    } catch {
+      notification.error(t('register.sendFailed'))
+    } finally {
+      sendCodeLoading.value = false
+    }
+  } else {
+    if (!forgotForm.phone.trim()) {
+      notification.error(t('login.forgot_password.phone_required'))
+      return
+    }
+
+    const phoneRegex = /^\d{6,15}$/
+    if (!phoneRegex.test(forgotForm.phone.trim())) {
+      notification.error(t('sms.invalidPhone'))
+      return
+    }
+
+    sendCodeLoading.value = true
+
+    try {
+      const response = await apiService.sendSmsForgotPassword({
+        phone: forgotForm.phone.trim(),
+        countryCode: forgotForm.countryCode,
+        language: locale.value
+      })
+
+      if (response.success) {
+        notification.success(t('sms.sent'))
+        startCooldown(60)
+      } else {
+        notification.error(response.message || t('sms.failed'))
+      }
+    } catch {
+      notification.error(t('sms.failed'))
+    } finally {
+      sendCodeLoading.value = false
+    }
   }
 }
 
 const handleForgotPassword = async () => {
-  if (!forgotForm.email.trim()) {
-    notification.error(t('register.validation.email_required'))
-    return
+  let account = ''
+  
+  if (forgotForm.verifyMethod === 'email') {
+    if (!forgotForm.email.trim()) {
+      notification.error(t('register.validation.email_required'))
+      return
+    }
+    account = forgotForm.email.trim()
+  } else {
+    if (!forgotForm.phone.trim()) {
+      notification.error(t('login.forgot_password.phone_required'))
+      return
+    }
+    account = forgotForm.countryCode + forgotForm.phone.trim()
   }
 
   if (!forgotForm.code.trim() || forgotForm.code.length !== 6) {
@@ -320,7 +413,7 @@ const handleForgotPassword = async () => {
 
   try {
     const response = await apiService.forgotPasswordReset({
-      email: forgotForm.email.trim(),
+      account,
       code: forgotForm.code.trim(),
       password: forgotForm.password,
       language: locale.value
@@ -329,6 +422,7 @@ const handleForgotPassword = async () => {
     if (response.success) {
       notification.success(t('login.forgot_password.reset_success'))
       forgotForm.email = ''
+      forgotForm.phone = ''
       forgotForm.code = ''
       forgotForm.password = ''
       showForgotPassword.value = false
@@ -352,4 +446,4 @@ onUnmounted(() => {
     cooldownTimer = null
   }
 })
-</script> 
+</script>
