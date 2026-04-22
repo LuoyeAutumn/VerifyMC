@@ -2,8 +2,6 @@ node_modules/
 dist/
 wiki/
 test/
-!plugin/src/test/
-!plugin/src/test/**
 target/
 static/
 .env*

@@ -16,17 +16,9 @@ export interface ConfigResponse {
   webServerPrefix: string
   wsPort?: number
   usernameRegex: string
-  usernameCaseSensitive?: boolean
   authme: {
     enabled: boolean
     passwordRegex: string
-  }
-  user?: {
-    passwordResetMethods: string[]
-  }
-  forgotPassword?: {
-    enabled: boolean
-    captchaEnabled: boolean
   }
   captcha?: {
     enabled: boolean
@@ -521,10 +513,9 @@ class ApiService {
 
   // 用户修改密码
   async userChangePassword(data: {
-    currentPassword?: string
+    currentPassword: string
     newPassword: string
     language: string
-    code?: string
   }): Promise<{ success: boolean; message?: string }> {
     return this.request('/user/password', {
       method: 'POST',
@@ -532,34 +523,25 @@ class ApiService {
     })
   }
 
-  async sendUserPasswordCode(language: string): Promise<{ success: boolean; message?: string; remainingSeconds?: number }> {
-    return this.request('/user/password/code', {
-      method: 'POST',
-      body: JSON.stringify({ language }),
-    })
-  }
-
-  async sendForgotPasswordCode(data: {
+  // 忘记密码 - 发送验证码
+  async forgotPasswordSendCode(data: {
     email: string
     language: string
-    captchaToken?: string
-    captchaAnswer?: string
-  }): Promise<{ success: boolean; message?: string; remainingSeconds?: number; multipleAccounts?: boolean }> {
-    return this.request('/password/forgot/code', {
+  }): Promise<SendCodeResponse> {
+    return this.request<SendCodeResponse>('/forgot-password/code', {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
-  async resetForgottenPassword(data: {
+  // 忘记密码 - 重置密码
+  async forgotPasswordReset(data: {
     email: string
     code: string
-    newPassword: string
+    password: string
     language: string
-    captchaToken?: string
-    captchaAnswer?: string
-  }): Promise<{ success: boolean; message?: string }> {
-    return this.request('/password/forgot/reset', {
+  }): Promise<{ success: boolean; message?: string; resetCount?: number }> {
+    return this.request('/forgot-password/reset', {
       method: 'POST',
       body: JSON.stringify(data),
     })

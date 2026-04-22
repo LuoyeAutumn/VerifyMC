@@ -1,169 +1,285 @@
 package team.kitemc.verifymc;
 
-import java.util.logging.Logger;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
-import team.kitemc.verifymc.admin.VmcCommandExecutor;
-import team.kitemc.verifymc.bootstrap.IntegrationBootstrap;
-import team.kitemc.verifymc.bootstrap.PlatformBootstrap;
-import team.kitemc.verifymc.bootstrap.PluginRuntime;
-import team.kitemc.verifymc.bootstrap.RepositoryBootstrap;
-import team.kitemc.verifymc.bootstrap.SchedulerBootstrap;
-import team.kitemc.verifymc.bootstrap.UseCaseBootstrap;
-import team.kitemc.verifymc.bootstrap.WebBootstrap;
-import team.kitemc.verifymc.user.PlayerLoginListener;
+import team.kitemc.verifymc.core.ConfigManager;
+import team.kitemc.verifymc.core.OpsManager;
+import team.kitemc.verifymc.core.PluginContext;
+import team.kitemc.verifymc.db.*;
+import team.kitemc.verifymc.listener.PlayerLoginListener;
+import team.kitemc.verifymc.command.VmcCommandExecutor;
+import team.kitemc.verifymc.mail.MailService;
+import team.kitemc.verifymc.service.*;
+import team.kitemc.verifymc.web.ReviewWebSocketServer;
+import team.kitemc.verifymc.web.ServerSslContextFactory;
+import team.kitemc.verifymc.web.WebAuthHelper;
+import team.kitemc.verifymc.web.WebServer;
 
+import java.io.File;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import javax.net.ssl.SSLContext;
+import java.util.logging.Logger;
+import team.kitemc.verifymc.util.FoliaCompat;
+
+/**
+ * VerifyMC plugin entrypoint — refactored from the 878-line god class
+ * into a clean initialization orchestrator.
+ * <p>
+ * Responsibilities:
+ * - Initialize the {@link PluginContext} service container
+ * - Wire up all services, data access, and web layer
+ * - Register event listeners and command executors
+ * - Manage lifecycle (enable/disable)
+ */
 public class VerifyMC extends JavaPlugin {
-    private PluginRuntime runtime;
+    private PluginContext context;
+    private WebServer webServer;
+    private ReviewWebSocketServer wsServer;
     private Metrics metrics;
+    private final List<Object> scheduledTasks = new ArrayList<>();
 
     @Override
     public void onEnable() {
         Logger log = getLogger();
-        try {
-            runtime = initializeRuntime(log);
-            registerRuntimeBindings();
-            initMetrics(log);
-            if (runtime.versionCheckService() != null) {
-                runtime.versionCheckService().checkAsync();
-            }
-            log.info("[VerifyMC] Plugin enabled successfully!");
-        } catch (Exception e) {
-            log.severe("[VerifyMC] Plugin startup failed: " + e.getMessage());
-            getServer().getPluginManager().disablePlugin(this);
-        }
-    }
 
-    @Override
-    public void onDisable() {
-        if (runtime != null) {
-            runtime.shutdown();
-        }
-        if (metrics != null) {
-            metrics.shutdown();
-        }
-        getLogger().info("[VerifyMC] Plugin disabled.");
-    }
+        // --- Core infrastructure ---
+        context = new PluginContext(this);
+        context.getResourceManager().init();
+        context.getConfigManager().reloadConfig();
+        context.getI18nManager().init(context.getConfigManager().getLanguage());
 
-    protected PluginRuntime initializeRuntime(Logger log) {
-        PlatformBootstrap.Result platformModule = null;
-        RepositoryBootstrap.Result repositoryModule = null;
-        IntegrationBootstrap.Result integrationModule = null;
-        SchedulerBootstrap.SchedulerModule schedulerModule = null;
-        UseCaseBootstrap.Result useCaseModule = null;
-        WebBootstrap.Result webModule = null;
+        // --- Data access layer ---
+        initDataLayer(log);
 
-        try {
-            platformModule = new PlatformBootstrap().bootstrap(this);
-            repositoryModule = new RepositoryBootstrap().bootstrap(this, platformModule.platform(), log);
-            integrationModule = new IntegrationBootstrap().bootstrap(
-                    this,
-                    platformModule.platform(),
-                    repositoryModule.userRepository(),
-                    repositoryModule.auditService(),
-                    platformModule.adminAccessManager(),
-                    log
-            );
-            schedulerModule = new SchedulerBootstrap().bootstrap(
-                    this,
-                    platformModule.platform().getConfigManager(),
-                    integrationModule.authmeService(),
-                    integrationModule.webAuthHelper(),
-                    log
-            );
-            useCaseModule = new UseCaseBootstrap().bootstrap(platformModule, repositoryModule, integrationModule);
-            webModule = new WebBootstrap().bootstrap(this, platformModule, repositoryModule, integrationModule, useCaseModule);
+        // --- Services ---
+        initServices(log);
 
-            return new PluginRuntime(
-                    log,
-                    platformModule.platform(),
-                    repositoryModule.userRepository(),
-                    repositoryModule.auditService(),
-                    platformModule.adminAccessManager(),
-                    platformModule.usernameRuleService(),
-                    useCaseModule.registerUserUseCase(),
-                    useCaseModule.approveUserUseCase(),
-                    useCaseModule.rejectUserUseCase(),
-                    useCaseModule.deleteUserUseCase(),
-                    useCaseModule.banUserUseCase(),
-                    useCaseModule.unbanUserUseCase(),
-                    useCaseModule.resetUserPasswordUseCase(),
-                    useCaseModule.updateEmailUseCase(),
-                    useCaseModule.listUsersUseCase(),
-                    webModule.webServer(),
-                    integrationModule.wsServer(),
-                    integrationModule.verifyCodeService(),
-                    integrationModule.captchaService(),
-                    integrationModule.discordService(),
-                    integrationModule.webAuthHelper(),
-                    schedulerModule,
-                    integrationModule.versionCheckService()
-            );
-        } catch (RuntimeException e) {
-            cleanupPartialRuntime(log, repositoryModule, integrationModule, schedulerModule, webModule);
-            throw e;
-        } catch (Exception e) {
-            cleanupPartialRuntime(log, repositoryModule, integrationModule, schedulerModule, webModule);
-            throw new IllegalStateException("Failed to initialize runtime", e);
-        }
-    }
+        // --- Web layer ---
+        initWebLayer(log);
 
-    private void cleanupPartialRuntime(
-            Logger log,
-            RepositoryBootstrap.Result repositoryModule,
-            IntegrationBootstrap.Result integrationModule,
-            SchedulerBootstrap.SchedulerModule schedulerModule,
-            WebBootstrap.Result webModule
-    ) {
-        PluginRuntime.shutdownResources(
-                log,
-                webModule != null ? webModule.webServer() : null,
-                integrationModule != null ? integrationModule.wsServer() : null,
-                schedulerModule,
-                integrationModule != null ? integrationModule.webAuthHelper() : null,
-                integrationModule != null ? integrationModule.verifyCodeService() : null,
-                integrationModule != null ? integrationModule.captchaService() : null,
-                integrationModule != null ? integrationModule.discordService() : null,
-                repositoryModule != null ? repositoryModule.userRepository() : null,
-                repositoryModule != null ? repositoryModule.auditService() : null
-        );
-    }
-
-    private void registerRuntimeBindings() {
+        // --- Event listeners ---
         getServer().getPluginManager().registerEvents(
-                new PlayerLoginListener(runtime.platform(), runtime.userRepository()),
-                this
-        );
+                new PlayerLoginListener(context), this);
 
-        PluginCommand vmcCommand = getVmcCommand();
+        // --- Commands ---
+        var vmcCommand = getCommand("vmc");
         if (vmcCommand != null) {
-            VmcCommandExecutor executor = new VmcCommandExecutor(
-                    runtime.platform(),
-                    runtime.adminAccessManager(),
-                    runtime.usernameRuleService(),
-                    runtime.userRepository(),
-                    runtime.approveUserUseCase(),
-                    runtime.rejectUserUseCase(),
-                    runtime.deleteUserUseCase(),
-                    runtime.banUserUseCase(),
-                    runtime.unbanUserUseCase(),
-                    runtime.resetUserPasswordUseCase(),
-                    runtime.listUsersUseCase()
-            );
+            VmcCommandExecutor executor = new VmcCommandExecutor(context);
             vmcCommand.setExecutor(executor);
             vmcCommand.setTabCompleter(executor);
         }
-    }
 
-    protected PluginCommand getVmcCommand() {
-        return getCommand("vmc");
-    }
-
-    private void initMetrics(Logger log) {
+        // --- Metrics ---
         try {
             metrics = new Metrics(this, 21854);
         } catch (Exception e) {
             log.warning("[VerifyMC] Metrics init failed: " + e.getMessage());
         }
+
+        // --- Version check ---
+        if (context.getVersionCheckService() != null) {
+            context.getVersionCheckService().checkAsync();
+        }
+
+        log.info("[VerifyMC] Plugin enabled successfully!");
+    }
+
+    @Override
+    public void onDisable() {
+        Logger log = getLogger();
+
+        // Stop web server
+        if (webServer != null) {
+            webServer.stop();
+        }
+
+        // Stop WebSocket server
+        if (wsServer != null) {
+            try {
+                wsServer.stop(1000);
+            } catch (Exception e) {
+                log.warning("[VerifyMC] WebSocket server stop error: " + e.getMessage());
+            }
+        }
+
+        // Stop service cleanup threads
+        if (context != null) {
+            FoliaCompat.cancelTasks(this, scheduledTasks);
+            if (context.getWebAuthHelper() != null) {
+                context.getWebAuthHelper().stopTokenCleanupTask();
+            }
+            if (context.getVerifyCodeService() != null) {
+                context.getVerifyCodeService().stop();
+            }
+            if (context.getCaptchaService() != null) {
+                context.getCaptchaService().stop();
+            }
+            context.shutdown();
+        }
+
+        // Save and close data access layer
+        if (context != null) {
+            if (context.getUserDao() != null) {
+                context.getUserDao().save();
+                context.getUserDao().close();
+            }
+            if (context.getAuditService() != null) {
+                context.getAuditService().close();
+            }
+        }
+
+        // Shutdown metrics
+        if (metrics != null) {
+            metrics.shutdown();
+        }
+
+        log.info("[VerifyMC] Plugin disabled.");
+    }
+
+    private void initDataLayer(Logger log) {
+        ConfigManager config = context.getConfigManager();
+        String storageType = config.getStorageType();
+        boolean usernameCaseSensitive = config.isUsernameCaseSensitive();
+
+        try {
+            if ("mysql".equalsIgnoreCase(storageType)) {
+                var props = config.getMysqlProperties();
+                context.setUserDao(new MysqlUserDao(props, context.getI18nManager().getResourceBundle(), this, usernameCaseSensitive));
+                context.setAuditService(new AuditService(new MysqlAuditDao(props, this)));
+                log.info("[VerifyMC] Using MySQL storage.");
+            } else {
+                File dataDir = getDataFolder();
+                context.setUserDao(new FileUserDao(new File(dataDir, "users.json"), this, usernameCaseSensitive));
+                context.setAuditService(new AuditService(new FileAuditDao(new File(dataDir, "audits.json"))));
+                log.info("[VerifyMC] Using file storage.");
+            }
+        } catch (SQLException e) {
+            log.severe("[VerifyMC] Database initialization failed: " + e.getMessage());
+            log.info("[VerifyMC] Falling back to file storage.");
+            File dataDir = getDataFolder();
+            context.setUserDao(new FileUserDao(new File(dataDir, "users.json"), this, usernameCaseSensitive));
+            context.setAuditService(new AuditService(new FileAuditDao(new File(dataDir, "audits.json"))));
+        }
+
+        if (usernameCaseSensitive) {
+            List<List<String>> conflictGroups = context.getUserDao().findUsernameCaseConflictGroups();
+            if (!conflictGroups.isEmpty()) {
+                log.severe("[VerifyMC] ========================================");
+                log.severe("[VerifyMC] CRITICAL: Username case conflicts detected!");
+                log.severe("[VerifyMC] The 'username_case_sensitive' option is enabled, but the following");
+                log.severe("[VerifyMC] username groups have case conflicts that must be resolved manually:");
+                for (List<String> group : conflictGroups) {
+                    log.severe("[VerifyMC]   - " + String.join(", ", group));
+                }
+                log.severe("[VerifyMC] Please either:");
+                log.severe("[VerifyMC]   1. Set 'username_case_sensitive: false' in config.yml, or");
+                log.severe("[VerifyMC]   2. Manually resolve the conflicts by renaming/deleting users.");
+                log.severe("[VerifyMC] Plugin will now disable itself.");
+                log.severe("[VerifyMC] ========================================");
+                getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+        }
+    }
+
+    private void initServices(Logger log) {
+        ConfigManager config = context.getConfigManager();
+
+        context.setOpsManager(new OpsManager(this));
+
+        context.getResourceManager().setI18nManager(context.getI18nManager());
+
+        // Mail service
+        context.setMailService(new MailService(this, context.getResourceManager()));
+
+        // Verify code service
+        context.setVerifyCodeService(new VerifyCodeService(this));
+        // AuthMe service
+        AuthmeService authmeService = new AuthmeService(this);
+        authmeService.setUserDao(context.getUserDao());
+        context.setAuthmeService(authmeService);
+
+        // Sync AuthMe data on startup if enabled
+        if (authmeService.isAuthmeEnabled()) {
+            authmeService.syncApprovedUsers();
+            log.info("[VerifyMC] AuthMe sync completed on startup.");
+
+            // Schedule periodic sync
+            int syncInterval = config.getAuthmeSyncInterval();
+            if (syncInterval > 0) {
+                scheduledTasks.add(FoliaCompat.runTaskTimerAsync(this, () -> {
+                    authmeService.syncApprovedUsers();
+                }, syncInterval * 20L, syncInterval * 20L));
+                log.info("[VerifyMC] AuthMe periodic sync scheduled every " + syncInterval + " seconds.");
+            }
+        }
+
+        // Captcha service
+        context.setCaptchaService(new CaptchaService(this));
+
+        // Questionnaire service
+        context.setQuestionnaireService(new QuestionnaireService(this));
+
+        // Discord service
+        DiscordService discordService = new DiscordService(this);
+        discordService.setUserDao(context.getUserDao());
+        context.setDiscordService(discordService);
+
+        // Version check service
+        context.setVersionCheckService(new VersionCheckService(this));
+
+        // Registration application service
+        context.setRegistrationApplicationService(new RegistrationApplicationService());
+
+        // Review application service
+        context.setReviewApplicationService(new ReviewApplicationService());
+
+        // Questionnaire application service
+        context.setQuestionnaireApplicationService(new QuestionnaireApplicationService());
+
+        // --- Web auth ---
+        WebAuthHelper webAuthHelper = new WebAuthHelper(this, context.getI18nManager());
+        webAuthHelper.startTokenCleanupTask();
+        context.setWebAuthHelper(webAuthHelper);
+    }
+
+    private void initWebLayer(Logger log) {
+        SSLContext sslContext = null;
+        if (context.getConfigManager().isSslEnabled()) {
+            try {
+                sslContext = ServerSslContextFactory.create(context.getConfigManager());
+                log.info("[VerifyMC] SSL context loaded successfully.");
+            } catch (Exception e) {
+                log.severe("[VerifyMC] Failed to initialize SSL. Web layer will remain disabled: " + e.getMessage());
+                return;
+            }
+        }
+
+        // WebSocket server for review notifications
+        int wsPort = context.getConfigManager().getWsPort();
+        try {
+            wsServer = new ReviewWebSocketServer(wsPort, context);
+            if (sslContext != null) {
+                wsServer.enableSsl(sslContext);
+            }
+            wsServer.start();
+            context.setWsServer(wsServer);
+            String protocol = sslContext != null ? "WSS" : "WS";
+            log.info("[VerifyMC] " + protocol + " WebSocket server started on port " + wsPort);
+        } catch (Exception e) {
+            log.warning("[VerifyMC] WebSocket server failed to start: " + e.getMessage());
+        }
+
+        // HTTP server
+        webServer = new WebServer(context, sslContext);
+        webServer.start();
+    }
+
+    /**
+     * Access the plugin context from external code.
+     */
+    public PluginContext getContext() {
+        return context;
     }
 }

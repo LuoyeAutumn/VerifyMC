@@ -268,17 +268,16 @@ const validateDiscord = () => {
 const validateUsername = () => {
   errors.username = ''
   const rawUsername = getUsernameForValidation()
-  const defaultUsernameRegex = '^[a-zA-Z0-9_-]{3,16}$'
   if (!rawUsername) {
     errors.username = t('register.validation.username_required')
     return
   }
 
-  const regex = config.value.usernameRegex || defaultUsernameRegex
+  const regex = config.value.usernameRegex || '^[a-zA-Z0-9_-]{3,16}$'
   if (regex && !new RegExp(regex).test(rawUsername)) {
     errors.username = t('register.validation.username_format', { regex })
-  } else if (!regex && !new RegExp(defaultUsernameRegex).test(rawUsername)) {
-    errors.username = t('register.validation.username_format', { regex: defaultUsernameRegex })
+  } else if (!regex && !/^[a-zA-Z0-9_]+$/.test(rawUsername)) {
+    errors.username = t('register.validation.username_format', { regex: '^[a-zA-Z0-9_]+$' })
   }
 }
 

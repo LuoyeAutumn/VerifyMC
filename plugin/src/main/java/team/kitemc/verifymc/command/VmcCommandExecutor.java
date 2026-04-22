@@ -1,0 +1,324 @@
+package team.kitemc.verifymc.command;
+
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import team.kitemc.verifymc.core.PluginContext;
+import team.kitemc.verifymc.security.AdminAction;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/**
+ * Handles the /vmc command. Refactored from the inline onCommand method
+ * in the original 878-line VerifyMC class.
+ * <p>
+ * Subcommands:
+ *   reload    — Reload configuration
+ *   approve   — Approve a pending user
+ *   reject    — Reject a pending user
+ *   delete    — Delete a user
+ *   ban       — Ban a user
+ *   unban     — Unban a user
+ *   list      — List users by status
+ *   info      — Show user info
+ *   version   — Show plugin version
+ */
+public class VmcCommandExecutor implements CommandExecutor, TabCompleter {
+    private static final String BASE_PERMISSION = "verifymc.use";
+    private static final Map<String, AdminAction> SUBCOMMAND_ACTIONS = Map.of(
+            "reload", AdminAction.RELOAD,
+            "approve", AdminAction.APPROVE,
+            "reject", AdminAction.REJECT,
+            "delete", AdminAction.DELETE,
+            "ban", AdminAction.BAN,
+            "unban", AdminAction.UNBAN,
+            "list", AdminAction.LIST,
+            "info", AdminAction.INFO
+    );
+
+    private final PluginContext ctx;
+
+    private static final List<String> SUBCOMMANDS = Arrays.asList(
+            "reload", "approve", "reject", "delete", "ban", "unban", "list", "info", "version"
+    );
+
+    public VmcCommandExecutor(PluginContext ctx) {
+        this.ctx = ctx;
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length == 0) {
+            List<String> availableSubcommands = getAvailableSubcommands(sender);
+            if (availableSubcommands.isEmpty()) {
+                sendNoPermission(sender);
+                return true;
+            }
+
+            sender.sendMessage("§6[VerifyMC] §fUsage: /vmc <" + String.join("|", availableSubcommands) + ">");
+            return true;
+        }
+
+        String sub = args[0].toLowerCase();
+        if (!SUBCOMMANDS.contains(sub)) {
+            sender.sendMessage("§6[VerifyMC] §cUnknown subcommand: " + sub);
+            return true;
+        }
+        if (!hasPermissionForSubcommand(sender, sub)) {
+            sendNoPermission(sender);
+            return true;
+        }
+
+        switch (sub) {
+            case "reload" -> handleReload(sender);
+            case "approve" -> handleApprove(sender, args);
+            case "reject" -> handleReject(sender, args);
+            case "delete" -> handleDelete(sender, args);
+            case "ban" -> handleBan(sender, args);
+            case "unban" -> handleUnban(sender, args);
+            case "list" -> handleList(sender, args);
+            case "info" -> handleInfo(sender, args);
+            case "version" -> handleVersion(sender);
+            default -> { }
+        }
+        return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return SUBCOMMANDS.stream()
+                    .filter(sub -> hasPermissionForSubcommand(sender, sub))
+                    .filter(s -> s.startsWith(args[0].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        if (args.length == 2) {
+            String sub = args[0].toLowerCase();
+            if (!hasPermissionForSubcommand(sender, sub)) {
+                return List.of();
+            }
+            if (List.of("approve", "reject", "delete", "ban", "unban", "info").contains(sub)) {
+                // Return registered usernames that match partial input
+                return ctx.getUserDao().getAllUsers().stream()
+                        .map(u -> (String) u.get("username"))
+                        .filter(name -> name != null && name.toLowerCase().startsWith(args[1].toLowerCase()))
+                        .limit(20)
+                        .collect(Collectors.toList());
+            }
+            if ("list".equals(sub)) {
+                return Arrays.asList("all", "pending", "approved", "rejected", "banned");
+            }
+        }
+        return List.of();
+    }
+
+    private void handleReload(CommandSender sender) {
+        ctx.getConfigManager().reloadConfig();
+        ctx.getI18nManager().clearCache();
+        ctx.getI18nManager().init(ctx.getConfigManager().getLanguage());
+        sender.sendMessage("§6[VerifyMC] §aConfiguration reloaded.");
+    }
+
+    private void handleApprove(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§6[VerifyMC] §fUsage: /vmc approve <username>");
+            return;
+        }
+        String target = args[1];
+        String resolvedTarget = ctx.getUsernameRuleService().resolveAdminTarget(target, ctx.getUserDao());
+        if (resolvedTarget.isEmpty()) {
+            sender.sendMessage("§6[VerifyMC] §cUser not found: " + target);
+            return;
+        }
+        boolean ok = ctx.getUserDao().updateUserStatus(resolvedTarget, "approved", sender.getName());
+        if (ok) {
+            org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "whitelist add " + resolvedTarget);
+            if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
+                ctx.getAuthmeService().syncApprovedUserToAuthme(resolvedTarget);
+            }
+            ctx.getAuditService().recordApproval(sender.getName(), resolvedTarget);
+
+            var user = ctx.getUserDao().getUserByUsername(resolvedTarget);
+            if (user != null) {
+                String email = (String) user.get("email");
+                if (email != null && !email.isEmpty()) {
+                    ctx.getMailService().sendReviewResult(email, resolvedTarget, true,
+                            "", ctx.getConfigManager().getLanguage());
+                }
+            }
+
+            sender.sendMessage("§6[VerifyMC] §aUser " + resolvedTarget + " approved.");
+        } else {
+            sender.sendMessage("§6[VerifyMC] §cFailed to approve user " + resolvedTarget);
+        }
+    }
+
+    private void handleReject(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§6[VerifyMC] §fUsage: /vmc reject <username> [reason]");
+            return;
+        }
+        String target = args[1];
+        String reason = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : "";
+        String resolvedTarget = ctx.getUsernameRuleService().resolveAdminTarget(target, ctx.getUserDao());
+        if (resolvedTarget.isEmpty()) {
+            sender.sendMessage("§6[VerifyMC] §cUser not found: " + target);
+            return;
+        }
+        boolean ok = ctx.getUserDao().updateUserStatus(resolvedTarget, "rejected", sender.getName());
+        if (ok) {
+            ctx.getAuditService().recordRejection(sender.getName(), resolvedTarget, reason);
+
+            var user = ctx.getUserDao().getUserByUsername(resolvedTarget);
+            if (user != null) {
+                String email = (String) user.get("email");
+                if (email != null && !email.isEmpty()) {
+                    ctx.getMailService().sendReviewResult(email, resolvedTarget, false,
+                            reason, ctx.getConfigManager().getLanguage());
+                }
+            }
+
+            sender.sendMessage("§6[VerifyMC] §cUser " + resolvedTarget + " rejected.");
+        } else {
+            sender.sendMessage("§6[VerifyMC] §cFailed to reject user " + resolvedTarget);
+        }
+    }
+
+    private void handleDelete(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§6[VerifyMC] §fUsage: /vmc delete <username>");
+            return;
+        }
+        String target = args[1];
+        String resolvedTarget = ctx.getUsernameRuleService().resolveAdminTarget(target, ctx.getUserDao());
+        if (resolvedTarget.isEmpty()) {
+            sender.sendMessage("§6[VerifyMC] §cUser not found: " + target);
+            return;
+        }
+        boolean ok = ctx.getUserDao().deleteUser(resolvedTarget);
+        if (ok) {
+            org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "whitelist remove " + resolvedTarget);
+            if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
+                ctx.getAuthmeService().removeUserFromAuthme(resolvedTarget);
+            }
+            ctx.getAuditService().recordDeletion(sender.getName(), resolvedTarget);
+            sender.sendMessage("§6[VerifyMC] §aUser " + resolvedTarget + " deleted.");
+        } else {
+            sender.sendMessage("§6[VerifyMC] §cFailed to delete user " + resolvedTarget);
+        }
+    }
+
+    private void handleBan(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§6[VerifyMC] §fUsage: /vmc ban <username> [reason]");
+            return;
+        }
+        String target = args[1];
+        String reason = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : "";
+        String resolvedTarget = ctx.getUsernameRuleService().resolveAdminTarget(target, ctx.getUserDao());
+        if (resolvedTarget.isEmpty()) {
+            sender.sendMessage("§6[VerifyMC] §cUser not found: " + target);
+            return;
+        }
+        boolean ok = ctx.getUserDao().banUser(resolvedTarget);
+        if (ok) {
+            org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "whitelist remove " + resolvedTarget);
+            if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
+                ctx.getAuthmeService().removeUserFromAuthme(resolvedTarget);
+            }
+            ctx.getAuditService().recordBan(sender.getName(), resolvedTarget, reason);
+            sender.sendMessage("§6[VerifyMC] §cUser " + resolvedTarget + " banned.");
+        } else {
+            sender.sendMessage("§6[VerifyMC] §cFailed to ban user " + resolvedTarget);
+        }
+    }
+
+    private void handleUnban(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§6[VerifyMC] §fUsage: /vmc unban <username>");
+            return;
+        }
+        String target = args[1];
+        String resolvedTarget = ctx.getUsernameRuleService().resolveAdminTarget(target, ctx.getUserDao());
+        if (resolvedTarget.isEmpty()) {
+            sender.sendMessage("§6[VerifyMC] §cUser not found: " + target);
+            return;
+        }
+        boolean ok = ctx.getUserDao().unbanUser(resolvedTarget);
+        if (ok) {
+            org.bukkit.Bukkit.dispatchCommand(org.bukkit.Bukkit.getConsoleSender(), "whitelist add " + resolvedTarget);
+            if (ctx.getAuthmeService() != null && ctx.getAuthmeService().isAuthmeEnabled()) {
+                ctx.getAuthmeService().syncApprovedUserToAuthme(resolvedTarget);
+            }
+            ctx.getAuditService().recordUnban(sender.getName(), resolvedTarget);
+            sender.sendMessage("§6[VerifyMC] §aUser " + resolvedTarget + " unbanned.");
+        } else {
+            sender.sendMessage("§6[VerifyMC] §cFailed to unban user " + resolvedTarget);
+        }
+    }
+
+    private void handleList(CommandSender sender, String[] args) {
+        String statusFilter = args.length > 1 ? args[1].toLowerCase() : "all";
+        List<Map<String, Object>> users;
+        if ("all".equals(statusFilter)) {
+            users = ctx.getUserDao().getAllUsers();
+        } else {
+            users = ctx.getUserDao().getUsersByStatus(statusFilter);
+        }
+
+        sender.sendMessage("§6[VerifyMC] §f--- Users (" + statusFilter + ") ---");
+        if (users.isEmpty()) {
+            sender.sendMessage("§7  No users found.");
+        } else {
+            for (Map<String, Object> user : users) {
+                String name = (String) user.getOrDefault("username", "?");
+                String status = (String) user.getOrDefault("status", "?");
+                sender.sendMessage("§7  " + name + " §f- §e" + status);
+            }
+        }
+    }
+
+    private void handleInfo(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§6[VerifyMC] §fUsage: /vmc info <username>");
+            return;
+        }
+        String target = args[1];
+        Map<String, Object> user = ctx.getUserDao().getUserByUsername(target);
+        if (user == null) {
+            sender.sendMessage("§6[VerifyMC] §cUser not found: " + target);
+            return;
+        }
+
+        sender.sendMessage("§6[VerifyMC] §f--- User Info ---");
+        sender.sendMessage("§7  Username: §f" + user.getOrDefault("username", "?"));
+        sender.sendMessage("§7  Email: §f" + user.getOrDefault("email", "?"));
+        sender.sendMessage("§7  Status: §e" + user.getOrDefault("status", "?"));
+    }
+
+    private void handleVersion(CommandSender sender) {
+        sender.sendMessage("§6[VerifyMC] §fVersion: " + ctx.getPlugin().getDescription().getVersion());
+    }
+
+    private List<String> getAvailableSubcommands(CommandSender sender) {
+        return SUBCOMMANDS.stream()
+                .filter(subcommand -> hasPermissionForSubcommand(sender, subcommand))
+                .collect(Collectors.toList());
+    }
+
+    private boolean hasPermissionForSubcommand(CommandSender sender, String subcommand) {
+        AdminAction action = SUBCOMMAND_ACTIONS.get(subcommand);
+        if (action == null) {
+            return sender.hasPermission(BASE_PERMISSION) || ctx.getAdminAccessManager().hasAnyAdminAccess(sender);
+        }
+        return ctx.getAdminAccessManager().canAccess(sender, action);
+    }
+
+    private void sendNoPermission(CommandSender sender) {
+        sender.sendMessage("§6[VerifyMC] §cNo permission.");
+    }
+}
