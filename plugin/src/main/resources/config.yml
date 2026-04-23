@@ -46,10 +46,10 @@ forgot_password:
   enabled: true
   captcha_enabled: false
 frontend:
+  serve_static: true
   theme: glassx
   logo_url: /logo.png
   announcement: Welcome to [ Name ]!
-  serve_static: true
   allowed_origins: []
 email:
   smtp:

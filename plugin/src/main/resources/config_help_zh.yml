@@ -32,15 +32,16 @@ ssl:
     type: PKCS12
 
 frontend:
+  # 是否由插件自身托管静态前端文件。
+  # 如果你把 frontend/glassx/dist 部署到其他域名，请设为 false。
+  serve_static: true
   # 网页界面的视觉主题。可选: 'glassx'。
   theme: glassx
   # Logo 的 URL。可以是网页链接或本地文件路径（例如 '/logo.png'）。
   logo_url: /logo.png
   # 显示在主页上的公告信息。
   announcement: 欢迎来到[ Name ]!
-  # 是否由插件自身托管静态前端文件。
-  # 如果你把 frontend/glassx/dist 部署到其他域名，请设为 false。
-  serve_static: true
+
   # 允许跨域访问 API 的前端来源列表。
   # 支持完全匹配，例如: https://your-pages-domain.pages.dev
   # 也支持子域名通配，例如: https://*.example.com

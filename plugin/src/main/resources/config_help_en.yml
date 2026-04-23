@@ -32,15 +32,16 @@ ssl:
     type: PKCS12
 
 frontend:
+  # Whether the plugin should serve static frontend files itself.
+  # Set this to false if you deploy frontend/glassx/dist on another origin.
+  serve_static: true
   # The visual theme for the web interface. Options: 'glassx'.
   theme: glassx
   # URL for the logo. Can be a web link or a local file path (e.g., '/logo.png').
   logo_url: /logo.png
   # A message to display on the homepage.
   announcement: Welcome to [ Name ]!
-  # Whether the plugin should serve static frontend files itself.
-  # Set this to false if you deploy frontend/glassx/dist on another origin.
-  serve_static: true
+
   # List of frontend origins allowed to access the API cross-origin.
   # Supports exact matches, for example: https://your-pages-domain.pages.dev
   # Also supports single-level subdomain wildcards, for example: https://*.example.com
