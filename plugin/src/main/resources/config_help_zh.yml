@@ -138,6 +138,8 @@ register:
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 # 如果为 false，则仅大小写不同的用户名（例如 "Player" 和 "player"）将被视为相同。
 username_case_sensitive: false
+# 密码正则表达式
+password_regex: "^[a-zA-Z0-9_]{8,26}$"
 
 # 用户配置
 user:
@@ -226,8 +228,6 @@ mysql:
 authme:
   # 是否启用 Authme 集成功能
   enabled: true
-  # 密码正则表达式
-  password_regex: "^[a-zA-Z0-9_]{8,26}$"
   database:
     # database 模式下数据库类型: mysql / sqlite
     type: sqlite

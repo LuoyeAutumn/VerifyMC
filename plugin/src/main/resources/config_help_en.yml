@@ -139,6 +139,8 @@ register:
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 # If false, usernames that only differ by case (e.g., "Player" and "player") are treated as the same.
 username_case_sensitive: false
+# Password regex pattern
+password_regex: "^[a-zA-Z0-9_]{8,26}$"
 
 # User configuration
 user:
@@ -227,8 +229,6 @@ mysql:
 authme:
   # Whether to enable Authme integration functionality
   enabled: true
-  # Password regex pattern
-  password_regex: "^[a-zA-Z0-9_]{8,26}$"
   database:
     # DB type in database mode: mysql / sqlite
     type: sqlite

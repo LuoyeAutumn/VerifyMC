@@ -40,6 +40,7 @@ register:
   auto_approve: false
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 username_case_sensitive: false
+password_regex: "^[a-zA-Z0-9_]{8,26}$"
 user:
   password_reset_methods: ["current_password"]
 forgot_password:
@@ -89,7 +90,6 @@ mysql:
     allowPublicKeyRetrieval: false
 authme:
   enabled: true
-  password_regex: "^[a-zA-Z0-9_]{8,26}$"
   database:
     type: sqlite
     table: authme
