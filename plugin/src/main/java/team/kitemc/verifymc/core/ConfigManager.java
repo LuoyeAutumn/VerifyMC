@@ -791,4 +791,13 @@ public class ConfigManager {
     public boolean isUsernameLoginEnabled() {
         return isLoginMethodAllowed("username");
     }
+
+    public int getLoginCodeExpireSeconds() {
+        return getConfig().getInt("login.code_expire_seconds", 300);
+    }
+
+    public int getLoginCodeLength() {
+        int length = getConfig().getInt("login.code_length", 6);
+        return Math.max(4, Math.min(length, 8));
+    }
 }

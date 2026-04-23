@@ -8,9 +8,12 @@ import org.json.JSONObject;
 import team.kitemc.verifymc.core.OpsManager;
 import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.db.UserDao;
+import team.kitemc.verifymc.registration.VerifyCodePurpose;
 import team.kitemc.verifymc.service.AuthmeService;
+import team.kitemc.verifymc.service.VerifyCodeService;
 import team.kitemc.verifymc.security.AdminAuthMode;
 import team.kitemc.verifymc.util.PasswordUtil;
+import team.kitemc.verifymc.util.PhoneUtil;
 import team.kitemc.verifymc.web.ApiResponseFactory;
 import team.kitemc.verifymc.web.WebAuthHelper;
 import team.kitemc.verifymc.web.WebResponseHelper;
@@ -104,6 +107,9 @@ public class LoginHandler implements HttpHandler {
         String loginMethod = req.optString("loginMethod", "username").toLowerCase();
         String identifier = req.optString("username", "");
         String password = req.optString("password", "");
+        String verifyMethod = req.optString("verifyMethod", "password").toLowerCase();
+        String code = req.optString("code", "");
+        String countryCode = req.optString("countryCode", "+86");
 
         if (!ctx.getConfigManager().isLoginMethodAllowed(loginMethod)) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
@@ -125,12 +131,23 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
+        boolean useCodeLogin = "code".equals(verifyMethod) && 
+                ("email".equals(loginMethod) || "phone".equals(loginMethod));
+
         switch (loginMethod) {
             case "email":
-                handleEmailLogin(exchange, identifier, password, language, clientIp);
+                if (useCodeLogin) {
+                    handleEmailCodeLogin(exchange, identifier, code, language, clientIp);
+                } else {
+                    handleEmailLogin(exchange, identifier, password, language, clientIp);
+                }
                 break;
             case "phone":
-                handlePhoneLogin(exchange, identifier, password, language, clientIp);
+                if (useCodeLogin) {
+                    handlePhoneCodeLogin(exchange, identifier, countryCode, code, language, clientIp);
+                } else {
+                    handlePhoneLogin(exchange, identifier, password, language, clientIp);
+                }
                 break;
             case "username":
             default:
@@ -199,6 +216,79 @@ public class LoginHandler implements HttpHandler {
         }
 
         requireAccountSelection(exchange, validUsers, language);
+    }
+
+    private void handleEmailCodeLogin(HttpExchange exchange, String email, String code,
+                                       String language, String clientIp) throws IOException {
+        UserDao userDao = ctx.getUserDao();
+        List<Map<String, Object>> users = userDao.findAllByEmail(email);
+
+        if (users.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.email_not_found", language)));
+            return;
+        }
+
+        if (code == null || code.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("verification.code_required", language)));
+            return;
+        }
+
+        VerifyCodeService verifyCodeService = ctx.getVerifyCodeService();
+        boolean codeValid = verifyCodeService.checkCode(VerifyCodePurpose.EMAIL_LOGIN, email, code);
+
+        if (!codeValid) {
+            ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - Email: " + email + ", IP: " + clientIp + ", Reason: Invalid code");
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("verification.code_invalid", language)));
+            return;
+        }
+
+        if (users.size() == 1) {
+            completeLogin(exchange, users.get(0), null, language);
+            return;
+        }
+
+        requireAccountSelection(exchange, users, language);
+    }
+
+    private void handlePhoneCodeLogin(HttpExchange exchange, String phone, String countryCode, 
+                                       String code, String language, String clientIp) throws IOException {
+        String normalizedPhone = PhoneUtil.normalizePhoneNumber(phone);
+        String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, normalizedPhone);
+        
+        UserDao userDao = ctx.getUserDao();
+        List<Map<String, Object>> users = userDao.findAllByPhone(fullPhone);
+
+        if (users.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.phone_not_found", language)));
+            return;
+        }
+
+        if (code == null || code.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("verification.code_required", language)));
+            return;
+        }
+
+        VerifyCodeService verifyCodeService = ctx.getVerifyCodeService();
+        boolean codeValid = verifyCodeService.checkSmsCode(normalizedPhone, countryCode, code, VerifyCodePurpose.SMS_LOGIN);
+
+        if (!codeValid) {
+            ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - Phone: " + fullPhone + ", IP: " + clientIp + ", Reason: Invalid code");
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("verification.code_invalid", language)));
+            return;
+        }
+
+        if (users.size() == 1) {
+            completeLogin(exchange, users.get(0), null, language);
+            return;
+        }
+
+        requireAccountSelection(exchange, users, language);
     }
 
     private void handlePhoneLogin(HttpExchange exchange, String phone, String password,

@@ -27,6 +27,8 @@ register:
     min_option_auth_methods: 0
 login:
   allowed_methods: ["username", "email", "phone"]
+  code_expire_seconds: 300
+  code_length: 6
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 username_case_sensitive: false
 password_regex: "^[a-zA-Z0-9_]{8,26}$"

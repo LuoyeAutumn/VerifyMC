@@ -23,6 +23,7 @@ import team.kitemc.verifymc.web.handler.DiscordUnlinkHandler;
 import team.kitemc.verifymc.web.handler.DownloadsHandler;
 import team.kitemc.verifymc.web.handler.ForgotPasswordCodeHandler;
 import team.kitemc.verifymc.web.handler.ForgotPasswordResetHandler;
+import team.kitemc.verifymc.web.handler.LoginCodeHandler;
 import team.kitemc.verifymc.web.handler.LoginHandler;
 import team.kitemc.verifymc.web.handler.QuestionnaireConfigHandler;
 import team.kitemc.verifymc.web.handler.QuestionnaireSubmitHandler;
@@ -107,6 +108,7 @@ public class ApiRouter {
         registerApiRoute(server, "/api/review/status", new ReviewStatusHandler(ctx));
 
         // --- Login endpoints ---
+        registerApiRoute(server, "/api/login/code", new LoginCodeHandler(ctx));
         registerApiRoute(server, "/api/login", new LoginHandler(ctx, false));
         registerApiRoute(server, "/api/admin/login", new LoginHandler(ctx, true));
 

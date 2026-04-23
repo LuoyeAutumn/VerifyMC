@@ -168,6 +168,9 @@ export interface AdminLoginRequest {
   loginMethod: 'username' | 'email' | 'phone'
   language: string
   selectedUsername?: string
+  verifyMethod?: 'password' | 'code'
+  code?: string
+  countryCode?: string
 }
 
 export interface AdminLoginResponse {
@@ -591,6 +594,18 @@ class ApiService {
 
   async sendSmsForgotPassword(data: SendSmsCodeRequest): Promise<SendSmsCodeResponse> {
     return this.request<SendSmsCodeResponse>('/sms/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async sendLoginCode(data: {
+    account: string
+    loginMethod: 'email' | 'phone'
+    countryCode?: string
+    language: string
+  }): Promise<SendCodeResponse> {
+    return this.request<SendCodeResponse>('/login/code', {
       method: 'POST',
       body: JSON.stringify(data),
     })

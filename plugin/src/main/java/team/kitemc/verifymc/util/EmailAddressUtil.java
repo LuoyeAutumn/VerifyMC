@@ -37,4 +37,18 @@ public final class EmailAddressUtil {
         }
         return normalized.substring(0, atIndex).contains("+");
     }
+
+    public static String maskEmail(String email) {
+        String normalized = normalize(email);
+        int atIndex = normalized.indexOf('@');
+        if (atIndex <= 0) {
+            return "***";
+        }
+        String localPart = normalized.substring(0, atIndex);
+        String domain = normalized.substring(atIndex);
+        if (localPart.length() <= 2) {
+            return "**" + domain;
+        }
+        return localPart.charAt(0) + "***" + localPart.charAt(localPart.length() - 1) + domain;
+    }
 }

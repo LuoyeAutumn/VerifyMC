@@ -53,7 +53,31 @@
               />
             </div>
 
-            <div class="grid gap-2">
+            <div v-if="showVerifyMethodSelector" class="grid gap-2">
+              <Label>{{ $t('login.form.verify_method') }}</Label>
+              <div class="inline-flex w-full rounded-lg bg-white/5 border border-white/10 p-1 gap-1" role="radiogroup">
+                <Button
+                  type="button"
+                  variant="outline"
+                  class="flex-1 border-transparent focus:ring-offset-0"
+                  :class="form.verifyMethod === 'password' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
+                  @click="form.verifyMethod = 'password'"
+                >
+                  {{ $t('login.form.method_password') }}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  class="flex-1 border-transparent focus:ring-offset-0"
+                  :class="form.verifyMethod === 'code' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
+                  @click="form.verifyMethod = 'code'"
+                >
+                  {{ $t('login.form.method_code') }}
+                </Button>
+              </div>
+            </div>
+
+            <div v-if="form.verifyMethod === 'password'" class="grid gap-2">
               <Label for="password">{{ $t('login.form.password') }}</Label>
               <Input
                 id="password"
@@ -61,6 +85,30 @@
                 :placeholder="$t('login.form.password_placeholder')"
                 v-model="form.password"
               />
+            </div>
+
+            <div v-else-if="form.verifyMethod === 'code'" class="grid gap-2">
+              <Label for="code">{{ $t('login.form.code') }}</Label>
+              <div class="flex gap-2">
+                <Input
+                  id="code"
+                  type="text"
+                  :placeholder="$t('login.form.code_placeholder')"
+                  v-model="form.code"
+                  maxlength="6"
+                  class="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  :disabled="sendLoginCodeLoading || loginCooldownSeconds > 0"
+                  @click="handleSendLoginCode"
+                >
+                  <span v-if="sendLoginCodeLoading">{{ $t('register.sending') }}</span>
+                  <span v-else-if="loginCooldownSeconds > 0">{{ loginCooldownSeconds }}s</span>
+                  <span v-else>{{ $t('login.form.send_code') }}</span>
+                </Button>
+              </div>
             </div>
 
             <Button
@@ -265,7 +313,10 @@ const showForgotPassword = ref(false)
 const sendCodeLoading = ref(false)
 const resetLoading = ref(false)
 const cooldownSeconds = ref(0)
+const sendLoginCodeLoading = ref(false)
+const loginCooldownSeconds = ref(0)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
+let loginCooldownTimer: ReturnType<typeof setInterval> | null = null
 
 const redirectTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
@@ -273,11 +324,14 @@ const countryCodes = ref<string[]>(['+86', '+1', '+44', '+81', '+82', '+852', '+
 const allowedLoginMethods = ref<string[]>(['username', 'email', 'phone'])
 
 type LoginMethod = 'username' | 'email' | 'phone'
+type VerifyMethod = 'password' | 'code'
 
 const form = reactive({
   account: '',
   password: '',
+  code: '',
   loginMethod: 'username' as LoginMethod,
+  verifyMethod: 'password' as VerifyMethod,
   countryCode: '+86'
 })
 
@@ -302,6 +356,10 @@ const selectingAccount = ref(false)
 const selectedAccount = ref('')
 
 const showLoginMethodSelector = computed(() => allowedLoginMethods.value.length > 1)
+
+const showVerifyMethodSelector = computed(() => 
+  form.loginMethod === 'email' || form.loginMethod === 'phone'
+)
 
 const availableLoginMethods = computed(() => {
   const methods: { key: LoginMethod, label: string }[] = []
@@ -369,7 +427,6 @@ const validateForm = () => {
   errors.password = ''
   
   const account = form.account.trim()
-  const password = form.password.trim()
   
   let isValid = true
   
@@ -390,9 +447,16 @@ const validateForm = () => {
     }
   }
   
-  if (!password) {
-    errors.password = t('login.validation.password_required')
-    isValid = false
+  if (form.verifyMethod === 'password') {
+    if (!form.password.trim()) {
+      errors.password = t('login.validation.password_required')
+      isValid = false
+    }
+  } else if (form.verifyMethod === 'code') {
+    if (!form.code.trim() || form.code.length !== 6) {
+      errors.password = t('register.validation.code_required')
+      isValid = false
+    }
   }
   
   return isValid
@@ -414,12 +478,34 @@ const handleSubmit = async () => {
       ? form.countryCode + form.account.trim()
       : form.account.trim()
 
-    const response = await apiService.adminLogin({
+    const request: {
+      account: string
+      password: string
+      loginMethod: 'username' | 'email' | 'phone'
+      language: string
+      verifyMethod?: 'password' | 'code'
+      code?: string
+      countryCode?: string
+    } = {
       account,
       password: form.password,
       loginMethod: form.loginMethod,
       language: locale.value
-    })
+    }
+
+    if (form.loginMethod === 'email' || form.loginMethod === 'phone') {
+      request.verifyMethod = form.verifyMethod
+      if (form.verifyMethod === 'code') {
+        request.code = form.code.trim()
+        request.password = ''
+      }
+    }
+
+    if (form.loginMethod === 'phone') {
+      request.countryCode = form.countryCode
+    }
+
+    const response = await apiService.adminLogin(request)
     
     if (response.success) {
       if (response.requireAccountSelection && response.accounts && response.tempToken) {
@@ -519,6 +605,75 @@ const startCooldown = (seconds: number) => {
       }
     }
   }, 1000)
+}
+
+const startLoginCooldown = (seconds: number) => {
+  loginCooldownSeconds.value = seconds
+  if (loginCooldownTimer) {
+    clearInterval(loginCooldownTimer)
+  }
+  loginCooldownTimer = setInterval(() => {
+    if (loginCooldownSeconds.value > 0) {
+      loginCooldownSeconds.value--
+    } else {
+      if (loginCooldownTimer) {
+        clearInterval(loginCooldownTimer)
+        loginCooldownTimer = null
+      }
+    }
+  }, 1000)
+}
+
+const handleSendLoginCode = async () => {
+  if (!form.account.trim()) {
+    notification.error(t('login.validation.account_required'))
+    return
+  }
+
+  if (form.loginMethod === 'email') {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(form.account.trim())) {
+      notification.error(t('register.validation.email_format'))
+      return
+    }
+  } else if (form.loginMethod === 'phone') {
+    const phoneRegex = /^\d{6,15}$/
+    if (!phoneRegex.test(form.account.trim())) {
+      notification.error(t('sms.invalidPhone'))
+      return
+    }
+  }
+
+  sendLoginCodeLoading.value = true
+
+  try {
+    const response = await apiService.sendLoginCode({
+      account: form.loginMethod === 'phone' 
+        ? form.countryCode + form.account.trim()
+        : form.account.trim(),
+      loginMethod: form.loginMethod as 'email' | 'phone',
+      countryCode: form.loginMethod === 'phone' ? form.countryCode : undefined,
+      language: locale.value
+    })
+
+    if (response.success) {
+      notification.success(t('login.code_sent'))
+      if (response.remainingSeconds) {
+        startLoginCooldown(response.remainingSeconds)
+      } else {
+        startLoginCooldown(60)
+      }
+    } else {
+      notification.error(response.message || t('register.sendFailed'))
+      if (response.remainingSeconds) {
+        startLoginCooldown(response.remainingSeconds)
+      }
+    }
+  } catch {
+    notification.error(t('register.sendFailed'))
+  } finally {
+    sendLoginCodeLoading.value = false
+  }
 }
 
 const handleSendCode = async () => {
@@ -657,6 +812,10 @@ onUnmounted(() => {
   if (cooldownTimer) {
     clearInterval(cooldownTimer)
     cooldownTimer = null
+  }
+  if (loginCooldownTimer) {
+    clearInterval(loginCooldownTimer)
+    loginCooldownTimer = null
   }
 })
 </script>

@@ -4,7 +4,9 @@ public enum VerifyCodePurpose {
     REGISTER("register", "Verification for registration"),
     FORGOT_PASSWORD("forgot_password", "Verification for password reset"),
     SMS_REGISTER("sms_register", "SMS verification for registration"),
-    SMS_FORGOT_PASSWORD("sms_forgot_password", "SMS verification for password reset");
+    SMS_FORGOT_PASSWORD("sms_forgot_password", "SMS verification for password reset"),
+    EMAIL_LOGIN("email_login", "Email verification for login"),
+    SMS_LOGIN("sms_login", "SMS verification for login");
 
     private final String key;
     private final String description;

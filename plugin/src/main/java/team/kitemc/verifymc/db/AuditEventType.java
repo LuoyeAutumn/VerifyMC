@@ -16,7 +16,9 @@ public enum AuditEventType {
     EMAIL_UPDATE("email_update", "Email update"),
     ADMIN_ACCESS_DENIED("admin_access_denied", "Admin access denied"),
     SMS_SEND_SUCCESS("sms_send_success", "SMS verification code sent successfully"),
-    SMS_SEND_FAILED("sms_send_failed", "SMS verification code sending failed");
+    SMS_SEND_FAILED("sms_send_failed", "SMS verification code sending failed"),
+    EMAIL_SEND_SUCCESS("email_send_success", "Email verification code sent successfully"),
+    EMAIL_SEND_FAILED("email_send_failed", "Email verification code sending failed");
 
     private final String key;
     private final String description;
