@@ -29,6 +29,7 @@ public class ConfigManager {
 
     private static final Set<String> VALID_STORAGE_TYPES = new HashSet<>(Arrays.asList("file", "mysql"));
     private static final Set<String> VALID_AUTH_METHODS = new HashSet<>(Arrays.asList("email", "captcha"));
+    private static final Set<String> VALID_LOGIN_METHODS = new HashSet<>(Arrays.asList("username", "email", "phone"));
     private static final int MIN_PORT = 1;
     private static final int MAX_PORT = 65535;
 
@@ -40,21 +41,44 @@ public class ConfigManager {
     }
 
     private void migrateAuthMethodsConfig() {
-        boolean hasOldConfig = getConfig().contains("auth_methods");
-        boolean hasNewMustConfig = getConfig().contains("auth.must_auth_methods");
-        boolean hasNewOptionConfig = getConfig().contains("auth.option_auth_methods");
+        boolean hasOldAuthMethods = getConfig().contains("auth_methods");
+        boolean hasOldAuth = getConfig().contains("auth.must_auth_methods") || getConfig().contains("auth.option_auth_methods");
+        boolean hasNewAuth = getConfig().contains("register.auth.must_auth_methods");
 
-        if (hasOldConfig && !hasNewMustConfig && !hasNewOptionConfig) {
+        // 迁移最旧的 auth_methods 到 register.auth
+        if (hasOldAuthMethods && !hasOldAuth && !hasNewAuth) {
             List<String> oldMethods = getConfig().getStringList("auth_methods");
             if (oldMethods != null && !oldMethods.isEmpty()) {
-                plugin.getLogger().log(Level.INFO, "Migrating auth_methods to new auth.must_auth_methods config...");
-                getConfig().set("auth.must_auth_methods", oldMethods);
-                getConfig().set("auth.option_auth_methods", new ArrayList<>());
-                getConfig().set("auth.min_option_auth_methods", 0);
+                plugin.getLogger().log(Level.INFO, "Migrating auth_methods to register.auth.must_auth_methods config...");
+                getConfig().set("register.auth.must_auth_methods", oldMethods);
+                getConfig().set("register.auth.option_auth_methods", new ArrayList<>());
+                getConfig().set("register.auth.min_option_auth_methods", 0);
+                getConfig().set("auth_methods", null);
                 plugin.saveConfig();
                 plugin.reloadConfig();
-                plugin.getLogger().log(Level.INFO, "Migration completed. Old auth_methods migrated to auth.must_auth_methods");
+                plugin.getLogger().log(Level.INFO, "Migration completed. Old auth_methods migrated to register.auth.must_auth_methods");
             }
+        }
+
+        // 迁移旧的 auth.* 到 register.auth.*
+        if (hasOldAuth && !hasNewAuth) {
+            plugin.getLogger().log(Level.INFO, "Migrating auth.* to register.auth.* config...");
+            List<String> mustMethods = getConfig().getStringList("auth.must_auth_methods");
+            List<String> optionMethods = getConfig().getStringList("auth.option_auth_methods");
+            int minOption = getConfig().getInt("auth.min_option_auth_methods", 0);
+
+            if (mustMethods != null && !mustMethods.isEmpty()) {
+                getConfig().set("register.auth.must_auth_methods", mustMethods);
+            }
+            if (optionMethods != null) {
+                getConfig().set("register.auth.option_auth_methods", optionMethods);
+            }
+            getConfig().set("register.auth.min_option_auth_methods", minOption);
+
+            getConfig().set("auth", null);
+            plugin.saveConfig();
+            plugin.reloadConfig();
+            plugin.getLogger().log(Level.INFO, "Migration completed. auth.* migrated to register.auth.*");
         }
     }
 
@@ -242,12 +266,18 @@ public class ConfigManager {
     }
 
     private List<String> getMustAuthMethodsRaw() {
-        List<String> methods = getConfig().getStringList("auth.must_auth_methods");
+        List<String> methods = getConfig().getStringList("register.auth.must_auth_methods");
+        if (methods == null || methods.isEmpty()) {
+            methods = getConfig().getStringList("auth.must_auth_methods");
+        }
         return methods != null ? methods : Collections.emptyList();
     }
 
     private List<String> getOptionAuthMethodsRaw() {
-        List<String> methods = getConfig().getStringList("auth.option_auth_methods");
+        List<String> methods = getConfig().getStringList("register.auth.option_auth_methods");
+        if (methods == null || methods.isEmpty()) {
+            methods = getConfig().getStringList("auth.option_auth_methods");
+        }
         return methods != null ? methods : Collections.emptyList();
     }
 
@@ -371,7 +401,10 @@ public class ConfigManager {
     }
 
     public List<String> getMustAuthMethods() {
-        List<String> methods = getConfig().getStringList("auth.must_auth_methods");
+        List<String> methods = getConfig().getStringList("register.auth.must_auth_methods");
+        if (methods == null || methods.isEmpty()) {
+            methods = getConfig().getStringList("auth.must_auth_methods");
+        }
         if (methods == null || methods.isEmpty()) {
             return Collections.singletonList("email");
         }
@@ -381,7 +414,10 @@ public class ConfigManager {
     }
 
     public List<String> getOptionAuthMethods() {
-        List<String> methods = getConfig().getStringList("auth.option_auth_methods");
+        List<String> methods = getConfig().getStringList("register.auth.option_auth_methods");
+        if (methods == null || methods.isEmpty()) {
+            methods = getConfig().getStringList("auth.option_auth_methods");
+        }
         if (methods == null || methods.isEmpty()) {
             return Collections.emptyList();
         }
@@ -393,7 +429,10 @@ public class ConfigManager {
     }
 
     public int getMinOptionAuthMethods() {
-        int minOption = getConfig().getInt("auth.min_option_auth_methods", 0);
+        int minOption = getConfig().getInt("register.auth.min_option_auth_methods", -1);
+        if (minOption == -1) {
+            minOption = getConfig().getInt("auth.min_option_auth_methods", 0);
+        }
         int maxOption = getOptionAuthMethods().size();
         return Math.max(0, Math.min(minOption, maxOption));
     }
@@ -719,5 +758,37 @@ public class ConfigManager {
 
     public boolean isSmsEnabled() {
         return getConfig().getBoolean("sms.enabled", false);
+    }
+
+    // --- Login Methods ---
+    public List<String> getAllowedLoginMethods() {
+        List<String> methods = getConfig().getStringList("login.allowed_methods");
+        if (methods == null || methods.isEmpty()) {
+            return Arrays.asList("username", "email", "phone");
+        }
+        return methods.stream()
+            .filter(method -> VALID_LOGIN_METHODS.contains(method.toLowerCase()))
+            .map(String::toLowerCase)
+            .toList();
+    }
+
+    public boolean isLoginMethodAllowed(String method) {
+        if (method == null || method.isEmpty()) {
+            return false;
+        }
+        return getAllowedLoginMethods().stream()
+            .anyMatch(m -> m.equalsIgnoreCase(method));
+    }
+
+    public boolean isEmailLoginEnabled() {
+        return isLoginMethodAllowed("email");
+    }
+
+    public boolean isPhoneLoginEnabled() {
+        return isLoginMethodAllowed("phone") && isSmsEnabled();
+    }
+
+    public boolean isUsernameLoginEnabled() {
+        return isLoginMethodAllowed("username");
     }
 }

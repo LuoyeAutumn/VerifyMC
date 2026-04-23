@@ -138,14 +138,22 @@
     "title": "Login",
     "subtitle": "Enter your account credentials",
     "form": {
-      "username": "Username/Email",
-      "username_placeholder": "Enter username or email",
+      "login_method": "Login Method",
+      "method_username": "Username",
+      "method_email": "Email",
+      "method_phone": "Phone",
+      "username": "Username",
+      "username_placeholder": "Enter username",
+      "email": "Email",
+      "email_placeholder": "Enter email",
+      "phone": "Phone Number",
+      "phone_placeholder": "Enter phone number",
       "password": "Password",
       "password_placeholder": "Enter password",
       "submit": "Login"
     },
     "validation": {
-      "username_required": "Please enter username or email",
+      "account_required": "Please enter account information",
       "password_required": "Please enter password"
     },
     "messages": {
@@ -154,6 +162,11 @@
       "invalid_credentials": "Invalid username or password",
       "not_authorized": "You do not have admin privileges",
       "system_error": "System configuration error, please contact server admin"
+    },
+    "account_selection": {
+      "title": "Select Account",
+      "subtitle": "Multiple accounts detected, please select one to login",
+      "back": "Back to login"
     },
     "forgot_password": {
       "link": "Forgot password?",

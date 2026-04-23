@@ -2,6 +2,7 @@ package team.kitemc.verifymc.web.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.OpsManager;
@@ -15,6 +16,8 @@ import team.kitemc.verifymc.web.WebAuthHelper;
 import team.kitemc.verifymc.web.WebResponseHelper;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,14 +25,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LoginHandler implements HttpHandler {
     private static final int MAX_ATTEMPTS_PER_IP = 5;
     private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
+    private static final long TEMP_TOKEN_EXPIRY_MS = 300_000L;
 
     private final PluginContext ctx;
     private final boolean isAdminLogin;
     private final ConcurrentHashMap<String, LoginAttempt> loginAttempts = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AccountSelectionToken> accountSelectionTokens = new ConcurrentHashMap<>();
 
     private static class LoginAttempt {
         final AtomicInteger count = new AtomicInteger(0);
         volatile long windowStart = System.currentTimeMillis();
+    }
+
+    private static class AccountSelectionToken {
+        final List<String> usernames;
+        final long expiryTime;
+
+        AccountSelectionToken(List<String> usernames, long expiryTime) {
+            this.usernames = usernames;
+            this.expiryTime = expiryTime;
+        }
     }
 
     public LoginHandler(PluginContext ctx) {
@@ -76,9 +91,31 @@ public class LoginHandler implements HttpHandler {
                     ctx.getMessage("error.invalid_json", "en")), 400);
             return;
         }
-        String username = req.optString("username", "");
-        String password = req.optString("password", "");
+
         String language = req.optString("language", "en");
+        String tempToken = req.optString("tempToken", "");
+        String selectedUsername = req.optString("selectedUsername", "");
+
+        if (!tempToken.isEmpty() && !selectedUsername.isEmpty()) {
+            handleAccountSelection(exchange, tempToken, selectedUsername, language, clientIp);
+            return;
+        }
+
+        String loginMethod = req.optString("loginMethod", "username").toLowerCase();
+        String identifier = req.optString("username", "");
+        String password = req.optString("password", "");
+
+        if (!ctx.getConfigManager().isLoginMethodAllowed(loginMethod)) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.method_not_allowed", language)), 400);
+            return;
+        }
+
+        if ("phone".equals(loginMethod) && !ctx.getConfigManager().isSmsEnabled()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.phone_not_enabled", language)), 400);
+            return;
+        }
 
         OpsManager opsManager = ctx.getOpsManager();
         if (isAdminLogin && ctx.getConfigManager().getAdminAuthMode() == AdminAuthMode.OP
@@ -88,11 +125,24 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
+        switch (loginMethod) {
+            case "email":
+                handleEmailLogin(exchange, identifier, password, language, clientIp);
+                break;
+            case "phone":
+                handlePhoneLogin(exchange, identifier, password, language, clientIp);
+                break;
+            case "username":
+            default:
+                handleUsernameLogin(exchange, identifier, password, language, clientIp);
+                break;
+        }
+    }
+
+    private void handleUsernameLogin(HttpExchange exchange, String username, String password,
+                                     String language, String clientIp) throws IOException {
         UserDao userDao = ctx.getUserDao();
         Map<String, Object> user = userDao.getUserByUsername(username);
-        if (user == null) {
-            user = userDao.getUserByEmail(username);
-        }
 
         if (user == null) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
@@ -107,15 +157,119 @@ public class LoginHandler implements HttpHandler {
             return;
         }
 
-        if (isAdminLogin) {
-            if (!ctx.getAdminAccessManager().hasAnyAdminAccess(actualUsername)) {
-                ctx.getPlugin().getLogger().warning("[Security] Unauthorized admin login attempt for user: " + actualUsername);
-                WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
-                        ctx.getMessage("login.not_authorized", language)));
-                return;
+        if (!verifyPassword(user, password)) {
+            ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - User: " + actualUsername + ", IP: " + clientIp + ", Reason: Invalid password");
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.failed", language)));
+            return;
+        }
+
+        completeLogin(exchange, user, password, language);
+    }
+
+    private void handleEmailLogin(HttpExchange exchange, String email, String password,
+                                  String language, String clientIp) throws IOException {
+        UserDao userDao = ctx.getUserDao();
+        List<Map<String, Object>> users = userDao.findAllByEmail(email);
+
+        if (users.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.user_not_found", language)));
+            return;
+        }
+
+        List<Map<String, Object>> validUsers = new ArrayList<>();
+        for (Map<String, Object> user : users) {
+            if (verifyPassword(user, password)) {
+                validUsers.add(user);
             }
         }
 
+        if (validUsers.isEmpty()) {
+            String firstUsername = (String) users.get(0).get("username");
+            ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - Email: " + email + ", IP: " + clientIp + ", Reason: Invalid password");
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.failed", language)));
+            return;
+        }
+
+        if (validUsers.size() == 1) {
+            completeLogin(exchange, validUsers.get(0), password, language);
+            return;
+        }
+
+        requireAccountSelection(exchange, validUsers, language);
+    }
+
+    private void handlePhoneLogin(HttpExchange exchange, String phone, String password,
+                                  String language, String clientIp) throws IOException {
+        UserDao userDao = ctx.getUserDao();
+        List<Map<String, Object>> users = userDao.findAllByPhone(phone);
+
+        if (users.isEmpty()) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.user_not_found", language)));
+            return;
+        }
+
+        List<Map<String, Object>> validUsers = new ArrayList<>();
+        for (Map<String, Object> user : users) {
+            if (verifyPassword(user, password)) {
+                validUsers.add(user);
+            }
+        }
+
+        if (validUsers.isEmpty()) {
+            ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - Phone: " + phone + ", IP: " + clientIp + ", Reason: Invalid password");
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.failed", language)));
+            return;
+        }
+
+        if (validUsers.size() == 1) {
+            completeLogin(exchange, validUsers.get(0), password, language);
+            return;
+        }
+
+        requireAccountSelection(exchange, validUsers, language);
+    }
+
+    private void handleAccountSelection(HttpExchange exchange, String tempToken, String selectedUsername,
+                                        String language, String clientIp) throws IOException {
+        AccountSelectionToken tokenInfo = accountSelectionTokens.get(tempToken);
+
+        if (tokenInfo == null || System.currentTimeMillis() > tokenInfo.expiryTime) {
+            if (tokenInfo != null) {
+                accountSelectionTokens.remove(tempToken);
+            }
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.token_expired", language)), 401);
+            return;
+        }
+
+        if (!tokenInfo.usernames.contains(selectedUsername)) {
+            ctx.getPlugin().getLogger().warning("[Security] Invalid account selection - Username: " + selectedUsername + ", IP: " + clientIp);
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.invalid_account_selection", language)), 400);
+            return;
+        }
+
+        UserDao userDao = ctx.getUserDao();
+        Map<String, Object> user = userDao.getUserByUsername(selectedUsername);
+
+        if (user == null) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.user_not_found", language)));
+            return;
+        }
+
+        accountSelectionTokens.remove(tempToken);
+
+        completeLogin(exchange, user, null, language);
+    }
+
+    private boolean verifyPassword(Map<String, Object> user, String password) {
+        String actualUsername = (String) user.get("username");
         String storedPassword = (String) user.get("password");
         AuthmeService authmeService = ctx.getAuthmeService();
         boolean passwordValid = false;
@@ -131,15 +285,59 @@ public class LoginHandler implements HttpHandler {
             passwordValid = PasswordUtil.verify(password, storedPassword);
         }
 
-        if (!passwordValid) {
-            ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - User: " + actualUsername + ", IP: " + clientIp + ", Reason: Invalid password");
-            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
-                    ctx.getMessage("login.failed", language)));
-            return;
+        return passwordValid;
+    }
+
+    private void requireAccountSelection(HttpExchange exchange, List<Map<String, Object>> users,
+                                         String language) throws IOException {
+        List<String> usernames = new ArrayList<>();
+        JSONArray accountsArray = new JSONArray();
+
+        for (Map<String, Object> user : users) {
+            String username = (String) user.get("username");
+            if (username != null && !username.isEmpty()) {
+                usernames.add(username);
+
+                JSONObject accountInfo = new JSONObject();
+                accountInfo.put("username", username);
+                accountInfo.put("email", user.get("email"));
+                accountInfo.put("status", user.get("status"));
+                accountsArray.put(accountInfo);
+            }
         }
 
-        if (storedPassword != null && PasswordUtil.needsMigration(storedPassword)) {
-            migratePassword(actualUsername, password, storedPassword);
+        WebAuthHelper webAuthHelper = ctx.getWebAuthHelper();
+        String tempToken = webAuthHelper.generateToken("__account_selection__");
+
+        accountSelectionTokens.put(tempToken, new AccountSelectionToken(
+                usernames, System.currentTimeMillis() + TEMP_TOKEN_EXPIRY_MS));
+
+        JSONObject resp = ApiResponseFactory.success(ctx.getMessage("login.account_selection_required", language));
+        resp.put("requireAccountSelection", true);
+        resp.put("tempToken", tempToken);
+        resp.put("accounts", accountsArray);
+
+        WebResponseHelper.sendJson(exchange, resp);
+    }
+
+    private void completeLogin(HttpExchange exchange, Map<String, Object> user, String password,
+                               String language) throws IOException {
+        String actualUsername = (String) user.get("username");
+
+        if (isAdminLogin) {
+            if (!ctx.getAdminAccessManager().hasAnyAdminAccess(actualUsername)) {
+                ctx.getPlugin().getLogger().warning("[Security] Unauthorized admin login attempt for user: " + actualUsername);
+                WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                        ctx.getMessage("login.not_authorized", language)));
+                return;
+            }
+        }
+
+        if (password != null) {
+            String storedPassword = (String) user.get("password");
+            if (storedPassword != null && PasswordUtil.needsMigration(storedPassword)) {
+                migratePassword(actualUsername, password, storedPassword);
+            }
         }
 
         WebAuthHelper webAuthHelper = ctx.getWebAuthHelper();

@@ -75,6 +75,10 @@ public class ConfigHandler implements HttpHandler {
         smsConfig.put("countryCodes", new JSONArray(ctx.getConfigManager().getCountryCodes()));
         config.put("sms", smsConfig);
 
+        JSONObject loginConfig = new JSONObject();
+        loginConfig.put("allowedMethods", new JSONArray(ctx.getConfigManager().getAllowedLoginMethods()));
+        config.put("login", loginConfig);
+
         if (ctx.getConfigManager().isEmailDomainWhitelistEnabled()) {
             config.put("emailDomainWhitelist", new JSONArray(ctx.getConfigManager().getEmailDomainWhitelist()));
         }

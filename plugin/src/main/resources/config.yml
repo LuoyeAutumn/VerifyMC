@@ -11,33 +11,22 @@ ssl:
     path: ""
     password: ""
     type: PKCS12
-auth:
-  must_auth_methods: []
-  option_auth_methods: []
-  min_option_auth_methods: 0
-sms:
-  enabled: false
-  provider: tencent
-  region: ap-guangzhou
-  sign_name: ""
-  template_id: ""
-  sdk_app_id: ""
-  country_codes:
-    - "+86"
-  phone_regex: "^[0-9]{6,15}$"
-  max_accounts_per_phone: 5
-  
-  tencent:
-    secret_id: ""
-    secret_key: ""
-  
-  aliyun:
-    access_key_id: ""
-    access_key_secret: ""
+frontend:
+  serve_static: true
+  theme: glassx
+  logo_url: /logo.png
+  announcement: Welcome to [ Name ]!
+  allowed_origins: []
 whitelist_mode: plugin
 web_register_url: https://domain.com/
 register:
   auto_approve: false
+  auth:
+    must_auth_methods: []
+    option_auth_methods: []
+    min_option_auth_methods: 0
+login:
+  allowed_methods: ["username", "email", "phone"]
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
 username_case_sensitive: false
 password_regex: "^[a-zA-Z0-9_]{8,26}$"
@@ -46,12 +35,6 @@ user:
 forgot_password:
   enabled: true
   captcha_enabled: false
-frontend:
-  serve_static: true
-  theme: glassx
-  logo_url: /logo.png
-  announcement: Welcome to [ Name ]!
-  allowed_origins: []
 email:
   smtp:
     host: smtp.qq.com
@@ -78,7 +61,25 @@ email:
     enabled: true
     on_approve: true
     on_reject: true
-auto_update_resources: true
+sms:
+  enabled: false
+  provider: tencent
+  region: ap-guangzhou
+  sign_name: ""
+  template_id: ""
+  sdk_app_id: ""
+  country_codes:
+    - "+86"
+  phone_regex: "^[0-9]{6,15}$"
+  max_accounts_per_phone: 5
+  
+  tencent:
+    secret_id: ""
+    secret_key: ""
+  
+  aliyun:
+    access_key_id: ""
+    access_key_secret: ""
 storage: file
 mysql:
     host: localhost
@@ -191,3 +192,4 @@ downloads:
     size: "64 MB"
     url: "#"
     icon: "package"
+auto_update_resources: true

@@ -51,74 +51,6 @@ frontend:
   # Leave the list empty to allow all cross-origin access.
   allowed_origins: []
 
-# ----------------------------------------
-# Verification & Whitelist
-# ----------------------------------------
-# Supported authentication methods. Options: 'email' (email verification), 'captcha' (graphical captcha), 'sms' (SMS verification).
-# 
-# Configuration guide:
-#   must_auth_methods: Required methods - users must pass all listed methods to register
-#   option_auth_methods: Optional methods - users can choose one or more
-#   min_option_auth_methods: Minimum number of optional methods users must complete
-# 
-# Examples:
-#   Email only: must_auth_methods: [email]
-#   Email + Captcha: must_auth_methods: [email, captcha]
-#   Email required, SMS or Captcha optional:
-#     must_auth_methods: [email]
-#     option_auth_methods: [sms, captcha]
-#     min_option_auth_methods: 1
-# 
-# [IMPORTANT] Configuring the captcha/sms section below does NOT enable verification!
-# You must add the method to must_auth_methods or option_auth_methods to enable it.
-auth:
-  # List of authentication methods that must be completed. Users must pass all listed methods to register.
-  must_auth_methods: []
-  # List of optional authentication methods. Users can choose one or more to verify.
-  option_auth_methods: []
-  # Minimum number of optional authentication methods users must complete.
-  min_option_auth_methods: 0
-
-# ----------------------------------------
-# SMS Verification Configuration
-# ----------------------------------------
-# SMS verification can be used as an alternative or supplement to email verification
-# Add 'sms' to must_auth_methods or option_auth_methods to enable
-sms:
-  # Whether to enable SMS verification feature
-  enabled: false
-  # SMS service provider: tencent (Tencent Cloud) or aliyun (Alibaba Cloud)
-  provider: tencent
-  # Region (used by Tencent Cloud, e.g., ap-guangzhou)
-  region: ap-guangzhou
-  # SMS signature name
-  sign_name: ""
-  # SMS template ID
-  template_id: ""
-  # SDK application ID (used by Tencent Cloud)
-  sdk_app_id: ""
-  # List of supported country/region codes
-  country_codes:
-    - "+86"
-  # Phone number validation regex
-  phone_regex: "^[0-9]{6,15}$"
-  # Maximum number of game accounts that can be linked to a single phone number
-  max_accounts_per_phone: 5
-  
-  # Tencent Cloud SMS configuration
-  tencent:
-    # Tencent Cloud SecretId
-    secret_id: ""
-    # Tencent Cloud SecretKey
-    secret_key: ""
-  
-  # Alibaba Cloud SMS configuration
-  aliyun:
-    # Alibaba Cloud AccessKeyId
-    access_key_id: ""
-    # Alibaba Cloud AccessKeySecret
-    access_key_secret: ""
-
 # Whitelist mode: 'bukkit' (syncs with server's whitelist.json) or 'plugin' (uses internal database).
 whitelist_mode: plugin
 # Registration URL displayed to non-whitelisted players when in 'plugin' mode.
@@ -130,6 +62,32 @@ web_register_url: https://domain.com/
 # If true, new user registrations are automatically approved. If false, they require manual admin approval.
 register:
   auto_approve: false
+
+  # Registration verification configuration
+  # Available methods: email (email verification), captcha (graphical captcha), sms (SMS verification)
+  auth:
+    # Required verification methods, users must pass all listed methods to register
+    # Example: [email] means email verification required; [email, captcha] means both required
+    must_auth_methods: []
+    # Optional verification methods, users can choose one or more
+    # Example: [sms, captcha] means users can choose SMS or captcha
+    option_auth_methods: []
+    # Minimum number of optional methods users must complete
+    min_option_auth_methods: 0
+
+  # Note: Configuring captcha/sms sections below does NOT enable verification!
+  # You must add methods to must_auth_methods or option_auth_methods above to enable them.
+
+# ----------------------------------------
+# Login Settings
+# ----------------------------------------
+# List of allowed login methods. Options: username, email, phone
+# - username: Login with username
+# - email: Login with email (supports multi-account selection)
+# - phone: Login with phone number (requires SMS feature enabled, supports multi-account selection)
+# If only one method is configured, the login method selector will not be displayed.
+login:
+  allowed_methods: ["username", "email", "phone"]
 
 # ----------------------------------------
 # User & Security
@@ -202,10 +160,44 @@ email:
     on_reject: true
 
 # ----------------------------------------
-# Auto Update Resources
+# SMS Verification Configuration
 # ----------------------------------------
-# If true, automatically updates i18n files, email templates, and static theme files when the plugin starts.
-auto_update_resources: true
+# SMS verification can be used as an alternative or supplement to email verification
+# Add 'sms' to must_auth_methods or option_auth_methods to enable
+sms:
+  # Whether to enable SMS verification feature
+  enabled: false
+  # SMS service provider: tencent (Tencent Cloud) or aliyun (Alibaba Cloud)
+  provider: tencent
+  # Region (used by Tencent Cloud, e.g., ap-guangzhou)
+  region: ap-guangzhou
+  # SMS signature name
+  sign_name: ""
+  # SMS template ID
+  template_id: ""
+  # SDK application ID (used by Tencent Cloud)
+  sdk_app_id: ""
+  # List of supported country/region codes
+  country_codes:
+    - "+86"
+  # Phone number validation regex
+  phone_regex: "^[0-9]{6,15}$"
+  # Maximum number of game accounts that can be linked to a single phone number
+  max_accounts_per_phone: 5
+  
+  # Tencent Cloud SMS configuration
+  tencent:
+    # Tencent Cloud SecretId
+    secret_id: ""
+    # Tencent Cloud SecretKey
+    secret_key: ""
+  
+  # Alibaba Cloud SMS configuration
+  aliyun:
+    # Alibaba Cloud AccessKeyId
+    access_key_id: ""
+    # Alibaba Cloud AccessKeySecret
+    access_key_secret: ""
 
 # ----------------------------------------
 # Storage
@@ -429,3 +421,9 @@ downloads:
     url: "#"
     # Icon name
     icon: "package"
+
+# ----------------------------------------
+# Auto Update Resources
+# ----------------------------------------
+# If true, automatically updates i18n files, email templates, and static theme files when the plugin starts.
+auto_update_resources: true

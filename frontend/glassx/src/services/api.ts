@@ -44,6 +44,11 @@ export interface ConfigResponse {
   language?: string
   authMethodsConfig?: AuthMethodsConfig
   sms?: SmsConfig
+  login?: LoginConfig
+}
+
+export interface LoginConfig {
+  allowedMethods: string[]
 }
 
 export interface QuestionnaireAnswer {
@@ -158,17 +163,22 @@ export interface RegisterResponse {
 }
 
 export interface AdminLoginRequest {
-  username: string
+  account: string
   password: string
+  loginMethod: 'username' | 'email' | 'phone'
   language: string
+  selectedUsername?: string
 }
 
 export interface AdminLoginResponse {
   success: boolean
-  token: string
+  token?: string
   message: string
   isAdmin?: boolean
   username?: string
+  requireAccountSelection?: boolean
+  accounts?: string[]
+  tempToken?: string
 }
 
 export interface PendingListResponse {
