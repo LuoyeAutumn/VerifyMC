@@ -203,7 +203,6 @@ public class LoginHandler implements HttpHandler {
         }
 
         if (validUsers.isEmpty()) {
-            String firstUsername = (String) users.get(0).get("username");
             ctx.getPlugin().getLogger().warning("[Security] Failed login attempt - Email: " + email + ", IP: " + clientIp + ", Reason: Invalid password");
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("login.failed", language)));
