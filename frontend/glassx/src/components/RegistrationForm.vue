@@ -3,6 +3,7 @@
     <AnimatedStepper
       ref="stepperRef"
       :initial-step="currentStepIndex"
+      :total-steps="totalStepsCount"
       :disable-step-indicators="false"
       class="stepper-container"
       @step-change="handleStepChange"

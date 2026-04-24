@@ -58,6 +58,7 @@ type StepStatus = 'inactive' | 'active' | 'complete'
 
 interface Props {
   initialStep?: number
+  totalSteps?: number
   backButtonText?: string
   nextButtonText?: string
   disableStepIndicators?: boolean
@@ -65,6 +66,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   initialStep: 1,
+  totalSteps: 0,
   backButtonText: 'Back',
   nextButtonText: 'Continue',
   disableStepIndicators: false
@@ -87,6 +89,9 @@ const countSlotChildren = (slot: (() => VNode[]) | undefined): number => {
 }
 
 const totalSteps = computed(() => {
+  if (props.totalSteps > 0) {
+    return props.totalSteps
+  }
   if (slots.default) {
     return countSlotChildren(slots.default)
   }
