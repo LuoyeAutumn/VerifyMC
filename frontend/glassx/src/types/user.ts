@@ -4,8 +4,6 @@ export interface UserInfo {
   isAdmin?: boolean
 }
 
-export type UserStatusType = 'pending' | 'approved' | 'rejected'
-
 export interface DiscordUser {
   id: string
   username: string

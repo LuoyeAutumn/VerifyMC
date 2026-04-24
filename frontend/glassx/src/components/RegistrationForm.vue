@@ -1,102 +1,97 @@
 <template>
   <div class="w-full max-w-xl flex flex-col items-center">
-    <div class="relative w-full max-w-md mb-6">
-      <div class="flex items-center justify-center gap-2 text-xs md:text-sm">
-        <div class="font-medium transition-colors" :class="currentStep === 'basic' ? 'text-blue-200' : 'text-white/60'">
-          1. {{ $t('register.steps.basic') }}
-        </div>
-        <div class="w-5 h-px bg-white/5"></div>
-        <template v-if="questionnaireEnabled">
-          <div class="font-medium transition-colors" :class="currentStep === 'questionnaire' ? 'text-blue-200' : 'text-white/60'">
-            2. {{ $t('register.steps.questionnaire') }}
+    <AnimatedStepper
+      ref="stepperRef"
+      :initial-step="currentStepIndex"
+      :disable-step-indicators="false"
+      class="stepper-container"
+      @step-change="handleStepChange"
+      @final-step-completed="handleSubmit"
+    >
+      <template #default="{ currentStep: stepperCurrentStep }">
+        <Step v-if="stepperCurrentStep === 1" :title="$t('register.steps.basic')">
+          <div class="w-full max-w-xl">
+            <div class="lg:hidden text-center mb-6">
+              <h2 class="text-2xl font-bold text-white">{{ $t('register.title') }}</h2>
+              <p class="text-white/60">{{ $t('register.subtitle') }}</p>
+            </div>
+
+            <form @submit.prevent="handleBasicSubmit" class="space-y-5">
+              <BasicInfoForm
+                ref="basicInfoFormRef"
+                v-model:username="form.username"
+                v-model:email="form.email"
+                v-model:password="form.password"
+                v-model:platform="selectedPlatform"
+                :bedrock-enabled="bedrockEnabled"
+                :bedrock-prefix="bedrockPrefix"
+                :username-regex="config.usernameRegex"
+                :password-regex="authmeConfig.passwordRegex"
+                @submit="handleBasicInfoSubmit"
+              >
+                <template #submit-text>
+                  {{ questionnaireEnabled ? $t('register.actions.next_questionnaire') : $t('register.steps.submit') }}
+                </template>
+              </BasicInfoForm>
+
+              <AuthMethodsSection
+                ref="authMethodsRef"
+                :form="form"
+                :errors="errors"
+                :auth-methods-state="authMethodsState"
+                :is-method-enabled="isMethodEnabled"
+                :is-method-required="isMethodRequired"
+                :set-method-completed="setMethodCompleted"
+                :completed-methods="completedMethods"
+                :captcha-image="captchaImage"
+                :captcha-token="captchaToken"
+                :discord-linked="discordLinked"
+                :sms-country-codes="smsCountryCodes"
+                :normalized-username="getNormalizedUsername()"
+                :validate-code="validateCode"
+                :validate-captcha="validateCaptcha"
+                @update:code="handleCodeUpdate"
+                @update:phone="handlePhoneUpdate"
+                @update:country-code="handleCountryCodeUpdate"
+                @update:sms-code="handleSmsCodeUpdate"
+                @update:captcha-answer="handleCaptchaAnswerUpdate"
+                @send-code="handleSendCode"
+                @refresh-captcha="refreshCaptcha"
+                @discord-linked="handleDiscordLinked"
+                @discord-unlinked="handleDiscordUnlinked"
+              />
+
+              <Button type="submit" :disabled="!isBasicStepValid" class="w-full">
+                <span>{{ questionnaireEnabled ? $t('register.actions.next_questionnaire') : $t('register.steps.submit') }}</span>
+              </Button>
+            </form>
           </div>
-          <div class="w-5 h-px bg-white/5"></div>
-          <div class="font-medium transition-colors" :class="currentStep === 'submit' ? 'text-blue-200' : 'text-white/60'">
-            3. {{ $t('register.steps.submit') }}
+        </Step>
+
+        <Step v-if="questionnaireEnabled && stepperCurrentStep === 2" :title="$t('register.steps.questionnaire')">
+          <div class="w-full max-w-xl">
+            <QuestionnaireForm
+              @back="goToBasic"
+              @skip="onQuestionnaireSkipped"
+              @passed="onQuestionnairePassed"
+            />
           </div>
-        </template>
-        <div v-else class="font-medium transition-colors" :class="currentStep === 'submit' ? 'text-blue-200' : 'text-white/60'">
-          2. {{ $t('register.steps.submit') }}
-        </div>
-      </div>
-    </div>
+        </Step>
 
-    <div class="w-full max-w-xl">
-      <div class="lg:hidden text-center mb-6">
-        <h2 class="text-2xl font-bold text-white">{{ $t('register.title') }}</h2>
-        <p class="text-white/60">{{ $t('register.subtitle') }}</p>
-      </div>
-
-      <div class="relative">
-        <form v-if="currentStep === 'basic'" @submit.prevent="handleBasicSubmit" class="space-y-5">
-          <BasicInfoForm
-            ref="basicInfoFormRef"
-            v-model:username="form.username"
-            v-model:email="form.email"
-            v-model:password="form.password"
-            v-model:platform="selectedPlatform"
-            :bedrock-enabled="bedrockEnabled"
-            :bedrock-prefix="bedrockPrefix"
-            :username-regex="config.usernameRegex"
-            :password-regex="authmeConfig.passwordRegex"
-            @submit="handleBasicInfoSubmit"
-          >
-            <template #submit-text>
-              {{ questionnaireEnabled ? $t('register.actions.next_questionnaire') : $t('register.steps.submit') }}
-            </template>
-          </BasicInfoForm>
-
-          <AuthMethodsSection
-            ref="authMethodsRef"
-            :form="form"
-            :errors="errors"
-            :auth-methods-state="authMethodsState"
-            :is-method-enabled="isMethodEnabled"
-            :is-method-required="isMethodRequired"
-            :set-method-completed="setMethodCompleted"
-            :completed-methods="completedMethods"
-            :captcha-image="captchaImage"
-            :captcha-token="captchaToken"
-            :discord-linked="discordLinked"
-            :sms-country-codes="smsCountryCodes"
-            :normalized-username="getNormalizedUsername()"
-            :validate-code="validateCode"
-            :validate-captcha="validateCaptcha"
-            @update:code="handleCodeUpdate"
-            @update:phone="handlePhoneUpdate"
-            @update:country-code="handleCountryCodeUpdate"
-            @update:sms-code="handleSmsCodeUpdate"
-            @update:captcha-answer="handleCaptchaAnswerUpdate"
-            @send-code="handleSendCode"
-            @refresh-captcha="refreshCaptcha"
-            @discord-linked="handleDiscordLinked"
-            @discord-unlinked="handleDiscordUnlinked"
-          />
-
-          <Button type="submit" :disabled="!isBasicStepValid" class="w-full">
-            <span>{{ questionnaireEnabled ? $t('register.actions.next_questionnaire') : $t('register.steps.submit') }}</span>
-          </Button>
-        </form>
-
-        <div v-else-if="currentStep === 'questionnaire'">
-          <QuestionnaireForm
-            @back="goToBasic"
-            @skip="onQuestionnaireSkipped"
-            @passed="onQuestionnairePassed"
-          />
-        </div>
-
-        <RegistrationSummary
-          v-else
-          :username="getNormalizedUsername()"
-          :email="form.email"
-          :loading="loading"
-          :registration-submitted="registrationSubmitted"
-          :success-message="registrationSuccessMessage"
-          :questionnaire-result="questionnaireResult"
-        />
-      </div>
-    </div>
+        <Step v-if="stepperCurrentStep === totalStepsCount" :title="$t('register.steps.submit')">
+          <div class="w-full max-w-xl">
+            <RegistrationSummary
+              :username="getNormalizedUsername()"
+              :email="form.email"
+              :loading="loading"
+              :registration-submitted="registrationSubmitted"
+              :success-message="registrationSuccessMessage"
+              :questionnaire-result="questionnaireResult"
+            />
+          </div>
+        </Step>
+      </template>
+    </AnimatedStepper>
   </div>
 </template>
 
@@ -114,6 +109,8 @@ import AuthMethodsSection from '@/components/registration/AuthMethodsSection.vue
 import RegistrationSummary from '@/components/registration/RegistrationSummary.vue'
 import QuestionnaireForm from '@/components/QuestionnaireForm.vue'
 import Button from '@/components/ui/Button.vue'
+import AnimatedStepper from '@/components/ui/AnimatedStepper.vue'
+import Step from '@/components/ui/Step.vue'
 import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest } from '@/services/api'
 
 const { locale } = useI18n()
@@ -301,6 +298,55 @@ const {
   onError: (message: string) => error(message)
 })
 
+const stepperRef = ref<InstanceType<typeof AnimatedStepper> | null>(null)
+
+const totalStepsCount = computed(() => questionnaireEnabled.value ? 3 : 2)
+
+const currentStepIndex = computed(() => {
+  if (currentStep.value === 'basic') return 1
+  if (questionnaireEnabled.value) {
+    if (currentStep.value === 'questionnaire') return 2
+    if (currentStep.value === 'submit') return 3
+  } else {
+    if (currentStep.value === 'submit') return 2
+  }
+  return 1
+})
+
+const stepIndexToStepName = (index: number): 'basic' | 'questionnaire' | 'submit' => {
+  if (index === 1) return 'basic'
+  if (questionnaireEnabled.value) {
+    if (index === 2) return 'questionnaire'
+    if (index === 3) return 'submit'
+  } else {
+    if (index === 2) return 'submit'
+  }
+  return 'basic'
+}
+
+watch(currentStepIndex, (newIndex) => {
+  if (stepperRef.value && stepperRef.value.currentStep !== newIndex) {
+    stepperRef.value.updateStep(newIndex)
+  }
+})
+
+const handleStepChange = (step: number) => {
+  const stepName = stepIndexToStepName(step)
+  if (stepName === currentStep.value) return
+  
+  if (stepName === 'basic') {
+    goToBasic()
+  } else if (stepName === 'questionnaire') {
+    if (isBasicStepValid.value) {
+      goToQuestionnaire()
+    } else {
+      if (stepperRef.value) {
+        stepperRef.value.updateStep(currentStepIndex.value)
+      }
+    }
+  }
+}
+
 const { cooldownSeconds: emailCooldownSeconds, startCooldown: startEmailCooldown, stopCooldown: stopEmailCooldown } = useCooldown()
 
 onMounted(async () => {
@@ -425,3 +471,9 @@ watch(() => form.username, () => {
   }
 })
 </script>
+
+<style scoped>
+.stepper-container :deep(> div:last-child) {
+  display: none;
+}
+</style>

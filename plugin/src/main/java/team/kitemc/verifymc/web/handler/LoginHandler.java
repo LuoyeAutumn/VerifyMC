@@ -412,6 +412,28 @@ public class LoginHandler implements HttpHandler {
     private void completeLogin(HttpExchange exchange, Map<String, Object> user, String password,
                                String language) throws IOException {
         String actualUsername = (String) user.get("username");
+        String status = (String) user.get("status");
+
+        if ("pending".equals(status)) {
+            ctx.getPlugin().getLogger().warning("[Security] Login attempt by pending user: " + actualUsername);
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.pending", language)));
+            return;
+        }
+
+        if ("rejected".equals(status)) {
+            ctx.getPlugin().getLogger().warning("[Security] Login attempt by rejected user: " + actualUsername);
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.rejected", language)));
+            return;
+        }
+
+        if ("banned".equals(status)) {
+            ctx.getPlugin().getLogger().warning("[Security] Login attempt by banned user: " + actualUsername);
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.banned", language)));
+            return;
+        }
 
         if (isAdminLogin) {
             if (!ctx.getAdminAccessManager().hasAnyAdminAccess(actualUsername)) {

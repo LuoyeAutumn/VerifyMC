@@ -1,33 +1,12 @@
 <template>
   <div class="max-w-4xl mx-auto flex flex-col gap-4">
     <Card class="flex flex-col sm:flex-row items-center gap-6 p-6 text-center sm:text-left">
-      <div class="relative">
-        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
-          <User class="w-12 h-12" />
-        </div>
-        <div class="absolute -bottom-1 -right-1 px-2 py-1 rounded-lg text-[0.7rem] font-semibold whitespace-nowrap" :class="statusClass">
-          {{ statusText }}
-        </div>
+      <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white">
+        <User class="w-12 h-12" />
       </div>
       <div class="flex-1">
         <h2 class="text-2xl font-bold text-white mb-1">{{ userInfo?.username || 'User' }}</h2>
         <p class="text-white/60 m-0">{{ userInfo?.email || '' }}</p>
-      </div>
-    </Card>
-
-    <!-- Status Card -->
-    <Card class="border-l-4 p-5 flex items-start gap-4" :class="statusCardClass">
-      <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" :class="statusIconWrapperClass">
-        <Clock v-if="userStatus === 'pending'" class="w-6 h-6" />
-        <CheckCircle v-else-if="userStatus === 'approved'" class="w-6 h-6" />
-        <XCircle v-else class="w-6 h-6" />
-      </div>
-      <div class="flex-1">
-        <h3 class="text-lg font-semibold text-white mb-1">{{ $t(`user_status.status.${userStatus}`) }}</h3>
-        <p class="text-white/70 text-sm m-0">{{ $t(`user_status.messages.${userStatus}`) }}</p>
-        <p v-if="userStatus === 'rejected' && rejectReason" class="text-white/60 mt-2 text-sm">
-          {{ $t('user_status.reason') }}: {{ rejectReason }}
-        </p>
       </div>
     </Card>
 
@@ -183,24 +162,21 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { User, Clock, CheckCircle, XCircle } from 'lucide-vue-next'
+import { User } from 'lucide-vue-next'
 import { useNotification } from '@/composables/useNotification'
 import { sessionService } from '@/services/session'
 import { apiService, type ConfigResponse } from '@/services/api'
-import { getStatusColors } from '@/lib/utils'
 import Label from '@/components/ui/Label.vue'
 import Input from '@/components/ui/Input.vue'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
-import type { UserInfo, DiscordStatus, UserStatusType } from '@/types'
+import type { UserInfo, DiscordStatus } from '@/types'
 
 const { t, locale } = useI18n()
 const notification = useNotification()
 const config = inject<{ value: ConfigResponse }>('config', { value: {} as ConfigResponse })
 
 const userInfo = ref<UserInfo | null>(null)
-const userStatus = ref<UserStatusType>('pending')
-const rejectReason = ref<string>('')
 const saving = ref(false)
 const changingPassword = ref(false)
 const discordStatus = ref<DiscordStatus | null>(null)
@@ -222,42 +198,10 @@ const passwordForm = ref({
 const discordEnabled = computed(() => config.value?.discord?.enabled)
 const emailVerificationEnabled = computed(() => config.value?.authMethods?.includes('email') ?? false)
 
-const statusClass = computed(() => {
-  const colors = getStatusColors(userStatus.value)
-  return `${colors.bg} ${colors.text} border ${colors.border}`
-})
-
-const statusText = computed(() => t(`user_status.status.${userStatus.value}`))
-
-const statusCardClass = computed(() => {
-  const colors = getStatusColors(userStatus.value)
-  return `${colors.cardBg} ${colors.cardBorder}`
-})
-
-const statusIconWrapperClass = computed(() => {
-  const colors = getStatusColors(userStatus.value)
-  return `${colors.bg} ${colors.text}`
-})
-
 const loadUserInfo = async () => {
   userInfo.value = sessionService.getUserInfo()
   if (userInfo.value) {
     form.value.email = userInfo.value.email || ''
-  }
-}
-
-const loadUserStatus = async () => {
-  try {
-    const response = await apiService.getUserStatus()
-    if (response.success && response.data) {
-      const status = response.data.status
-      userStatus.value = (status === 'pending' || status === 'approved' || status === 'rejected')
-        ? status
-        : 'pending'
-      rejectReason.value = response.data.reason || ''
-    }
-  } catch (error) {
-    console.error('Failed to load user status:', error)
   }
 }
 
@@ -418,7 +362,6 @@ const linkDiscord = async () => {
 
 onMounted(() => {
   loadUserInfo()
-  loadUserStatus()
   if (discordEnabled.value) {
     loadDiscordStatus()
   }
