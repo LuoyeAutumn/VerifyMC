@@ -1,0 +1,2265 @@
+openapi: 3.1.0
+info:
+  title: VerifyMC API
+  description: |
+    VerifyMC 是一个 Minecraft 服务器白名单验证系统，提供用户注册、登录、审核和管理等功能。
+    
+    ## 认证方式
+    大部分 API 端点需要 Bearer Token 认证。登录成功后会返回一个 token，后续请求需要在请求头中携带：
+    ```
+    Authorization: Bearer {token}
+    ```
+    
+    ## 多语言支持
+    API 支持多语言错误消息，通过请求参数 `language` 指定语言（支持 `en` 和 `zh`）。
+    
+    ## 错误处理
+    所有错误响应都包含 `success: false` 字段，以及 `message` 和可选的 `errorCode` 字段。
+  version: 1.8.7
+  contact:
+    name: KiteMC Team
+    url: https://kitemc.com
+    email: support@kitemc.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://{host}:{port}
+    description: VerifyMC Web Server
+    variables:
+      host:
+        default: localhost
+        description: 服务器主机地址
+      port:
+        default: '8080'
+        description: Web 服务器端口
+
+tags:
+  - name: config
+    description: 配置相关端点
+  - name: verification
+    description: 验证码相关端点
+  - name: auth
+    description: 认证相关端点
+  - name: registration
+    description: 注册相关端点
+  - name: user
+    description: 用户管理端点
+  - name: admin
+    description: 管理员端点
+  - name: discord
+    description: Discord 集成端点
+  - name: questionnaire
+    description: 问卷相关端点
+  - name: system
+    description: 系统状态端点
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer Token 认证，登录后获取
+
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: 请求是否成功
+        message:
+          type: string
+          description: 响应消息
+        errorCode:
+          type: string
+          description: 错误代码
+        remainingAttempts:
+          type: integer
+          description: 剩余尝试次数
+        retryAfter:
+          type: integer
+          format: int64
+          description: 重试等待时间（秒）
+
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              enum: [false]
+
+    SuccessResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponse'
+        - type: object
+          properties:
+            success:
+              type: boolean
+              enum: [true]
+
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+          description: 用户名
+        email:
+          type: string
+          format: email
+          description: 邮箱地址
+        phone:
+          type: string
+          description: 手机号码
+        status:
+          type: string
+          enum: [pending, approved, rejected, banned]
+          description: 用户状态
+        uuid:
+          type: string
+          format: uuid
+          description: Minecraft UUID
+        discordId:
+          type: string
+          description: Discord ID
+        createdAt:
+          type: string
+          format: date-time
+          description: 创建时间
+        approvedAt:
+          type: string
+          format: date-time
+          description: 批准时间
+        questionnaireScore:
+          type: number
+          description: 问卷得分
+
+    UserStatus:
+      type: object
+      properties:
+        username:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, banned]
+        isOnline:
+          type: boolean
+          description: 是否在线
+
+    Pagination:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+          description: 当前页码
+        pageSize:
+          type: integer
+          description: 每页数量
+        totalCount:
+          type: integer
+          description: 总数量
+        totalPages:
+          type: integer
+          description: 总页数
+        hasNext:
+          type: boolean
+          description: 是否有下一页
+        hasPrev:
+          type: boolean
+          description: 是否有上一页
+
+    LoginRequest:
+      type: object
+      required:
+        - account
+        - password
+      properties:
+        account:
+          type: string
+          description: 用户名、邮箱或手机号
+        password:
+          type: string
+          format: password
+          description: 密码
+        loginMethod:
+          type: string
+          enum: [username, email, phone]
+          default: username
+          description: 登录方式
+        verifyMethod:
+          type: string
+          enum: [password, code]
+          default: password
+          description: 验证方式
+        code:
+          type: string
+          description: 验证码（当 verifyMethod 为 code 时必填）
+        countryCode:
+          type: string
+          default: '+86'
+          description: 国家代码（手机登录时使用）
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+        tempToken:
+          type: string
+          description: 临时令牌（账户选择时使用）
+        selectedUsername:
+          type: string
+          description: 选择的用户名（账户选择时使用）
+
+    LoginResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            token:
+              type: string
+              description: 认证令牌
+            username:
+              type: string
+              description: 用户名
+            isAdmin:
+              type: boolean
+              description: 是否为管理员
+            requireAccountSelection:
+              type: boolean
+              description: 是否需要选择账户
+            tempToken:
+              type: string
+              description: 临时令牌（账户选择时使用）
+            accounts:
+              type: array
+              items:
+                type: object
+                properties:
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  status:
+                    type: string
+
+    VerifyCodeRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: 邮箱地址
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    SmsCodeRequest:
+      type: object
+      required:
+        - phone
+        - countryCode
+      properties:
+        phone:
+          type: string
+          description: 手机号码
+        countryCode:
+          type: string
+          default: '+86'
+          description: 国家代码
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    CaptchaResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            captchaId:
+              type: string
+              description: 验证码 ID
+            captchaImage:
+              type: string
+              format: byte
+              description: Base64 编码的验证码图片
+
+    RegistrationRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 16
+          description: 用户名
+        password:
+          type: string
+          format: password
+          minLength: 6
+          description: 密码
+        email:
+          type: string
+          format: email
+          description: 邮箱地址
+        phone:
+          type: string
+          description: 手机号码
+        countryCode:
+          type: string
+          default: '+86'
+          description: 国家代码
+        emailCode:
+          type: string
+          description: 邮箱验证码
+        smsCode:
+          type: string
+          description: 短信验证码
+        captchaId:
+          type: string
+          description: 图形验证码 ID
+        captchaCode:
+          type: string
+          description: 图形验证码
+        discordCode:
+          type: string
+          description: Discord OAuth code
+        questionnaireAnswers:
+          type: object
+          additionalProperties: true
+          description: 问卷答案
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    ConfigResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        config:
+          type: object
+          properties:
+            authMethods:
+              type: array
+              items:
+                type: string
+              description: 认证方法列表
+            theme:
+              type: string
+              description: 主题
+            logoUrl:
+              type: string
+              format: uri
+              description: Logo URL
+            announcement:
+              type: string
+              description: 公告内容
+            usernameRegex:
+              type: string
+              description: 用户名正则表达式
+            webServerPrefix:
+              type: string
+              description: Web 服务器前缀
+            wsPort:
+              type: integer
+              description: WebSocket 端口
+            authme:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                passwordRegex:
+                  type: string
+            captcha:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                emailEnabled:
+                  type: boolean
+                type:
+                  type: string
+            questionnaire:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                passScore:
+                  type: number
+                hasTextQuestions:
+                  type: boolean
+            discord:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                required:
+                  type: boolean
+            bedrock:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                prefix:
+                  type: string
+            authMethodsConfig:
+              type: object
+              properties:
+                mustAuthMethods:
+                  type: array
+                  items:
+                    type: string
+                optionAuthMethods:
+                  type: array
+                  items:
+                    type: string
+                minOptionAuthMethods:
+                  type: integer
+            sms:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                countryCodes:
+                  type: array
+                  items:
+                    type: string
+                phoneRegex:
+                  type: string
+            login:
+              type: object
+              properties:
+                allowedMethods:
+                  type: array
+                  items:
+                    type: string
+                allowedIdentifiers:
+                  type: array
+                  items:
+                    type: string
+            forgotPassword:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                resetMethods:
+                  type: array
+                  items:
+                    type: string
+            emailDomainWhitelist:
+              type: array
+              items:
+                type: string
+            enableEmailDomainWhitelist:
+              type: boolean
+            enableEmailAliasLimit:
+              type: boolean
+            language:
+              type: string
+
+    ForgotPasswordCodeRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: 邮箱地址
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    ForgotPasswordResetRequest:
+      type: object
+      required:
+        - email
+        - code
+        - newPassword
+      properties:
+        email:
+          type: string
+          format: email
+          description: 邮箱地址
+        code:
+          type: string
+          description: 验证码
+        newPassword:
+          type: string
+          format: password
+          minLength: 6
+          description: 新密码
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: 新邮箱地址
+        phone:
+          type: string
+          description: 新手机号码
+        countryCode:
+          type: string
+          description: 国家代码
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    UserPasswordRequest:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+      properties:
+        oldPassword:
+          type: string
+          format: password
+          description: 旧密码
+        newPassword:
+          type: string
+          format: password
+          minLength: 6
+          description: 新密码
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    AdminUserActionRequest:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          description: 目标用户名或 UUID
+        reason:
+          type: string
+          description: 操作原因
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    AdminPasswordRequest:
+      type: object
+      required:
+        - username
+        - newPassword
+      properties:
+        username:
+          type: string
+          description: 目标用户名或 UUID
+        newPassword:
+          type: string
+          format: password
+          minLength: 6
+          description: 新密码
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    QuestionnaireConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        passScore:
+          type: number
+        questions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              question:
+                type: string
+              type:
+                type: string
+                enum: [single, multiple, text]
+              options:
+                type: array
+                items:
+                  type: string
+              required:
+                type: boolean
+
+    QuestionnaireSubmitRequest:
+      type: object
+      required:
+        - answers
+      properties:
+        answers:
+          type: object
+          additionalProperties: true
+          description: 问卷答案
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+          description: 语言
+
+    DiscordAuthResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            authUrl:
+              type: string
+              format: uri
+              description: Discord OAuth URL
+
+    DiscordStatusResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            linked:
+              type: boolean
+              description: 是否已绑定
+            discordId:
+              type: string
+              description: Discord ID
+            discordUsername:
+              type: string
+              description: Discord 用户名
+
+    ServerStatus:
+      type: object
+      properties:
+        success:
+          type: boolean
+        online:
+          type: boolean
+          description: 服务器是否在线
+        playerCount:
+          type: integer
+          description: 在线玩家数
+        maxPlayers:
+          type: integer
+          description: 最大玩家数
+        version:
+          type: string
+          description: 服务器版本
+        motd:
+          type: string
+          description: 服务器 MOTD
+
+    VersionInfo:
+      type: object
+      properties:
+        success:
+          type: boolean
+        version:
+          type: string
+          description: 当前版本
+        latestVersion:
+          type: string
+          description: 最新版本
+        updateAvailable:
+          type: boolean
+          description: 是否有更新可用
+        releaseNotes:
+          type: string
+          description: 更新说明
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        eventType:
+          type: string
+          description: 事件类型
+        username:
+          type: string
+          description: 用户名
+        operator:
+          type: string
+          description: 操作者
+        timestamp:
+          type: string
+          format: date-time
+          description: 时间戳
+        details:
+          type: object
+          additionalProperties: true
+          description: 详细信息
+
+    Download:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 文件名
+        url:
+          type: string
+          format: uri
+          description: 下载链接
+        size:
+          type: integer
+          description: 文件大小（字节）
+        version:
+          type: string
+          description: 版本号
+        description:
+          type: string
+          description: 描述
+
+paths:
+  /api/config:
+    get:
+      tags:
+        - config
+      summary: 获取前端配置
+      description: 获取前端所需的配置信息，包括认证方法、主题设置、验证码配置等
+      operationId: getConfig
+      responses:
+        '200':
+          description: 成功获取配置
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigResponse'
+              example:
+                success: true
+                config:
+                  authMethods: ['email', 'phone']
+                  theme: 'default'
+                  logoUrl: 'https://example.com/logo.png'
+                  announcement: '欢迎注册'
+                  usernameRegex: '^[a-zA-Z0-9_]{3,16}$'
+                  authme:
+                    enabled: false
+                    passwordRegex: ''
+                  captcha:
+                    enabled: true
+                    emailEnabled: true
+                    type: 'image'
+                  questionnaire:
+                    enabled: true
+                    passScore: 60
+                    hasTextQuestions: false
+                  discord:
+                    enabled: true
+                    required: false
+                  sms:
+                    enabled: true
+                    countryCodes: ['+86', '+1']
+                    phoneRegex: '^1[3-9]\\d{9}$'
+                  login:
+                    allowedMethods: ['password', 'code']
+                    allowedIdentifiers: ['username', 'email', 'phone']
+                  forgotPassword:
+                    enabled: true
+                    resetMethods: ['email', 'sms']
+                  language: 'zh'
+
+  /api/server/status:
+    get:
+      tags:
+        - system
+      summary: 获取服务器状态
+      description: 获取 Minecraft 服务器的在线状态和玩家信息
+      operationId: getServerStatus
+      responses:
+        '200':
+          description: 成功获取服务器状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerStatus'
+              example:
+                success: true
+                online: true
+                playerCount: 10
+                maxPlayers: 100
+                version: '1.20.4'
+                motd: 'Welcome to our server!'
+
+  /api/version:
+    get:
+      tags:
+        - system
+      summary: 获取版本信息
+      description: 获取插件版本信息和更新检查
+      operationId: getVersion
+      responses:
+        '200':
+          description: 成功获取版本信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionInfo'
+              example:
+                success: true
+                version: '1.8.7'
+                latestVersion: '1.8.7'
+                updateAvailable: false
+                releaseNotes: 'Security fixes and bug improvements'
+
+  /api/user/status:
+    get:
+      tags:
+        - user
+      summary: 获取用户状态
+      description: 获取当前登录用户的状态信息
+      operationId: getUserStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功获取用户状态
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserStatus'
+              example:
+                success: true
+                message: 'User status retrieved'
+                data:
+                  username: 'player123'
+                  status: 'approved'
+                  isOnline: true
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/downloads:
+    get:
+      tags:
+        - system
+      summary: 获取下载列表
+      description: 获取可下载的文件列表
+      operationId: getDownloads
+      responses:
+        '200':
+          description: 成功获取下载列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      downloads:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Download'
+              example:
+                success: true
+                downloads:
+                  - name: 'VerifyMC-1.8.7.jar'
+                    url: 'https://example.com/downloads/VerifyMC-1.8.7.jar'
+                    size: 1048576
+                    version: '1.8.7'
+                    description: 'Main plugin file'
+
+  /api/captcha/generate:
+    post:
+      tags:
+        - verification
+      summary: 生成图形验证码
+      description: 生成一个新的图形验证码
+      operationId: generateCaptcha
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+      responses:
+        '200':
+          description: 成功生成验证码
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaptchaResponse'
+              example:
+                success: true
+                message: 'Captcha generated'
+                captchaId: 'abc123'
+                captchaImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...'
+
+  /api/captcha:
+    post:
+      tags:
+        - verification
+      summary: 验证图形验证码
+      description: 验证用户输入的图形验证码是否正确
+      operationId: verifyCaptcha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - captchaId
+                - captchaCode
+              properties:
+                captchaId:
+                  type: string
+                  description: 验证码 ID
+                captchaCode:
+                  type: string
+                  description: 用户输入的验证码
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+            example:
+              captchaId: 'abc123'
+              captchaCode: 'ABCD'
+              language: 'zh'
+      responses:
+        '200':
+          description: 验证成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'Captcha verified'
+        '400':
+          description: 验证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Invalid captcha'
+                errorCode: 'INVALID_CAPTCHA'
+
+  /api/verify/send:
+    post:
+      tags:
+        - verification
+      summary: 发送邮件验证码
+      description: 向指定邮箱发送验证码
+      operationId: sendEmailCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyCodeRequest'
+            example:
+              email: 'user@example.com'
+              language: 'zh'
+      responses:
+        '200':
+          description: 验证码发送成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      remainingSeconds:
+                        type: integer
+                        description: 剩余等待时间（秒）
+              example:
+                success: true
+                message: 'Verification code sent'
+                remainingSeconds: 60
+        '400':
+          description: 请求无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Invalid email format'
+                errorCode: 'INVALID_EMAIL'
+        '429':
+          description: 请求过于频繁
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Please wait 45 seconds before requesting again'
+                remainingSeconds: 45
+
+  /api/sms/send:
+    post:
+      tags:
+        - verification
+      summary: 发送短信验证码
+      description: 向指定手机号发送验证码
+      operationId: sendSmsCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SmsCodeRequest'
+            example:
+              phone: '13800138000'
+              countryCode: '+86'
+              language: 'zh'
+      responses:
+        '200':
+          description: 验证码发送成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      remainingSeconds:
+                        type: integer
+                        description: 剩余等待时间（秒）
+              example:
+                success: true
+                message: 'SMS verification code sent'
+                remainingSeconds: 60
+        '400':
+          description: 请求无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: 请求过于频繁
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/register:
+    post:
+      tags:
+        - registration
+      summary: 用户注册
+      description: 提交用户注册信息
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+            example:
+              username: 'player123'
+              password: 'SecurePass123'
+              email: 'user@example.com'
+              emailCode: '123456'
+              language: 'zh'
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'Registration successful, waiting for review'
+        '400':
+          description: 注册失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Username already exists'
+                errorCode: 'USERNAME_EXISTS'
+
+  /api/review/status:
+    get:
+      tags:
+        - registration
+      summary: 获取审核状态
+      description: 获取当前用户的审核状态
+      operationId: getReviewStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 用户名
+      responses:
+        '200':
+          description: 成功获取审核状态
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [pending, approved, rejected]
+                      message:
+                        type: string
+              example:
+                success: true
+                status: 'pending'
+                message: 'Your application is under review'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/login:
+    post:
+      tags:
+        - auth
+      summary: 用户登录
+      description: 用户登录系统，支持用户名、邮箱、手机号三种登录方式
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              username_login:
+                summary: 用户名密码登录
+                value:
+                  account: 'player123'
+                  password: 'SecurePass123'
+                  loginMethod: 'username'
+                  verifyMethod: 'password'
+                  language: 'zh'
+              email_code_login:
+                summary: 邮箱验证码登录
+                value:
+                  account: 'user@example.com'
+                  code: '123456'
+                  loginMethod: 'email'
+                  verifyMethod: 'code'
+                  language: 'zh'
+              phone_login:
+                summary: 手机号登录
+                value:
+                  account: '13800138000'
+                  password: 'SecurePass123'
+                  loginMethod: 'phone'
+                  verifyMethod: 'password'
+                  countryCode: '+86'
+                  language: 'zh'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                login_success:
+                  summary: 登录成功
+                  value:
+                    success: true
+                    message: 'Login successful'
+                    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                    username: 'player123'
+                    isAdmin: false
+                account_selection:
+                  summary: 需要选择账户
+                  value:
+                    success: true
+                    message: 'Multiple accounts found, please select one'
+                    requireAccountSelection: true
+                    tempToken: 'temp_abc123'
+                    accounts:
+                      - username: 'player123'
+                        email: 'user@example.com'
+                        status: 'approved'
+                      - username: 'player456'
+                        email: 'user@example.com'
+                        status: 'approved'
+        '400':
+          description: 登录失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Invalid username or password'
+        '401':
+          description: 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: 请求过于频繁
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Too many login attempts. Please try again later.'
+                retryAfter: 60
+
+  /api/login/code:
+    post:
+      tags:
+        - auth
+      summary: 发送登录验证码
+      description: 发送登录用的验证码到邮箱或手机
+      operationId: sendLoginCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - account
+                - loginMethod
+              properties:
+                account:
+                  type: string
+                  description: 邮箱或手机号
+                loginMethod:
+                  type: string
+                  enum: [email, phone]
+                  description: 登录方式
+                countryCode:
+                  type: string
+                  default: '+86'
+                  description: 国家代码
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+            example:
+              account: 'user@example.com'
+              loginMethod: 'email'
+              language: 'zh'
+      responses:
+        '200':
+          description: 验证码发送成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 请求无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/login:
+    post:
+      tags:
+        - auth
+      summary: 管理员登录
+      description: 管理员登录系统
+      operationId: adminLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              account: 'admin'
+              password: 'AdminPass123'
+              loginMethod: 'username'
+              verifyMethod: 'password'
+              language: 'zh'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                success: true
+                message: 'Login successful'
+                token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                username: 'admin'
+                isAdmin: true
+        '401':
+          description: 认证失败或无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Not authorized'
+
+  /api/forgot-password/code:
+    post:
+      tags:
+        - auth
+      summary: 发送忘记密码验证码
+      description: 发送重置密码用的验证码到邮箱
+      operationId: sendForgotPasswordCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordCodeRequest'
+            example:
+              email: 'user@example.com'
+              language: 'zh'
+      responses:
+        '200':
+          description: 验证码发送成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 请求无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/forgot-password/reset:
+    post:
+      tags:
+        - auth
+      summary: 重置密码
+      description: 使用验证码重置密码
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordResetRequest'
+            example:
+              email: 'user@example.com'
+              code: '123456'
+              newPassword: 'NewSecurePass123'
+              language: 'zh'
+      responses:
+        '200':
+          description: 密码重置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'Password reset successful'
+        '400':
+          description: 重置失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/sms/forgot-password:
+    post:
+      tags:
+        - auth
+      summary: 短信忘记密码
+      description: 通过短信验证码重置密码
+      operationId: smsForgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - countryCode
+                - code
+                - newPassword
+              properties:
+                phone:
+                  type: string
+                  description: 手机号码
+                countryCode:
+                  type: string
+                  default: '+86'
+                  description: 国家代码
+                code:
+                  type: string
+                  description: 验证码
+                newPassword:
+                  type: string
+                  format: password
+                  description: 新密码
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+            example:
+              phone: '13800138000'
+              countryCode: '+86'
+              code: '123456'
+              newPassword: 'NewSecurePass123'
+              language: 'zh'
+      responses:
+        '200':
+          description: 密码重置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 重置失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/questionnaire/config:
+    get:
+      tags:
+        - questionnaire
+      summary: 获取问卷配置
+      description: 获取问卷题目和配置信息
+      operationId: getQuestionnaireConfig
+      responses:
+        '200':
+          description: 成功获取问卷配置
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      config:
+                        $ref: '#/components/schemas/QuestionnaireConfig'
+              example:
+                success: true
+                config:
+                  enabled: true
+                  passScore: 60
+                  questions:
+                    - id: 'q1'
+                      question: 'What is your Minecraft experience?'
+                      type: 'single'
+                      options: ['Beginner', 'Intermediate', 'Expert']
+                      required: true
+
+  /api/questionnaire/submit:
+    post:
+      tags:
+        - questionnaire
+      summary: 提交问卷
+      description: 提交问卷答案
+      operationId: submitQuestionnaire
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionnaireSubmitRequest'
+            example:
+              answers:
+                q1: 'Intermediate'
+                q2: 'I want to join because...'
+              language: 'zh'
+      responses:
+        '200':
+          description: 提交成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      score:
+                        type: number
+                        description: 得分
+                      passed:
+                        type: boolean
+                        description: 是否通过
+              example:
+                success: true
+                message: 'Questionnaire submitted'
+                score: 85
+                passed: true
+
+  /api/admin/verify:
+    post:
+      tags:
+        - admin
+      summary: 管理员验证
+      description: 验证管理员身份
+      operationId: adminVerify
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+      responses:
+        '200':
+          description: 验证成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/users:
+    get:
+      tags:
+        - admin
+      summary: 获取用户列表
+      description: 获取用户列表，支持分页和搜索
+      operationId: getUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: 页码
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: 每页数量
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: 搜索关键词
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, banned]
+          description: 用户状态筛选
+      responses:
+        '200':
+          description: 成功获取用户列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      users:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/User'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              example:
+                success: true
+                users:
+                  - username: 'player123'
+                    email: 'user@example.com'
+                    status: 'approved'
+                    createdAt: '2024-01-01T00:00:00Z'
+                pagination:
+                  currentPage: 1
+                  pageSize: 20
+                  totalCount: 100
+                  totalPages: 5
+                  hasNext: true
+                  hasPrev: false
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/user/approve:
+    post:
+      tags:
+        - admin
+      summary: 批准用户
+      description: 批准待审核用户的注册申请
+      operationId: approveUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserActionRequest'
+            example:
+              username: 'player123'
+              language: 'zh'
+      responses:
+        '200':
+          description: 批准成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'User approved successfully'
+        '400':
+          description: 操作失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/user/reject:
+    post:
+      tags:
+        - admin
+      summary: 拒绝用户
+      description: 拒绝待审核用户的注册申请
+      operationId: rejectUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserActionRequest'
+            example:
+              username: 'player123'
+              reason: 'Incomplete information'
+              language: 'zh'
+      responses:
+        '200':
+          description: 拒绝成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 操作失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/user/delete:
+    post:
+      tags:
+        - admin
+      summary: 删除用户
+      description: 删除用户记录
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserActionRequest'
+            example:
+              username: 'player123'
+              reason: 'User requested deletion'
+              language: 'zh'
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 操作失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/user/ban:
+    post:
+      tags:
+        - admin
+      summary: 封禁用户
+      description: 封禁用户账户
+      operationId: banUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserActionRequest'
+            example:
+              username: 'player123'
+              reason: 'Violation of rules'
+              language: 'zh'
+      responses:
+        '200':
+          description: 封禁成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 操作失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/user/unban:
+    post:
+      tags:
+        - admin
+      summary: 解封用户
+      description: 解除用户封禁状态
+      operationId: unbanUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserActionRequest'
+            example:
+              username: 'player123'
+              reason: 'Ban expired'
+              language: 'zh'
+      responses:
+        '200':
+          description: 解封成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 操作失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/user/password:
+    post:
+      tags:
+        - admin
+      summary: 重置用户密码
+      description: 管理员重置用户密码
+      operationId: adminResetPassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminPasswordRequest'
+            example:
+              username: 'player123'
+              newPassword: 'NewPassword123'
+              language: 'zh'
+      responses:
+        '200':
+          description: 重置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 操作失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/audits:
+    get:
+      tags:
+        - admin
+      summary: 获取审核日志
+      description: 获取系统审核日志，支持分页和筛选
+      operationId: getAuditLogs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: 页码
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+          description: 每页数量
+        - name: username
+          in: query
+          schema:
+            type: string
+          description: 用户名筛选
+        - name: eventType
+          in: query
+          schema:
+            type: string
+          description: 事件类型筛选
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 开始日期
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: 结束日期
+      responses:
+        '200':
+          description: 成功获取审核日志
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      audits:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/AuditLog'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/sync:
+    post:
+      tags:
+        - admin
+      summary: 同步数据
+      description: 同步用户数据到游戏服务器
+      operationId: syncData
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+      responses:
+        '200':
+          description: 同步成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/discord/auth:
+    post:
+      tags:
+        - discord
+      summary: Discord 认证
+      description: 获取 Discord OAuth 认证 URL
+      operationId: discordAuth
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+      responses:
+        '200':
+          description: 成功获取认证 URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordAuthResponse'
+              example:
+                success: true
+                message: 'Discord auth URL generated'
+                authUrl: 'https://discord.com/api/oauth2/authorize?client_id=...'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/discord/callback:
+    get:
+      tags:
+        - discord
+      summary: Discord 回调
+      description: 处理 Discord OAuth 回调
+      operationId: discordCallback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Discord OAuth 授权码
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: 状态参数
+      responses:
+        '200':
+          description: 绑定成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'Discord account linked successfully'
+        '400':
+          description: 绑定失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/discord/status:
+    get:
+      tags:
+        - discord
+      summary: Discord 状态
+      description: 获取当前用户的 Discord 绑定状态
+      operationId: discordStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功获取状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordStatusResponse'
+              example:
+                success: true
+                linked: true
+                discordId: '123456789012345678'
+                discordUsername: 'User#1234'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/discord/unlink:
+    post:
+      tags:
+        - discord
+      summary: 解除 Discord 绑定
+      description: 解除当前用户的 Discord 账号绑定
+      operationId: discordUnlink
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                language:
+                  type: string
+                  enum: [en, zh]
+                  default: en
+      responses:
+        '200':
+          description: 解绑成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'Discord account unlinked successfully'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/user/update:
+    post:
+      tags:
+        - user
+      summary: 更新用户信息
+      description: 更新当前用户的个人信息
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+            example:
+              email: 'newemail@example.com'
+              language: 'zh'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'User information updated successfully'
+        '400':
+          description: 更新失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/user/password:
+    post:
+      tags:
+        - user
+      summary: 修改密码
+      description: 修改当前用户的密码
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPasswordRequest'
+            example:
+              oldPassword: 'OldPass123'
+              newPassword: 'NewPass456'
+              language: 'zh'
+      responses:
+        '200':
+          description: 修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: 'Password changed successfully'
+        '400':
+          description: 修改失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: 'Old password is incorrect'
+        '401':
+          description: 未认证
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

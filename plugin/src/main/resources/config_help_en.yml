@@ -81,13 +81,28 @@ register:
 # ----------------------------------------
 # Login Settings
 # ----------------------------------------
-# List of allowed login methods. Options: username, email, phone
-# - username: Login with username
-# - email: Login with email (supports multi-account selection)
-# - phone: Login with phone number (requires SMS feature enabled, supports multi-account selection)
-# If only one method is configured, the login method selector will not be displayed.
+# List of allowed login methods. Format: {login_identifier}_{verify_method}
+# Login identifiers: username, email, phone
+# Verify methods: password, code
+#
+# Available options:
+# - username: Login with username (password only)
+# - email_password: Login with email + password
+# - email_code: Login with email + verification code (sends email code)
+# - phone_password: Login with phone + password
+# - phone_code: Login with phone + verification code (sends SMS, requires SMS enabled)
+#
+# Notes:
+# - If a login identifier has multiple verify methods configured (e.g., both email_password and email_code),
+#   users can choose their preferred verify method during login.
+# - If a login identifier has only one verify method, the login UI will use that method directly.
+# - If only one login identifier is configured, the login method selector will not be displayed.
+# - Backward compatibility: Old format ["username", "email", "phone"] is automatically converted to:
+#   username → username
+#   email → email_password, email_code
+#   phone → phone_password, phone_code
 login:
-  allowed_methods: ["username", "email", "phone"]
+  allowed_methods: ["username", "email_password", "email_code", "phone_password", "phone_code"]
 
 # ----------------------------------------
 # User & Security
@@ -184,7 +199,16 @@ sms:
   phone_regex: "^[0-9]{6,15}$"
   # Maximum number of game accounts that can be linked to a single phone number
   max_accounts_per_phone: 5
-  
+  # SMS verification code configuration
+  code:
+    # Verification code expiration time in minutes
+    expire_minutes: 5
+    # Maximum verification attempts allowed
+    max_attempts: 5
+  # Connection timeout in seconds
+  connect_timeout: 5
+  # Request timeout in seconds
+  request_timeout: 10
   # Tencent Cloud SMS configuration
   tencent:
     # Tencent Cloud SecretId

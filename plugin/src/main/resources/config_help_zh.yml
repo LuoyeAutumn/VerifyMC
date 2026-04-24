@@ -198,7 +198,16 @@ sms:
   phone_regex: "^[0-9]{6,15}$"
   # 单个手机号最多可以绑定的游戏账号数量
   max_accounts_per_phone: 5
-  
+  # 短信验证码配置
+  code:
+    # 验证码过期时间（分钟）
+    expire_minutes: 5
+    # 最大尝试验证次数
+    max_attempts: 5
+  # 连接超时时间（秒）
+  connect_timeout: 5
+  # 请求超时时间（秒）
+  request_timeout: 10
   # 腾讯云短信配置
   tencent:
     # 腾讯云 SecretId

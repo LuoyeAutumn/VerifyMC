@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import team.kitemc.verifymc.core.ConfigManager;
-import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.registration.VerifyCodePurpose;
 import team.kitemc.verifymc.util.EmailAddressUtil;
 
@@ -20,7 +19,6 @@ public class VerifyCodeService {
     private final SecureRandom secureRandom = new SecureRandom();
     private volatile boolean running = true;
     private AuditService auditService;
-    private PluginContext pluginContext;
 
     public VerifyCodeService(org.bukkit.plugin.Plugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
@@ -40,10 +38,6 @@ public class VerifyCodeService {
 
     public void setAuditService(AuditService auditService) {
         this.auditService = auditService;
-    }
-
-    public void setPluginContext(PluginContext pluginContext) {
-        this.pluginContext = pluginContext;
     }
 
     private void startCleanupTask() {

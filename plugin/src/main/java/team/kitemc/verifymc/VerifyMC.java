@@ -310,7 +310,7 @@ public class VerifyMC extends JavaPlugin {
             log.info("[VerifyMC] Using Tencent SMS provider.");
         }
 
-        SmsService smsService = new SmsService(this, config, provider);
+        SmsService smsService = new SmsService(config, provider);
         context.setSmsService(smsService);
 
         SmsVerificationCodeNotifierAdapter notifier = new SmsVerificationCodeNotifierAdapter(this, smsService);

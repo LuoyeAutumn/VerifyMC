@@ -26,7 +26,7 @@ register:
     option_auth_methods: []
     min_option_auth_methods: 0
 login:
-  allowed_methods: ["username", "email", "phone"]
+  allowed_methods: ["username", "email_password", "email_code", "phone_password", "phone_code"]
   code_expire_seconds: 300
   code_length: 6
 username_regex: "^[a-zA-Z0-9_-]{3,16}$"
@@ -79,11 +79,9 @@ sms:
     max_attempts: 5
   connect_timeout: 5
   request_timeout: 10
-  
   tencent:
     secret_id: ""
     secret_key: ""
-  
   aliyun:
     access_key_id: ""
     access_key_secret: ""
