@@ -155,6 +155,9 @@ export interface RegisterRequest {
   language: string
   platform?: 'java' | 'bedrock'
   questionnaire?: QuestionnaireSubmission
+  phone?: string
+  countryCode?: string
+  smsCode?: string
 }
 
 export interface RegisterResponse {
