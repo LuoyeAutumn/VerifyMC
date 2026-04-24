@@ -637,6 +637,7 @@ class ApiService {
   // 忘记密码 - 发送验证码
   async forgotPasswordSendCode(data: {
     account: string
+    countryCode?: string
     language: string
   }): Promise<SendCodeResponse> {
     return this.request<SendCodeResponse>('/forgot-password/code', {
@@ -661,13 +662,6 @@ class ApiService {
 
   async sendSmsCode(data: SendSmsCodeRequest): Promise<SendSmsCodeResponse> {
     return this.request<SendSmsCodeResponse>('/sms/send', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-  }
-
-  async sendSmsForgotPassword(data: SendSmsCodeRequest): Promise<SendSmsCodeResponse> {
-    return this.request<SendSmsCodeResponse>('/sms/forgot-password', {
       method: 'POST',
       body: JSON.stringify(data),
     })

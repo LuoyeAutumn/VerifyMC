@@ -55,11 +55,8 @@ public class TencentSmsProvider implements SmsProvider {
         }
 
         try {
-            String countryCode = getDefaultCountryCode();
-            String phoneNumberWithCountryCode = PhoneUtil.buildFullPhoneNumber(countryCode, phoneNumber);
-
             JSONObject body = new JSONObject();
-            body.put("PhoneNumberSet", new JSONArray().put(phoneNumberWithCountryCode));
+            body.put("PhoneNumberSet", new JSONArray().put(phoneNumber));
             body.put("SmsSdkAppId", sdkAppId);
             body.put("TemplateId", templateId);
             body.put("TemplateParamSet", new JSONArray().put(code));

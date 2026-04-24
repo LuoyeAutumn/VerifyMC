@@ -35,6 +35,7 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
             return;
         }
         String account = req.optString("account", "");
+        String countryCode = req.optString("countryCode", "");
         String language = req.optString("language", "en");
 
         if (!ctx.getConfigManager().isForgotPasswordEnabled()) {
@@ -53,8 +54,7 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
             normalizedAccount = EmailAddressUtil.normalize(account);
         } else {
             normalizedAccount = PhoneUtil.normalizePhoneNumber(account);
-            SmsService smsService = ctx.getSmsService();
-            if (smsService != null && smsService.isValidPhoneNumber(normalizedAccount)) {
+            if (PhoneUtil.isValidPhoneNumber(normalizedAccount, ctx.getConfigManager().getSmsPhoneRegex())) {
                 isPhone = true;
             }
         }
@@ -65,8 +65,33 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
             return;
         }
 
+        if (isPhone) {
+            if (!ctx.getConfigManager().isSmsEnabled()) {
+                WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                        ctx.getMessage("sms.not_enabled", language)));
+                return;
+            }
+            if (countryCode.isEmpty()) {
+                WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                        ctx.getMessage("sms.country_code_required", language)));
+                return;
+            }
+            if (!ctx.getConfigManager().getCountryCodes().contains(countryCode)) {
+                WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                        ctx.getMessage("sms.invalid_country_code", language)));
+                return;
+            }
+        }
+
         VerifyCodeService verifyCodeService = ctx.getVerifyCodeService();
-        VerifyCodeService.CodeIssueResult issueResult = verifyCodeService.issueCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount);
+        VerifyCodeService.CodeIssueResult issueResult;
+        
+        if (isEmail) {
+            issueResult = verifyCodeService.issueCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount);
+        } else {
+            issueResult = verifyCodeService.issueSmsCode(normalizedAccount, countryCode, VerifyCodePurpose.SMS_FORGOT_PASSWORD);
+        }
+        
         if (!issueResult.issued()) {
             long remainingSeconds = issueResult.remainingSeconds();
             String message = ctx.getMessage("email.rate_limited", language)
@@ -81,9 +106,10 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
         if (isEmail) {
             sent = ctx.getMailService().sendVerificationCode(normalizedAccount, issueResult.code(), language);
         } else if (isPhone) {
+            String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, normalizedAccount);
             SmsService smsService = ctx.getSmsService();
             if (smsService != null) {
-                sent = smsService.sendVerificationCode(normalizedAccount, issueResult.code(), language).join();
+                sent = smsService.sendVerificationCode(fullPhone, issueResult.code(), language).join();
             }
         }
 
@@ -91,34 +117,42 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
             if (isEmail) {
                 ctx.getPlugin().getLogger().info("[VerifyMC] Forgot password verification code sent to " + EmailAddressUtil.maskEmail(normalizedAccount) + " from IP " + clientIp);
             } else {
-                ctx.getPlugin().getLogger().info("[VerifyMC] Forgot password verification code sent to " + PhoneUtil.maskPhone(normalizedAccount) + " from IP " + clientIp);
+                String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, normalizedAccount);
+                ctx.getPlugin().getLogger().info("[VerifyMC] Forgot password SMS verification code sent to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             }
             if (ctx.getAuditService() != null) {
                 if (isEmail) {
                     ctx.getAuditService().record(AuditEventType.EMAIL_SEND_SUCCESS, clientIp,
                             EmailAddressUtil.maskEmail(normalizedAccount), "Forgot password code");
                 } else {
+                    String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, normalizedAccount);
                     ctx.getAuditService().record(AuditEventType.SMS_SEND_SUCCESS, clientIp,
-                            PhoneUtil.maskPhone(normalizedAccount), "Forgot password code");
+                            PhoneUtil.maskPhone(fullPhone), "Forgot password code");
                 }
             }
             JSONObject response = ApiResponseFactory.success(ctx.getMessage("forgot_password.code_sent", language));
             response.put("remainingSeconds", issueResult.remainingSeconds());
             WebResponseHelper.sendJson(exchange, response);
         } else {
-            verifyCodeService.revokeCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount);
+            if (isEmail) {
+                verifyCodeService.revokeCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount);
+            } else {
+                verifyCodeService.revokeSmsCode(normalizedAccount, countryCode, VerifyCodePurpose.SMS_FORGOT_PASSWORD);
+            }
             if (isEmail) {
                 ctx.getPlugin().getLogger().warning("[VerifyMC] Forgot password verification code send failed to " + EmailAddressUtil.maskEmail(normalizedAccount) + " from IP " + clientIp);
             } else {
-                ctx.getPlugin().getLogger().warning("[VerifyMC] Forgot password verification code send failed to " + PhoneUtil.maskPhone(normalizedAccount) + " from IP " + clientIp);
+                String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, normalizedAccount);
+                ctx.getPlugin().getLogger().warning("[VerifyMC] Forgot password SMS verification code send failed to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             }
             if (ctx.getAuditService() != null) {
                 if (isEmail) {
                     ctx.getAuditService().record(AuditEventType.EMAIL_SEND_FAILED, clientIp,
                             EmailAddressUtil.maskEmail(normalizedAccount), "Forgot password code failed");
                 } else {
+                    String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, normalizedAccount);
                     ctx.getAuditService().record(AuditEventType.SMS_SEND_FAILED, clientIp,
-                            PhoneUtil.maskPhone(normalizedAccount), "Forgot password code failed");
+                            PhoneUtil.maskPhone(fullPhone), "Forgot password code failed");
                 }
             }
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(

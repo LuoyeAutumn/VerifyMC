@@ -55,9 +55,7 @@ public class AliyunSmsProvider implements SmsProvider {
             String timestamp = Instant.now().atZone(ZoneId.of("UTC"))
                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
             String signatureNonce = UUID.randomUUID().toString();
-            String countryCode = getDefaultCountryCode();
-            String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, phoneNumber);
-            String queryString = CryptoUtil.percentEncode("PhoneNumbers") + "=" + CryptoUtil.percentEncode(fullPhone)
+            String queryString = CryptoUtil.percentEncode("PhoneNumbers") + "=" + CryptoUtil.percentEncode(phoneNumber)
                     + "&" + CryptoUtil.percentEncode("SignName") + "=" + CryptoUtil.percentEncode(signName)
                     + "&" + CryptoUtil.percentEncode("TemplateCode") + "=" + CryptoUtil.percentEncode(templateCode)
                     + "&" + CryptoUtil.percentEncode("TemplateParam") + "=" + CryptoUtil.percentEncode(new JSONObject().put("code", code).toString());

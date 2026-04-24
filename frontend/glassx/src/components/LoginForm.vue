@@ -809,8 +809,8 @@ const handleSendCode = async () => {
     sendCodeLoading.value = true
 
     try {
-      const response = await apiService.sendSmsForgotPassword({
-        phone: forgotForm.phone.trim(),
+      const response = await apiService.forgotPasswordSendCode({
+        account: forgotForm.phone.trim(),
         countryCode: forgotForm.countryCode,
         language: locale.value
       })
