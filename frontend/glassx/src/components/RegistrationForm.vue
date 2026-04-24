@@ -61,10 +61,6 @@
                 @discord-linked="handleDiscordLinked"
                 @discord-unlinked="handleDiscordUnlinked"
               />
-
-              <Button type="submit" :disabled="!isBasicStepValid" class="w-full">
-                <span>{{ questionnaireEnabled ? $t('register.actions.next_questionnaire') : $t('register.steps.submit') }}</span>
-              </Button>
             </form>
           </div>
         </Step>
