@@ -474,12 +474,12 @@ const handleSubmit = async () => {
   loading.value = true
 
   try {
-    const account = form.loginMethod === 'phone' 
+    const username = form.loginMethod === 'phone' 
       ? form.countryCode + form.account.trim()
       : form.account.trim()
 
     const request: {
-      account: string
+      username: string
       password: string
       loginMethod: 'username' | 'email' | 'phone'
       language: string
@@ -487,7 +487,7 @@ const handleSubmit = async () => {
       code?: string
       countryCode?: string
     } = {
-      account,
+      username,
       password: form.password,
       loginMethod: form.loginMethod,
       language: locale.value
@@ -547,7 +547,7 @@ const handleSelectAccount = async (account: string) => {
 
   try {
     const response = await apiService.adminLogin({
-      account: form.loginMethod === 'phone' 
+      username: form.loginMethod === 'phone' 
         ? form.countryCode + form.account.trim()
         : form.account.trim(),
       password: form.password,
