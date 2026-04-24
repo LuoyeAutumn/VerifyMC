@@ -21,7 +21,6 @@
               <BasicInfoForm
                 ref="basicInfoFormRef"
                 v-model:username="form.username"
-                v-model:email="form.email"
                 v-model:password="form.password"
                 v-model:platform="selectedPlatform"
                 :bedrock-enabled="bedrockEnabled"

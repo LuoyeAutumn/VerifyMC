@@ -25,13 +25,17 @@ public class AliyunSmsProvider implements SmsProvider {
     private final ConfigManager configManager;
     private final boolean debug;
     private final HttpClient httpClient;
+    private final int connectTimeout;
+    private final int requestTimeout;
 
     public AliyunSmsProvider(Plugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.debug = configManager.isDebug();
+        this.connectTimeout = configManager.getSmsConnectTimeout();
+        this.requestTimeout = configManager.getSmsRequestTimeout();
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(java.time.Duration.ofSeconds(5))
+                .connectTimeout(java.time.Duration.ofSeconds(connectTimeout))
                 .build();
     }
 
@@ -76,7 +80,7 @@ public class AliyunSmsProvider implements SmsProvider {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://" + HOST + "/?" + queryString))
-                    .timeout(java.time.Duration.ofSeconds(10))
+                    .timeout(java.time.Duration.ofSeconds(requestTimeout))
                     .header("x-acs-action", ACTION)
                     .header("x-acs-version", VERSION)
                     .header("x-acs-date", timestamp)

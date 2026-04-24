@@ -45,10 +45,17 @@ export interface ConfigResponse {
   authMethodsConfig?: AuthMethodsConfig
   sms?: SmsConfig
   login?: LoginConfig
+  forgotPassword?: ForgotPasswordConfig
 }
 
 export interface LoginConfig {
   allowedMethods: string[]
+  allowedIdentifiers: string[]
+}
+
+export interface ForgotPasswordConfig {
+  enabled: boolean
+  resetMethods: string[]
 }
 
 export interface QuestionnaireAnswer {
@@ -565,7 +572,7 @@ class ApiService {
 
   // 忘记密码 - 发送验证码
   async forgotPasswordSendCode(data: {
-    email: string
+    account: string
     language: string
   }): Promise<SendCodeResponse> {
     return this.request<SendCodeResponse>('/forgot-password/code', {

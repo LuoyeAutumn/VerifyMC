@@ -65,7 +65,6 @@ import {
 
 export interface BasicInfoFormData {
   username: string
-  email: string
   password: string
   platform: Platform
 }
@@ -76,7 +75,6 @@ const props = withDefaults(defineProps<{
   usernameRegex?: string
   passwordRegex?: string
   username?: string
-  email?: string
   password?: string
   platform?: Platform
 }>(), {
@@ -85,7 +83,6 @@ const props = withDefaults(defineProps<{
   usernameRegex: '',
   passwordRegex: '',
   username: '',
-  email: '',
   password: '',
   platform: 'java'
 })
@@ -93,7 +90,6 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'submit': [data: BasicInfoFormData]
   'update:username': [value: string]
-  'update:email': [value: string]
   'update:password': [value: string]
   'update:platform': [value: Platform]
   'validation-change': [isValid: boolean]
@@ -105,7 +101,6 @@ const localPlatform = ref<Platform>(props.platform)
 const discordLinked = ref(false)
 
 const localUsername = ref(props.username)
-const localEmail = ref(props.email)
 const localPassword = ref(props.password)
 
 const config = computed<ValidationConfig>(() => ({
@@ -117,7 +112,7 @@ const config = computed<ValidationConfig>(() => ({
 
 const form = computed<ValidationForm>(() => ({
   username: localUsername.value,
-  email: localEmail.value,
+  email: '',
   password: localPassword.value,
   code: '',
   captchaAnswer: '',
@@ -140,7 +135,7 @@ const platformState = {
 
 const validationForm = reactive<ValidationForm>({
   username: localUsername.value,
-  email: localEmail.value,
+  email: '',
   password: localPassword.value,
   code: '',
   captchaAnswer: '',
@@ -153,17 +148,12 @@ watch(localUsername, (val) => {
   validationForm.username = val
 })
 
-watch(localEmail, (val) => {
-  validationForm.email = val
-})
-
 watch(localPassword, (val) => {
   validationForm.password = val
 })
 
 const {
   validateUsername,
-  validateEmail,
   validatePassword,
   getNormalizedUsername,
   clearErrors
@@ -199,10 +189,6 @@ watch(localUsername, (newValue) => {
   emit('update:username', newValue)
 })
 
-watch(localEmail, (newValue) => {
-  emit('update:email', newValue)
-})
-
 watch(localPassword, (newValue) => {
   emit('update:password', newValue)
 })
@@ -214,12 +200,6 @@ watch(localPlatform, (newValue) => {
 watch(() => props.username, (newValue) => {
   if (newValue !== localUsername.value) {
     localUsername.value = newValue
-  }
-})
-
-watch(() => props.email, (newValue) => {
-  if (newValue !== localEmail.value) {
-    localEmail.value = newValue
   }
 })
 
@@ -251,7 +231,6 @@ const handleSubmit = () => {
 
   emit('submit', {
     username: getNormalizedUsername(),
-    email: localEmail.value.trim(),
     password: localPassword.value,
     platform: localPlatform.value
   })
@@ -259,7 +238,6 @@ const handleSubmit = () => {
 
 defineExpose({
   validateUsername,
-  validateEmail,
   validatePassword,
   clearErrors,
   getNormalizedUsername,

@@ -81,13 +81,28 @@ register:
 # ----------------------------------------
 # 登录设置
 # ----------------------------------------
-# 允许的登录方式列表。可选值: username, email, phone
-# - username: 使用用户名登录
-# - email: 使用邮箱登录（支持多账户选择）
-# - phone: 使用手机号登录（需要启用短信功能，支持多账户选择）
-# 如果只配置一种方式，登录界面将不显示方式选择器。
+# 允许的登录方式列表，格式为 {登录标识类型}_{验证方式}
+# 登录标识类型: username（用户名）, email（邮箱）, phone（手机号）
+# 验证方式: password（密码验证）, code（验证码验证）
+# 
+# 可选值:
+# - username: 用户名登录（仅支持密码验证）
+# - email_password: 邮箱 + 密码登录
+# - email_code: 邮箱 + 验证码登录（发送邮箱验证码）
+# - phone_password: 手机号 + 密码登录
+# - phone_code: 手机号 + 验证码登录（发送短信验证码，需要启用短信功能）
+#
+# 注意:
+# - 如果某种登录标识类型配置了多种验证方式（如同时配置 email_password 和 email_code），
+#   用户在登录时可以选择验证方式。
+# - 如果某种登录标识类型只配置了一种验证方式，登录界面将直接使用该方式，不显示选择器。
+# - 如果只配置一种登录标识类型，登录界面将不显示登录方式选择器。
+# - 向后兼容: 旧格式 ["username", "email", "phone"] 会自动转换为：
+#   username → username
+#   email → email_password, email_code
+#   phone → phone_password, phone_code
 login:
-  allowed_methods: ["username", "email", "phone"]
+  allowed_methods: ["username", "email_password", "email_code", "phone_password", "phone_code"]
 
 # ----------------------------------------
 # 用户与安全

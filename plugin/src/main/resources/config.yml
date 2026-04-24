@@ -74,6 +74,8 @@ sms:
     - "+86"
   phone_regex: "^[0-9]{6,15}$"
   max_accounts_per_phone: 5
+  connect_timeout: 5
+  request_timeout: 10
   
   tencent:
     secret_id: ""

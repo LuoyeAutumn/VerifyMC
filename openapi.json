@@ -1689,7 +1689,7 @@
             "default": "username",
             "description": "登录方式"
           },
-          "username": {
+          "account": {
             "type": "string",
             "description": "用户名/邮箱/手机号"
           },
@@ -1950,7 +1950,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["choice", "text"]
+            "enum": ["single_choice", "multiple_choice", "text"]
           },
           "question": {
             "type": "string"

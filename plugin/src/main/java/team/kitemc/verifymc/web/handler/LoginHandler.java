@@ -111,9 +111,15 @@ public class LoginHandler implements HttpHandler {
         String code = req.optString("code", "");
         String countryCode = req.optString("countryCode", "+86");
 
-        if (!ctx.getConfigManager().isLoginMethodAllowed(loginMethod)) {
+        if (!ctx.getConfigManager().isLoginIdentifierAllowed(loginMethod)) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("login.method_not_allowed", language)), 400);
+            return;
+        }
+
+        if (!ctx.getConfigManager().isLoginVerifyMethodAllowed(loginMethod, verifyMethod)) {
+            WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
+                    ctx.getMessage("login.verify_method_not_allowed", language)), 400);
             return;
         }
 

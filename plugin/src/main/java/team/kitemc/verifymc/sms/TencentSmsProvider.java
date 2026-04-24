@@ -26,13 +26,17 @@ public class TencentSmsProvider implements SmsProvider {
     private final ConfigManager configManager;
     private final boolean debug;
     private final HttpClient httpClient;
+    private final int connectTimeout;
+    private final int requestTimeout;
 
     public TencentSmsProvider(Plugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.debug = configManager.isDebug();
+        this.connectTimeout = configManager.getSmsConnectTimeout();
+        this.requestTimeout = configManager.getSmsRequestTimeout();
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(java.time.Duration.ofSeconds(5))
+                .connectTimeout(java.time.Duration.ofSeconds(connectTimeout))
                 .build();
     }
 
@@ -71,7 +75,7 @@ public class TencentSmsProvider implements SmsProvider {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://" + HOST))
-                    .timeout(java.time.Duration.ofSeconds(10))
+                    .timeout(java.time.Duration.ofSeconds(requestTimeout))
                     .header("Content-Type", "application/json; charset=utf-8")
                     .header("Host", HOST)
                     .header("X-TC-Action", ACTION)
@@ -100,7 +104,7 @@ public class TencentSmsProvider implements SmsProvider {
                             JSONArray sendStatusSet = responseObj.optJSONArray("SendStatusSet");
                             if (sendStatusSet != null && !sendStatusSet.isEmpty()) {
                                 JSONObject sendStatus = sendStatusSet.getJSONObject(0);
-                                if ("Ok".equals(sendStatus.optString("Code", ""))) {
+                                if ("Success".equals(sendStatus.optString("Code", ""))) {
                                     debugLog("SMS sent successfully to " + PhoneUtil.maskPhone(phoneNumber));
                                     return true;
                                 }

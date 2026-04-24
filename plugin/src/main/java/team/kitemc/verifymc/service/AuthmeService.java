@@ -254,14 +254,24 @@ public class AuthmeService {
             return null;
         }
 
-        String sql = "SELECT " + passwordColumn() + ", " + column("mySQLColumnEmail", "email") +
-                " FROM " + tableName() + " WHERE " + nameColumn() + " = ?";
+        StringBuilder sqlBuilder = new StringBuilder("SELECT ")
+            .append(passwordColumn()).append(", ")
+            .append(column("mySQLColumnEmail", "email"));
+        if (hasUuidColumn()) {
+            sqlBuilder.append(", ").append(uuidColumn());
+        }
+        sqlBuilder.append(" FROM ").append(tableName()).append(" WHERE ").append(nameColumn()).append(" = ?");
+        String sql = sqlBuilder.toString();
+
         try (Connection conn = getAuthmeConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new AuthmeProfile(rs.getString(1), rs.getString(2));
+                    String password = rs.getString(1);
+                    String email = rs.getString(2);
+                    String uuid = hasUuidColumn() ? rs.getString(3) : null;
+                    return new AuthmeProfile(password, email, uuid);
                 }
             }
         } catch (Exception e) {
@@ -332,26 +342,55 @@ public class AuthmeService {
         return saltCol != null && !saltCol.trim().isEmpty();
     }
 
+    private String uuidColumn() {
+        return column("mySQLPlayerUUID", "");
+    }
+
+    private boolean hasUuidColumn() {
+        String uuidCol = uuidColumn();
+        return uuidCol != null && !uuidCol.trim().isEmpty();
+    }
+
     private static final class AuthmeProfile {
         private final String password;
         private final String email;
+        private final String uuid;
 
         private AuthmeProfile(String password, String email) {
             this.password = password;
             this.email = email;
+            this.uuid = null;
+        }
+
+        private AuthmeProfile(String password, String email, String uuid) {
+            this.password = password;
+            this.email = email;
+            this.uuid = uuid;
         }
     }
 
     private Map<String, AuthmeProfile> listAuthmeProfiles() throws Exception {
         Map<String, AuthmeProfile> result = new HashMap<>();
-        String sql = "SELECT " + nameColumn() + ", " + passwordColumn() + ", " + column("mySQLColumnEmail", "email") + " FROM " + tableName();
+        StringBuilder sqlBuilder = new StringBuilder("SELECT ")
+            .append(nameColumn()).append(", ")
+            .append(passwordColumn()).append(", ")
+            .append(column("mySQLColumnEmail", "email"));
+        if (hasUuidColumn()) {
+            sqlBuilder.append(", ").append(uuidColumn());
+        }
+        sqlBuilder.append(" FROM ").append(tableName());
+        String sql = sqlBuilder.toString();
+
         try (Connection conn = getAuthmeConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 String username = rs.getString(1);
                 if (username != null) {
-                    result.put(username, new AuthmeProfile(rs.getString(2), rs.getString(3)));
+                    String password = rs.getString(2);
+                    String email = rs.getString(3);
+                    String uuid = hasUuidColumn() ? rs.getString(4) : null;
+                    result.put(username, new AuthmeProfile(password, email, uuid));
                 }
             }
         }
@@ -376,6 +415,7 @@ public class AuthmeService {
         String pitchCol = column("mySQLlastlocPitch", "pitch");
         String emailCol = column("mySQLColumnEmail", "email");
         String saltCol = saltColumn();
+        String uuidCol = uuidColumn();
 
         String selectSql = "SELECT " + nameCol + " FROM " + tableName() + " WHERE " + nameCol + " = ?";
 
@@ -384,6 +424,9 @@ public class AuthmeService {
             + ipCol + " = ?, " + regIpCol + " = ?, " + loggedCol + " = 0, " + hasSessionCol + " = 0");
         if (hasSaltColumn()) {
             updateSql.append(", ").append(saltCol).append(" = ?");
+        }
+        if (hasUuidColumn()) {
+            updateSql.append(", ").append(uuidCol).append(" = ?");
         }
         updateSql.append(" WHERE ").append(nameCol).append(" = ?");
 
@@ -396,11 +439,26 @@ public class AuthmeService {
             insertColumns.append(", ").append(saltCol);
             insertValues.append(", ?");
         }
+        if (hasUuidColumn()) {
+            insertColumns.append(", ").append(uuidCol);
+            insertValues.append(", ?");
+        }
         String insertSql = "INSERT INTO " + tableName() + " (" + insertColumns + ") VALUES (" + insertValues + ")";
 
         long now = System.currentTimeMillis() / 1000;
         String loopback = "127.0.0.1";
         String storedPassword = buildStoredPassword(password);
+        String playerUuid = null;
+        if (hasUuidColumn()) {
+            try {
+                org.bukkit.OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(username);
+                if (offlinePlayer != null && offlinePlayer.getUniqueId() != null) {
+                    playerUuid = offlinePlayer.getUniqueId().toString();
+                }
+            } catch (Exception e) {
+                debugLog("Failed to get UUID for " + username + ": " + e.getMessage());
+            }
+        }
 
         try (Connection conn = getAuthmeConnection();
              PreparedStatement select = conn.prepareStatement(selectSql)) {
@@ -422,6 +480,9 @@ public class AuthmeService {
                     if (hasSaltColumn()) {
                         update.setString(idx++, "");
                     }
+                    if (hasUuidColumn()) {
+                        update.setString(idx++, playerUuid != null ? playerUuid : "");
+                    }
                     update.setString(idx, username);
                     return update.executeUpdate() > 0;
                 }
@@ -439,6 +500,9 @@ public class AuthmeService {
                     insert.setString(idx++, "");
                     if (hasSaltColumn()) {
                         insert.setString(idx++, "");
+                    }
+                    if (hasUuidColumn()) {
+                        insert.setString(idx++, playerUuid != null ? playerUuid : "");
                     }
                     return insert.executeUpdate() > 0;
                 }

@@ -18,6 +18,9 @@ import team.kitemc.verifymc.web.ReviewWebSocketServer;
 import team.kitemc.verifymc.web.ServerSslContextFactory;
 import team.kitemc.verifymc.web.WebAuthHelper;
 import team.kitemc.verifymc.web.WebServer;
+import team.kitemc.verifymc.web.handler.LoginCodeHandler;
+import team.kitemc.verifymc.web.handler.SmsForgotPasswordHandler;
+import team.kitemc.verifymc.web.handler.SmsVerifyCodeHandler;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -282,6 +285,16 @@ public class VerifyMC extends JavaPlugin {
         // HTTP server
         webServer = new WebServer(context, sslContext);
         webServer.start();
+
+        // Schedule IP rate limit cleanup task (every 5 minutes)
+        long cleanupInterval = 5 * 60 * 20L; // 5 minutes in ticks
+        scheduledTasks.add(FoliaCompat.runTaskTimerAsync(this, () -> {
+            SmsVerifyCodeHandler.cleanup();
+            LoginCodeHandler.cleanup();
+            SmsForgotPasswordHandler.cleanup();
+            log.info("[VerifyMC] IP rate limit cleanup completed.");
+        }, cleanupInterval, cleanupInterval));
+        log.info("[VerifyMC] IP rate limit cleanup task scheduled every 5 minutes.");
     }
 
     private void initSmsService(Logger log) {

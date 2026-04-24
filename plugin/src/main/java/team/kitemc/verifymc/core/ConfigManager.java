@@ -30,6 +30,10 @@ public class ConfigManager {
     private static final Set<String> VALID_STORAGE_TYPES = new HashSet<>(Arrays.asList("file", "mysql"));
     private static final Set<String> VALID_AUTH_METHODS = new HashSet<>(Arrays.asList("email", "sms", "captcha"));
     private static final Set<String> VALID_LOGIN_METHODS = new HashSet<>(Arrays.asList("username", "email", "phone"));
+    private static final Set<String> VALID_VERIFY_METHODS = new HashSet<>(Arrays.asList("password", "code"));
+    private static final Set<String> VALID_LOGIN_METHOD_COMBINATIONS = new HashSet<>(Arrays.asList(
+        "username", "email_password", "email_code", "phone_password", "phone_code"
+    ));
     private static final int MIN_PORT = 1;
     private static final int MAX_PORT = 65535;
 
@@ -223,6 +227,8 @@ public class ConfigManager {
 
         validateAuthMethodsConfig();
 
+        validateLoginVerifyMethodsConfig();
+
         plugin.getLogger().log(Level.INFO, "Configuration validated successfully");
     }
 
@@ -262,6 +268,36 @@ public class ConfigManager {
             plugin.getLogger().log(Level.WARNING,
                 "min_option_auth_methods ({0}) is greater than option_auth_methods count ({1}). Adjusting to {1}.",
                 new Object[]{minOption, validOptionCount});
+        }
+    }
+
+    private void validateLoginVerifyMethodsConfig() {
+        List<String> methods = getConfig().getStringList("login.allowed_methods");
+        if (methods == null || methods.isEmpty()) {
+            return;
+        }
+        
+        for (String method : methods) {
+            String normalizedMethod = method.toLowerCase();
+            
+            if (!VALID_LOGIN_METHOD_COMBINATIONS.contains(normalizedMethod) && 
+                !VALID_LOGIN_METHODS.contains(normalizedMethod)) {
+                plugin.getLogger().log(Level.WARNING,
+                    "Invalid login method ''{0}''. Must be one of: {1}. Ignoring.",
+                    new Object[]{method, String.join(", ", VALID_LOGIN_METHOD_COMBINATIONS)});
+                continue;
+            }
+            
+            if (normalizedMethod.equals("email_code") && !isEmailAuthEnabled()) {
+                plugin.getLogger().log(Level.WARNING,
+                    "Login method ''email_code'' is configured, but email functionality is not enabled. Code login will not work.");
+            }
+            
+            if ((normalizedMethod.equals("phone_password") || normalizedMethod.equals("phone_code")) && !isSmsEnabled()) {
+                plugin.getLogger().log(Level.WARNING,
+                    "Login method ''{0}'' is configured, but SMS functionality is not enabled. Phone login will not work.",
+                    normalizedMethod);
+            }
         }
     }
 
@@ -768,36 +804,93 @@ public class ConfigManager {
         return getConfig().getBoolean("sms.enabled", false);
     }
 
+    public int getSmsConnectTimeout() {
+        return getConfig().getInt("sms.connect_timeout", 5);
+    }
+
+    public int getSmsRequestTimeout() {
+        return getConfig().getInt("sms.request_timeout", 10);
+    }
+
     // --- Login Methods ---
     public List<String> getAllowedLoginMethods() {
         List<String> methods = getConfig().getStringList("login.allowed_methods");
         if (methods == null || methods.isEmpty()) {
-            return Arrays.asList("username", "email", "phone");
+            return Arrays.asList("username", "email_password", "email_code", "phone_password", "phone_code");
         }
-        return methods.stream()
-            .filter(method -> VALID_LOGIN_METHODS.contains(method.toLowerCase()))
+        
+        List<String> normalizedMethods = methods.stream()
             .map(String::toLowerCase)
             .toList();
+        
+        List<String> expandedMethods = new ArrayList<>();
+        for (String method : normalizedMethods) {
+            if (VALID_LOGIN_METHOD_COMBINATIONS.contains(method)) {
+                expandedMethods.add(method);
+            } else if (VALID_LOGIN_METHODS.contains(method)) {
+                if (method.equals("username")) {
+                    expandedMethods.add("username");
+                } else if (method.equals("email")) {
+                    expandedMethods.add("email_password");
+                    expandedMethods.add("email_code");
+                } else if (method.equals("phone")) {
+                    expandedMethods.add("phone_password");
+                    expandedMethods.add("phone_code");
+                }
+            } else {
+                plugin.getLogger().log(Level.WARNING,
+                    "Invalid login method ''{0}''. Must be one of: {1}. Ignoring.",
+                    new Object[]{method, String.join(", ", VALID_LOGIN_METHOD_COMBINATIONS)});
+            }
+        }
+        
+        return expandedMethods.isEmpty() 
+            ? Arrays.asList("username", "email_password", "email_code", "phone_password", "phone_code")
+            : expandedMethods;
+    }
+    
+    public List<String> getAllowedLoginIdentifiers() {
+        Set<String> identifiers = new HashSet<>();
+        for (String method : getAllowedLoginMethods()) {
+            if (method.equals("username")) {
+                identifiers.add("username");
+            } else if (method.startsWith("email_")) {
+                identifiers.add("email");
+            } else if (method.startsWith("phone_")) {
+                identifiers.add("phone");
+            }
+        }
+        return new ArrayList<>(identifiers);
     }
 
     public boolean isLoginMethodAllowed(String method) {
         if (method == null || method.isEmpty()) {
             return false;
         }
+        String normalizedMethod = method.toLowerCase();
         return getAllowedLoginMethods().stream()
-            .anyMatch(m -> m.equalsIgnoreCase(method));
+            .anyMatch(m -> m.equals(normalizedMethod));
+    }
+    
+    public boolean isLoginIdentifierAllowed(String identifier) {
+        if (identifier == null || identifier.isEmpty()) {
+            return false;
+        }
+        String normalizedIdentifier = identifier.toLowerCase();
+        return getAllowedLoginIdentifiers().stream()
+            .anyMatch(i -> i.equals(normalizedIdentifier));
     }
 
     public boolean isEmailLoginEnabled() {
-        return isLoginMethodAllowed("email");
+        return getAllowedLoginIdentifiers().contains("email");
     }
 
     public boolean isPhoneLoginEnabled() {
-        return isLoginMethodAllowed("phone") && isSmsEnabled();
+        return getAllowedLoginIdentifiers().contains("phone") && isSmsEnabled();
     }
 
     public boolean isUsernameLoginEnabled() {
-        return isLoginMethodAllowed("username");
+        return getAllowedLoginIdentifiers().contains("username");
     }
 
     public int getLoginCodeExpireSeconds() {
@@ -807,5 +900,64 @@ public class ConfigManager {
     public int getLoginCodeLength() {
         int length = getConfig().getInt("login.code_length", 6);
         return Math.max(4, Math.min(length, 8));
+    }
+
+    public List<String> getLoginVerifyMethods(String loginMethod) {
+        if (loginMethod == null || loginMethod.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String normalizedMethod = loginMethod.toLowerCase();
+        if (!VALID_LOGIN_METHODS.contains(normalizedMethod)) {
+            return Collections.emptyList();
+        }
+
+        List<String> allowedMethods = getAllowedLoginMethods();
+        List<String> verifyMethods = new ArrayList<>();
+        
+        if (normalizedMethod.equals("username")) {
+            if (allowedMethods.contains("username")) {
+                verifyMethods.add("password");
+            }
+        } else if (normalizedMethod.equals("email")) {
+            if (allowedMethods.contains("email_password")) {
+                verifyMethods.add("password");
+            }
+            if (allowedMethods.contains("email_code")) {
+                verifyMethods.add("code");
+            }
+        } else if (normalizedMethod.equals("phone")) {
+            if (allowedMethods.contains("phone_password")) {
+                verifyMethods.add("password");
+            }
+            if (allowedMethods.contains("phone_code")) {
+                verifyMethods.add("code");
+            }
+        }
+        
+        return verifyMethods;
+    }
+
+    public boolean isLoginVerifyMethodAllowed(String loginMethod, String verifyMethod) {
+        if (loginMethod == null || loginMethod.isEmpty() || verifyMethod == null || verifyMethod.isEmpty()) {
+            return false;
+        }
+
+        String normalizedLoginMethod = loginMethod.toLowerCase();
+        String normalizedVerifyMethod = verifyMethod.toLowerCase();
+        
+        if (!VALID_LOGIN_METHODS.contains(normalizedLoginMethod)) {
+            return false;
+        }
+        
+        if (!VALID_VERIFY_METHODS.contains(normalizedVerifyMethod)) {
+            return false;
+        }
+
+        String combination = normalizedLoginMethod.equals("username") 
+            ? "username" 
+            : normalizedLoginMethod + "_" + normalizedVerifyMethod;
+        
+        return getAllowedLoginMethods().contains(combination);
     }
 }

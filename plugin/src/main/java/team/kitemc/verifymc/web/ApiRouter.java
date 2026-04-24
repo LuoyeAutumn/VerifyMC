@@ -6,13 +6,7 @@ import team.kitemc.verifymc.core.PluginContext;
 import team.kitemc.verifymc.util.EmailAddressUtil;
 import team.kitemc.verifymc.web.handler.AdminAuditHandler;
 import team.kitemc.verifymc.web.handler.AdminSyncHandler;
-import team.kitemc.verifymc.web.handler.AdminUserApproveHandler;
-import team.kitemc.verifymc.web.handler.AdminUserBanHandler;
-import team.kitemc.verifymc.web.handler.AdminUserDeleteHandler;
-import team.kitemc.verifymc.web.handler.AdminUserListHandler;
-import team.kitemc.verifymc.web.handler.AdminUserPasswordHandler;
-import team.kitemc.verifymc.web.handler.AdminUserRejectHandler;
-import team.kitemc.verifymc.web.handler.AdminUserUnbanHandler;
+import team.kitemc.verifymc.web.handler.AdminUserHandler;
 import team.kitemc.verifymc.web.handler.AdminVerifyHandler;
 import team.kitemc.verifymc.web.handler.CaptchaHandler;
 import team.kitemc.verifymc.web.handler.ConfigHandler;
@@ -114,13 +108,14 @@ public class ApiRouter {
 
         // --- Admin endpoints ---
         registerApiRoute(server, "/api/admin/verify", new AdminVerifyHandler(ctx));
-        registerApiRoute(server, "/api/admin/users", new AdminUserListHandler(ctx));
-        registerApiRoute(server, "/api/admin/user/approve", new AdminUserApproveHandler(ctx));
-        registerApiRoute(server, "/api/admin/user/reject", new AdminUserRejectHandler(ctx));
-        registerApiRoute(server, "/api/admin/user/delete", new AdminUserDeleteHandler(ctx));
-        registerApiRoute(server, "/api/admin/user/ban", new AdminUserBanHandler(ctx));
-        registerApiRoute(server, "/api/admin/user/unban", new AdminUserUnbanHandler(ctx));
-        registerApiRoute(server, "/api/admin/user/password", new AdminUserPasswordHandler(ctx));
+        AdminUserHandler userHandler = new AdminUserHandler(ctx);
+        registerApiRoute(server, "/api/admin/users", userHandler);
+        registerApiRoute(server, "/api/admin/user/approve", userHandler);
+        registerApiRoute(server, "/api/admin/user/reject", userHandler);
+        registerApiRoute(server, "/api/admin/user/delete", userHandler);
+        registerApiRoute(server, "/api/admin/user/ban", userHandler);
+        registerApiRoute(server, "/api/admin/user/unban", userHandler);
+        registerApiRoute(server, "/api/admin/user/password", userHandler);
         registerApiRoute(server, "/api/admin/audits", new AdminAuditHandler(ctx));
         registerApiRoute(server, "/api/admin/sync", new AdminSyncHandler(ctx));
 

@@ -77,7 +77,13 @@ public class ConfigHandler implements HttpHandler {
 
         JSONObject loginConfig = new JSONObject();
         loginConfig.put("allowedMethods", new JSONArray(ctx.getConfigManager().getAllowedLoginMethods()));
+        loginConfig.put("allowedIdentifiers", new JSONArray(ctx.getConfigManager().getAllowedLoginIdentifiers()));
         config.put("login", loginConfig);
+
+        JSONObject forgotPassword = new JSONObject();
+        forgotPassword.put("enabled", ctx.getConfigManager().isForgotPasswordEnabled());
+        forgotPassword.put("resetMethods", new JSONArray(ctx.getConfigManager().getPasswordResetMethods()));
+        config.put("forgotPassword", forgotPassword);
 
         if (ctx.getConfigManager().isEmailDomainWhitelistEnabled()) {
             config.put("emailDomainWhitelist", new JSONArray(ctx.getConfigManager().getEmailDomainWhitelist()));

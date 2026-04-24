@@ -57,22 +57,15 @@
               <Label>{{ $t('login.form.verify_method') }}</Label>
               <div class="inline-flex w-full rounded-lg bg-white/5 border border-white/10 p-1 gap-1" role="radiogroup">
                 <Button
+                  v-for="method in allowedVerifyMethods"
+                  :key="method"
                   type="button"
                   variant="outline"
                   class="flex-1 border-transparent focus:ring-offset-0"
-                  :class="form.verifyMethod === 'password' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
-                  @click="form.verifyMethod = 'password'"
+                  :class="form.verifyMethod === method ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
+                  @click="form.verifyMethod = method as VerifyMethod"
                 >
-                  {{ $t('login.form.method_password') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  class="flex-1 border-transparent focus:ring-offset-0"
-                  :class="form.verifyMethod === 'code' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
-                  @click="form.verifyMethod = 'code'"
-                >
-                  {{ $t('login.form.method_code') }}
+                  {{ method === 'password' ? $t('login.form.method_password') : $t('login.form.method_code') }}
                 </Button>
               </div>
             </div>
@@ -120,7 +113,7 @@
               <span>{{ loading ? $t('common.loading') : $t('login.form.submit') }}</span>
             </Button>
 
-            <div class="text-center">
+            <div v-if="shouldShowForgotPasswordLink" class="text-center">
               <button
                 type="button"
                 class="text-sm text-blue-500 hover:text-blue-600 hover:underline"
@@ -173,26 +166,19 @@
       <CardContent>
         <form @submit.prevent="handleForgotPassword">
           <div class="flex flex-col gap-6">
-            <div class="grid gap-2">
+            <div v-if="showForgotPasswordMethodSelector" class="grid gap-2">
               <Label>{{ $t('login.forgot_password.verify_method') }}</Label>
               <div class="inline-flex w-full rounded-lg bg-white/5 border border-white/10 p-1 gap-1" role="radiogroup">
                 <Button
+                  v-for="method in availableForgotPasswordMethods"
+                  :key="method.key"
                   type="button"
                   variant="outline"
                   class="flex-1 border-transparent focus:ring-offset-0"
-                  :class="forgotForm.verifyMethod === 'email' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
-                  @click="forgotForm.verifyMethod = 'email'"
+                  :class="forgotForm.verifyMethod === method.key ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
+                  @click="forgotForm.verifyMethod = method.key"
                 >
-                  {{ $t('login.forgot_password.method_email') }}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  class="flex-1 border-transparent focus:ring-offset-0"
-                  :class="forgotForm.verifyMethod === 'phone' ? 'bg-white/20 text-white shadow-sm hover:bg-white/20' : 'text-white/60 hover:bg-white/5 hover:text-white'"
-                  @click="forgotForm.verifyMethod = 'phone'"
-                >
-                  {{ $t('login.forgot_password.method_phone') }}
+                  {{ method.label }}
                 </Button>
               </div>
             </div>
@@ -288,7 +274,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onUnmounted, onMounted } from 'vue'
+import { reactive, ref, computed, onUnmounted, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useNotification } from '@/composables/useNotification'
@@ -321,7 +307,18 @@ let loginCooldownTimer: ReturnType<typeof setInterval> | null = null
 const redirectTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 const countryCodes = ref<string[]>(['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'])
-const allowedLoginMethods = ref<string[]>(['username', 'email', 'phone'])
+const allowedLoginMethods = ref<string[]>(['username', 'email_password', 'email_code', 'phone_password', 'phone_code'])
+const allowedLoginIdentifiers = ref<string[]>(['username', 'email', 'phone'])
+const forgotPasswordConfig = ref<{ enabled: boolean; resetMethods: string[] }>({
+  enabled: true,
+  resetMethods: []
+})
+
+const verifyMethodsConfig = ref<Record<string, string[]>>({
+  username: ['password'],
+  email: ['password', 'code'],
+  phone: ['password', 'code']
+})
 
 type LoginMethod = 'username' | 'email' | 'phone'
 type VerifyMethod = 'password' | 'code'
@@ -355,25 +352,66 @@ const tempToken = ref('')
 const selectingAccount = ref(false)
 const selectedAccount = ref('')
 
-const showLoginMethodSelector = computed(() => allowedLoginMethods.value.length > 1)
+const showLoginMethodSelector = computed(() => allowedLoginIdentifiers.value.length > 1)
 
-const showVerifyMethodSelector = computed(() => 
-  form.loginMethod === 'email' || form.loginMethod === 'phone'
-)
+const allowedVerifyMethods = computed(() => {
+  const methods: VerifyMethod[] = []
+  if (form.loginMethod === 'username') {
+    if (allowedLoginMethods.value.includes('username')) {
+      methods.push('password')
+    }
+  } else if (form.loginMethod === 'email') {
+    if (allowedLoginMethods.value.includes('email_password')) {
+      methods.push('password')
+    }
+    if (allowedLoginMethods.value.includes('email_code')) {
+      methods.push('code')
+    }
+  } else if (form.loginMethod === 'phone') {
+    if (allowedLoginMethods.value.includes('phone_password')) {
+      methods.push('password')
+    }
+    if (allowedLoginMethods.value.includes('phone_code')) {
+      methods.push('code')
+    }
+  }
+  return methods
+})
+
+const showVerifyMethodSelector = computed(() => allowedVerifyMethods.value.length > 1)
 
 const availableLoginMethods = computed(() => {
   const methods: { key: LoginMethod, label: string }[] = []
-  if (allowedLoginMethods.value.includes('username')) {
+  if (allowedLoginIdentifiers.value.includes('username')) {
     methods.push({ key: 'username', label: t('login.form.method_username') })
   }
-  if (allowedLoginMethods.value.includes('email')) {
+  if (allowedLoginIdentifiers.value.includes('email')) {
     methods.push({ key: 'email', label: t('login.form.method_email') })
   }
-  if (allowedLoginMethods.value.includes('phone')) {
+  if (allowedLoginIdentifiers.value.includes('phone')) {
     methods.push({ key: 'phone', label: t('login.form.method_phone') })
   }
   return methods
 })
+
+const showForgotPasswordMethodSelector = computed(() => 
+  forgotPasswordConfig.value.resetMethods.length > 1
+)
+
+const availableForgotPasswordMethods = computed(() => {
+  const methods: { key: 'email' | 'phone', label: string }[] = []
+  if (forgotPasswordConfig.value.resetMethods.includes('email')) {
+    methods.push({ key: 'email', label: t('login.forgot_password.method_email') })
+  }
+  if (forgotPasswordConfig.value.resetMethods.includes('sms')) {
+    methods.push({ key: 'phone', label: t('login.forgot_password.method_phone') })
+  }
+  return methods
+})
+
+const shouldShowForgotPasswordLink = computed(() => 
+  forgotPasswordConfig.value.enabled && availableForgotPasswordMethods.value.length > 0
+)
 
 const accountLabel = computed(() => {
   switch (form.loginMethod) {
@@ -406,17 +444,36 @@ const loadConfig = async () => {
     const config = await apiService.getConfig()
     if (config.login?.allowedMethods) {
       allowedLoginMethods.value = config.login.allowedMethods
-      if (allowedLoginMethods.value.length > 0 && !allowedLoginMethods.value.includes(form.loginMethod)) {
-        form.loginMethod = allowedLoginMethods.value[0] as LoginMethod
+    }
+    if (config.login?.allowedIdentifiers) {
+      allowedLoginIdentifiers.value = config.login.allowedIdentifiers
+      if (allowedLoginIdentifiers.value.length > 0 && !allowedLoginIdentifiers.value.includes(form.loginMethod)) {
+        form.loginMethod = allowedLoginIdentifiers.value[0] as LoginMethod
       }
+    }
+    if (allowedVerifyMethods.value.length > 0) {
+      form.verifyMethod = allowedVerifyMethods.value[0] as VerifyMethod
     }
     if (config.sms?.countryCodes) {
       countryCodes.value = config.sms.countryCodes
+    }
+    if (config.forgotPassword) {
+      forgotPasswordConfig.value = {
+        enabled: config.forgotPassword.enabled ?? true,
+        resetMethods: config.forgotPassword.resetMethods ?? []
+      }
     }
   } catch {
     // 使用默认值
   }
 }
+
+watch(() => form.loginMethod, () => {
+  const methods = verifyMethodsConfig.value[form.loginMethod] || ['password']
+  if (methods.length > 0) {
+    form.verifyMethod = methods[0] as VerifyMethod
+  }
+})
 
 onMounted(() => {
   loadConfig()
@@ -553,6 +610,7 @@ const handleSelectAccount = async (account: string) => {
       password: form.password,
       loginMethod: form.loginMethod,
       selectedUsername: account,
+      tempToken: tempToken.value,
       language: locale.value
     })
 
@@ -693,7 +751,7 @@ const handleSendCode = async () => {
 
     try {
       const response = await apiService.forgotPasswordSendCode({
-        email: forgotForm.email.trim(),
+        account: forgotForm.email.trim(),
         language: locale.value
       })
 
