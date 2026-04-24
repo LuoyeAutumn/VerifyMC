@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUpdated, watch, nextTick, computed } from 'vue'
+import { ref, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
 
 interface Props {
   direction?: 'forward' | 'backward'
@@ -58,16 +58,14 @@ const handleAfterLeave = () => {
 
 onMounted(() => {
   nextTick(() => {
-    measureHeight()
+    contentHeight.value = 'auto'
   })
 })
 
-onUpdated(() => {
-  if (!isAnimating.value) {
-    nextTick(() => {
-      measureHeight()
-    })
-  }
+watch(() => props.contentKey, () => {
+  nextTick(() => {
+    contentHeight.value = 'auto'
+  })
 })
 </script>
 
