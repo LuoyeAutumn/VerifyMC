@@ -86,6 +86,10 @@ export function useAuthMethods(options: UseAuthMethodsOptions): UseAuthMethodsRe
   })
 
   const isMethodEnabled = (type: AuthMethodType): boolean => {
+    const cfg = authMethodsConfig.value
+    if (cfg && (cfg.mustAuthMethods?.length > 0 || cfg.optionAuthMethods?.length > 0)) {
+      return cfg.mustAuthMethods?.includes(type) || cfg.optionAuthMethods?.includes(type) || false
+    }
     switch (type) {
       case 'email':
         return config.value.captcha?.emailEnabled !== false

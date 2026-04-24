@@ -28,7 +28,6 @@
                 :bedrock-prefix="bedrockPrefix"
                 :username-regex="config.usernameRegex"
                 :password-regex="authmeConfig.passwordRegex"
-                :show-email="showEmailInBasicForm"
                 @submit="handleBasicInfoSubmit"
               >
                 <template #submit-text>
@@ -143,7 +142,6 @@ const bedrockEnabled = computed(() => config.value.bedrock?.enabled || false)
 const bedrockPrefix = computed(() => config.value.bedrock?.prefix || '.')
 const authmeConfig = computed(() => config.value.authme)
 const smsCountryCodes = computed(() => config.value.sms?.countryCodes || ['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'])
-const showEmailInBasicForm = computed(() => !isMethodEnabled('email'))
 
 const {
   authState: authMethodsState,
