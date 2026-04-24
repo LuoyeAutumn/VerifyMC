@@ -2,6 +2,7 @@ package team.kitemc.verifymc.service;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
+import team.kitemc.verifymc.core.ConfigManager;
 import team.kitemc.verifymc.db.UserDao;
 import team.kitemc.verifymc.util.FoliaCompat;
 import team.kitemc.verifymc.util.PasswordUtil;
@@ -18,11 +19,13 @@ import java.util.regex.Pattern;
 
 public class AuthmeService {
     private final Plugin plugin;
+    private final ConfigManager configManager;
     private final boolean debug;
     private UserDao userDao;
 
-    public AuthmeService(Plugin plugin) {
+    public AuthmeService(Plugin plugin, ConfigManager configManager) {
         this.plugin = plugin;
+        this.configManager = configManager;
         this.debug = plugin.getConfig().getBoolean("debug", false);
     }
 
@@ -74,8 +77,12 @@ public class AuthmeService {
         if (password == null || password.trim().isEmpty()) {
             return false;
         }
-        String regex = plugin.getConfig().getString("authme.password_regex", "^[a-zA-Z0-9_]{8,26}$");
+        String regex = getPasswordRegex();
         return Pattern.matches(regex, password);
+    }
+
+    public String getPasswordRegex() {
+        return configManager.getAuthmePasswordRegex();
     }
 
     public boolean syncApprovedUserToAuthme(String username) {

@@ -235,7 +235,7 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
 
     @Override
     public boolean updateUserStatus(String username, String status) {
-        String sql = "UPDATE users SET status=? WHERE username=?";
+        String sql = "UPDATE users SET status=? WHERE LOWER(username)=LOWER(?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, status);
             ps.setString(2, username);
@@ -250,7 +250,7 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
 
     @Override
     public boolean updateUserPassword(String username, String plainPassword) {
-        String sql = "UPDATE users SET password=? WHERE username=?";
+        String sql = "UPDATE users SET password=? WHERE LOWER(username)=LOWER(?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, PasswordUtil.hash(plainPassword));
             ps.setString(2, username);
@@ -265,7 +265,7 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
 
     @Override
     public boolean updateUserStoredPassword(String username, String storedPassword) {
-        String sql = "UPDATE users SET password=? WHERE username=?";
+        String sql = "UPDATE users SET password=? WHERE LOWER(username)=LOWER(?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, storedPassword);
             ps.setString(2, username);
@@ -280,7 +280,7 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
 
     @Override
     public boolean updateUserEmail(String username, String email) {
-        String sql = "UPDATE users SET email=? WHERE username=?";
+        String sql = "UPDATE users SET email=? WHERE LOWER(username)=LOWER(?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, email);
             ps.setString(2, username);
@@ -393,7 +393,7 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
 
     @Override
     public boolean deleteUser(String username) {
-        String sql = "DELETE FROM users WHERE username=?";
+        String sql = "DELETE FROM users WHERE LOWER(username)=LOWER(?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, username);
             int rows = ps.executeUpdate();

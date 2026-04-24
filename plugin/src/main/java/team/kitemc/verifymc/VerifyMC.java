@@ -201,7 +201,7 @@ public class VerifyMC extends JavaPlugin {
         // Verify code service
         context.setVerifyCodeService(new VerifyCodeService(this));
         // AuthMe service
-        AuthmeService authmeService = new AuthmeService(this);
+        AuthmeService authmeService = new AuthmeService(this, config);
         authmeService.setUserDao(context.getUserDao());
         context.setAuthmeService(authmeService);
 

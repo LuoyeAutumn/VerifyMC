@@ -53,22 +53,20 @@ public class AliyunSmsProvider implements SmsProvider {
             String signatureNonce = UUID.randomUUID().toString();
             String countryCode = getDefaultCountryCode();
             String fullPhone = PhoneUtil.buildFullPhoneNumber(countryCode, phoneNumber);
-            String requestBody = "PhoneNumbers=" + CryptoUtil.percentEncode(fullPhone)
-                    + "&SignName=" + CryptoUtil.percentEncode(signName)
-                    + "&TemplateCode=" + CryptoUtil.percentEncode(templateCode)
-                    + "&TemplateParam=" + CryptoUtil.percentEncode(new JSONObject().put("code", code).toString());
+            String queryString = CryptoUtil.percentEncode("PhoneNumbers") + "=" + CryptoUtil.percentEncode(fullPhone)
+                    + "&" + CryptoUtil.percentEncode("SignName") + "=" + CryptoUtil.percentEncode(signName)
+                    + "&" + CryptoUtil.percentEncode("TemplateCode") + "=" + CryptoUtil.percentEncode(templateCode)
+                    + "&" + CryptoUtil.percentEncode("TemplateParam") + "=" + CryptoUtil.percentEncode(new JSONObject().put("code", code).toString());
 
-            String hashedPayload = CryptoUtil.sha256Hex(requestBody);
-            String contentType = "application/x-www-form-urlencoded";
-            String canonicalHeaders = "content-type:" + contentType + "\n"
-                    + "host:" + HOST + "\n"
+            String hashedPayload = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+            String canonicalHeaders = "host:" + HOST + "\n"
                     + "x-acs-action:" + ACTION + "\n"
                     + "x-acs-content-sha256:" + hashedPayload + "\n"
                     + "x-acs-date:" + timestamp + "\n"
                     + "x-acs-signature-nonce:" + signatureNonce + "\n"
                     + "x-acs-version:" + VERSION + "\n";
-            String signedHeaders = "content-type;host;x-acs-action;x-acs-content-sha256;x-acs-date;x-acs-signature-nonce;x-acs-version";
-            String canonicalRequest = "POST\n/\n\n" + canonicalHeaders + "\n" + signedHeaders + "\n" + hashedPayload;
+            String signedHeaders = "host;x-acs-action;x-acs-content-sha256;x-acs-date;x-acs-signature-nonce;x-acs-version";
+            String canonicalRequest = "POST\n/\n" + queryString + "\n" + canonicalHeaders + "\n" + signedHeaders + "\n" + hashedPayload;
             String stringToSign = "ACS3-HMAC-SHA256\n" + CryptoUtil.sha256Hex(canonicalRequest);
             String signature = CryptoUtil.hexEncode(CryptoUtil.hmacSha256(
                     accessKeySecret.getBytes(StandardCharsets.UTF_8), stringToSign));
@@ -77,16 +75,15 @@ public class AliyunSmsProvider implements SmsProvider {
                     + ",Signature=" + signature;
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://" + HOST + "/"))
+                    .uri(URI.create("https://" + HOST + "/?" + queryString))
                     .timeout(java.time.Duration.ofSeconds(10))
-                    .header("Content-Type", contentType)
                     .header("x-acs-action", ACTION)
                     .header("x-acs-version", VERSION)
                     .header("x-acs-date", timestamp)
                     .header("x-acs-signature-nonce", signatureNonce)
                     .header("x-acs-content-sha256", hashedPayload)
                     .header("Authorization", authorization)
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                    .POST(HttpRequest.BodyPublishers.ofString(""))
                     .build();
 
             debugLog("Sending SMS to " + PhoneUtil.maskPhone(phoneNumber) + " via Aliyun");

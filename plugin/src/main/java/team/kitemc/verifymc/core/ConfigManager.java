@@ -28,7 +28,7 @@ public class ConfigManager {
     );
 
     private static final Set<String> VALID_STORAGE_TYPES = new HashSet<>(Arrays.asList("file", "mysql"));
-    private static final Set<String> VALID_AUTH_METHODS = new HashSet<>(Arrays.asList("email", "captcha"));
+    private static final Set<String> VALID_AUTH_METHODS = new HashSet<>(Arrays.asList("email", "sms", "captcha"));
     private static final Set<String> VALID_LOGIN_METHODS = new HashSet<>(Arrays.asList("username", "email", "phone"));
     private static final int MIN_PORT = 1;
     private static final int MAX_PORT = 65535;
@@ -406,7 +406,7 @@ public class ConfigManager {
             methods = getConfig().getStringList("auth.must_auth_methods");
         }
         if (methods == null || methods.isEmpty()) {
-            return Collections.singletonList("email");
+            return Collections.emptyList();
         }
         return methods.stream()
             .filter(method -> VALID_AUTH_METHODS.contains(method.toLowerCase()))
@@ -459,6 +459,10 @@ public class ConfigManager {
 
     public boolean isCaptchaAuthEnabled() {
         return isAuthMethodRequired("captcha") || isAuthMethodOptional("captcha");
+    }
+
+    public boolean isSmsAuthEnabled() {
+        return isAuthMethodRequired("sms") || isAuthMethodOptional("sms");
     }
 
     // --- Email ---
@@ -592,7 +596,11 @@ public class ConfigManager {
     }
 
     public String getAuthmePasswordRegex() {
-        return getConfig().getString("authme.password_regex", "^[a-zA-Z0-9_]{8,26}$");
+        String regex = getConfig().getString("password_regex");
+        if (regex == null || regex.isEmpty()) {
+            regex = getConfig().getString("authme.password_regex", "^[a-zA-Z0-9_]{8,26}$");
+        }
+        return regex;
     }
 
     public int getAuthmeSyncInterval() {

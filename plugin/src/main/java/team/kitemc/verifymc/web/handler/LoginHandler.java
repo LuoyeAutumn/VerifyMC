@@ -159,7 +159,7 @@ public class LoginHandler implements HttpHandler {
     private void handleUsernameLogin(HttpExchange exchange, String username, String password,
                                      String language, String clientIp) throws IOException {
         UserDao userDao = ctx.getUserDao();
-        Map<String, Object> user = userDao.getUserByUsername(username);
+        Map<String, Object> user = userDao.getUserByUsernameConfigured(username);
 
         if (user == null) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
@@ -344,7 +344,7 @@ public class LoginHandler implements HttpHandler {
         }
 
         UserDao userDao = ctx.getUserDao();
-        Map<String, Object> user = userDao.getUserByUsername(selectedUsername);
+        Map<String, Object> user = userDao.getUserByUsernameConfigured(selectedUsername);
 
         if (user == null) {
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(

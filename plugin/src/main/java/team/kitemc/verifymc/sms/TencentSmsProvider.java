@@ -20,7 +20,7 @@ public class TencentSmsProvider implements SmsProvider {
     private static final String SERVICE = "sms";
     private static final String HOST = "sms.tencentcloudapi.com";
     private static final String ACTION = "SendSms";
-    private static final String VERSION = "2019-07-11";
+    private static final String VERSION = "2021-01-11";
 
     private final Plugin plugin;
     private final ConfigManager configManager;
@@ -59,9 +59,7 @@ public class TencentSmsProvider implements SmsProvider {
             body.put("SmsSdkAppId", sdkAppId);
             body.put("TemplateId", templateId);
             body.put("TemplateParamSet", new JSONArray().put(code));
-            if (!signName.isEmpty()) {
-                body.put("SignName", signName);
-            }
+            body.put("SignName", signName);
 
             String requestBody = body.toString();
             String timestamp = String.valueOf(Instant.now().getEpochSecond());

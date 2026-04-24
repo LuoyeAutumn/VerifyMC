@@ -592,7 +592,7 @@ const sendCode = async () => {
   if (errors.email) return
   sending.value = true
   try {
-    const email = form.email.trim().toLowerCase()
+    const email = form.email.trim()
     const res = await apiService.sendCode({ email, language: locale.value })
     if (res.success) {
       success(t('register.codeSent'))
@@ -620,7 +620,7 @@ const handleSubmit = async () => {
   try {
     const registerData: RegisterRequest & { phone?: string; countryCode?: string; smsCode?: string } = {
       username: getNormalizedUsername(),
-      email: form.email.trim().toLowerCase(),
+      email: form.email.trim(),
       password: form.password,
       language: locale.value,
       platform: selectedPlatform.value

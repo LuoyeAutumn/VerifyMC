@@ -152,7 +152,7 @@ public class RegistrationProcessingHandler implements HttpHandler {
             return RegistrationValidationResult.reject("register.password_required");
         }
         if (!authmeService.isValidPassword(request.password())) {
-            String passwordRegex = plugin.getConfig().getString("authme.password_regex", "^[a-zA-Z0-9_]{8,26}$");
+            String passwordRegex = authmeService.getPasswordRegex();
             return RegistrationValidationResult.reject("register.invalid_password", new JSONObject().put("regex", passwordRegex));
         }
 
