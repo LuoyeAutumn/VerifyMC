@@ -1,5 +1,5 @@
 <template>
-  <div class="auth-methods-section space-y-3">
+  <div class="verification-section space-y-3">
     <VerificationProgress
       :must-methods="authMethodsState.mustMethods"
       :optional-methods="authMethodsState.optionalMethods"
@@ -7,6 +7,24 @@
       :completed-methods="completedMethods"
       :is-method-enabled="isMethodEnabled"
     />
+
+    <div v-if="isMethodEnabled('email') && showEmailVerification">
+      <Label for="email" class="mb-1 flex items-center gap-2">
+        {{ $t('register.form.email') }}
+        <span v-if="isMethodRequired('email')" class="text-xs px-1.5 py-0.5 rounded bg-red-500/20 text-red-300">{{ $t('auth.required') }}</span>
+        <span v-else class="text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">{{ $t('auth.optional') }}</span>
+      </Label>
+      <Input
+        id="email"
+        :model-value="form.email"
+        type="email"
+        :placeholder="$t('register.form.email_placeholder')"
+        :class="{ 'border-red-500 focus-visible:ring-red-500': errors.email }"
+        @update:model-value="onEmailUpdate"
+        @blur="validateEmail"
+      />
+      <p v-if="errors.email" class="mt-1 text-sm text-red-400">{{ errors.email }}</p>
+    </div>
 
     <div v-if="isMethodEnabled('email') && showEmailVerification">
       <Label for="code" class="mb-1 flex items-center gap-2">
@@ -129,10 +147,12 @@ interface Props {
   normalizedUsername: string
   validateCode: () => void
   validateCaptcha: () => void
+  validateEmail: () => void
 }
 
 interface Emits {
   (e: 'update:form', value: Partial<ValidationForm>): void
+  (e: 'update:email', value: string): void
   (e: 'update:code', value: string): void
   (e: 'update:phone', value: string): void
   (e: 'update:countryCode', value: string): void
@@ -157,6 +177,10 @@ const showEmailVerification = computed(() => props.isMethodEnabled('email'))
 const showSmsVerification = computed(() => props.isMethodEnabled('sms'))
 const showCaptchaVerification = computed(() => props.isMethodEnabled('captcha'))
 const showDiscordVerification = computed(() => props.isMethodEnabled('discord'))
+
+const onEmailUpdate = (value: string) => {
+  emit('update:email', value)
+}
 
 const onEmailCodeUpdate = (value: string) => {
   emit('update:code', value)

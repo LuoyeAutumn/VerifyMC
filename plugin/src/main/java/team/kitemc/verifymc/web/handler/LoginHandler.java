@@ -105,7 +105,7 @@ public class LoginHandler implements HttpHandler {
         }
 
         String loginMethod = req.optString("loginMethod", "username").toLowerCase();
-        String identifier = req.optString("username", "");
+        String identifier = req.optString("account", "");
         String password = req.optString("password", "");
         String verifyMethod = req.optString("verifyMethod", "password").toLowerCase();
         String code = req.optString("code", "");

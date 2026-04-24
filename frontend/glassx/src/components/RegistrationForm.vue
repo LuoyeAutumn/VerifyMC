@@ -28,6 +28,7 @@
                 :bedrock-prefix="bedrockPrefix"
                 :username-regex="config.usernameRegex"
                 :password-regex="authmeConfig.passwordRegex"
+                :show-email="showEmailInBasicForm"
                 @submit="handleBasicInfoSubmit"
               >
                 <template #submit-text>
@@ -35,7 +36,7 @@
                 </template>
               </BasicInfoForm>
 
-              <AuthMethodsSection
+              <VerificationSection
                 ref="authMethodsRef"
                 :form="form"
                 :errors="errors"
@@ -51,6 +52,8 @@
                 :normalized-username="getNormalizedUsername()"
                 :validate-code="validateCode"
                 :validate-captcha="validateCaptcha"
+                :validate-email="validateEmail"
+                @update:email="handleEmailUpdate"
                 @update:code="handleCodeUpdate"
                 @update:phone="handlePhoneUpdate"
                 @update:country-code="handleCountryCodeUpdate"
@@ -102,7 +105,7 @@ import { useAuthMethods, type AuthMethodType } from '@/composables/useAuthMethod
 import { useRegistrationValidation, createValidationForm, createValidationErrors } from '@/composables/useRegistrationValidation'
 import { useRegistrationSteps } from '@/composables/useRegistrationSteps'
 import BasicInfoForm from '@/components/registration/BasicInfoForm.vue'
-import AuthMethodsSection from '@/components/registration/AuthMethodsSection.vue'
+import VerificationSection from '@/components/registration/VerificationSection.vue'
 import RegistrationSummary from '@/components/registration/RegistrationSummary.vue'
 import QuestionnaireForm from '@/components/QuestionnaireForm.vue'
 import Button from '@/components/ui/Button.vue'
@@ -134,12 +137,13 @@ const discordLinked = ref(false)
 const selectedPlatform = ref<'java' | 'bedrock'>('java')
 
 const basicInfoFormRef = ref<InstanceType<typeof BasicInfoForm> | null>(null)
-const authMethodsRef = ref<InstanceType<typeof AuthMethodsSection> | null>(null)
+const authMethodsRef = ref<InstanceType<typeof VerificationSection> | null>(null)
 
 const bedrockEnabled = computed(() => config.value.bedrock?.enabled || false)
 const bedrockPrefix = computed(() => config.value.bedrock?.prefix || '.')
 const authmeConfig = computed(() => config.value.authme)
 const smsCountryCodes = computed(() => config.value.sms?.countryCodes || ['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'])
+const showEmailInBasicForm = computed(() => !isMethodEnabled('email'))
 
 const {
   authState: authMethodsState,
@@ -201,8 +205,12 @@ const completedMethods = computed<AuthMethodType[]>(() => {
 })
 
 const isBasicStepValid = computed<boolean>(() => {
-  let valid = !!form.username && !!form.email && !errors.username && !errors.email
+  let valid = !!form.username && !errors.username
   valid = valid && !!form.password && !errors.password
+
+  if (isMethodEnabled('email')) {
+    valid = valid && !!form.email && !errors.email
+  }
 
   if (isMethodEnabled('email') && isMethodRequired('email')) {
     valid = valid && !!form.code && !errors.code
@@ -389,6 +397,10 @@ const handleCodeUpdate = (value: string) => {
   } else {
     setMethodCompleted('email', false)
   }
+}
+
+const handleEmailUpdate = (value: string) => {
+  form.email = value
 }
 
 const handlePhoneUpdate = (value: string) => {

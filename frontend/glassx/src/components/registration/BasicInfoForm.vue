@@ -27,7 +27,7 @@
         <p v-if="errors.username" class="mt-1 text-sm text-red-400">{{ errors.username }}</p>
       </div>
 
-      <div>
+      <div v-if="showEmail">
         <Label for="email" class="mb-1">{{ $t('register.form.email') }}</Label>
         <Input
           id="email"
@@ -92,6 +92,7 @@ const props = withDefaults(defineProps<{
   email?: string
   password?: string
   platform?: Platform
+  showEmail?: boolean
 }>(), {
   bedrockEnabled: false,
   bedrockPrefix: '.',
@@ -100,7 +101,8 @@ const props = withDefaults(defineProps<{
   username: '',
   email: '',
   password: '',
-  platform: 'java'
+  platform: 'java',
+  showEmail: false
 })
 
 const emit = defineEmits<{
@@ -196,12 +198,20 @@ const passwordHint = computed(() => {
 })
 
 const isValid = computed(() => {
+  if (props.showEmail) {
+    return !!(
+      localUsername.value &&
+      localEmail.value &&
+      localPassword.value &&
+      !errors.username &&
+      !errors.email &&
+      !errors.password
+    )
+  }
   return !!(
     localUsername.value &&
-    localEmail.value &&
     localPassword.value &&
     !errors.username &&
-    !errors.email &&
     !errors.password
   )
 })
@@ -260,14 +270,16 @@ const handlePlatformChange = (platform: Platform) => {
 
 const handleSubmit = () => {
   validateUsername()
-  validateEmail()
+  if (props.showEmail) {
+    validateEmail()
+  }
   validatePassword()
 
   if (!isValid.value) return
 
   emit('submit', {
     username: getNormalizedUsername(),
-    email: localEmail.value.trim(),
+    email: props.showEmail ? localEmail.value.trim() : '',
     password: localPassword.value,
     platform: localPlatform.value
   })

@@ -139,7 +139,9 @@ public class RegistrationProcessingHandler implements HttpHandler {
         if (request.normalizedUsername() == null || request.normalizedUsername().trim().isEmpty()) {
             return RegistrationValidationResult.reject("register.invalid_username");
         }
-        if (!emailValidator.apply(request.email())) {
+
+        boolean emailRequired = authMethodValidator.requiresEmail();
+        if (emailRequired && !emailValidator.apply(request.email())) {
             return RegistrationValidationResult.reject("register.invalid_email");
         }
 
@@ -156,13 +158,15 @@ public class RegistrationProcessingHandler implements HttpHandler {
             return RegistrationValidationResult.reject("register.invalid_password", new JSONObject().put("regex", passwordRegex));
         }
 
-        if (plugin.getConfig().getBoolean("enable_email_alias_limit", false) && EmailAddressUtil.hasAlias(request.email())) {
-            return RegistrationValidationResult.reject("register.alias_not_allowed");
-        }
-        if (plugin.getConfig().getBoolean("enable_email_domain_whitelist", true)) {
-            String domain = EmailAddressUtil.extractDomain(request.email());
-            if (!emailDomainWhitelistProvider.get().contains(domain)) {
-                return RegistrationValidationResult.reject("register.domain_not_allowed");
+        if (emailRequired && request.email() != null && !request.email().isEmpty()) {
+            if (plugin.getConfig().getBoolean("enable_email_alias_limit", false) && EmailAddressUtil.hasAlias(request.email())) {
+                return RegistrationValidationResult.reject("register.alias_not_allowed");
+            }
+            if (plugin.getConfig().getBoolean("enable_email_domain_whitelist", true)) {
+                String domain = EmailAddressUtil.extractDomain(request.email());
+                if (!emailDomainWhitelistProvider.get().contains(domain)) {
+                    return RegistrationValidationResult.reject("register.domain_not_allowed");
+                }
             }
         }
 
@@ -177,10 +181,12 @@ public class RegistrationProcessingHandler implements HttpHandler {
             return RegistrationValidationResult.reject("username.case_conflict");
         }
 
-        int maxAccounts = plugin.getConfig().getInt("max_accounts_per_email", 2);
-        int emailCount = userDao.countUsersByEmail(request.email());
-        if (emailCount >= maxAccounts) {
-            return RegistrationValidationResult.reject("register.email_limit");
+        if (emailRequired && request.email() != null && !request.email().isEmpty()) {
+            int maxAccounts = plugin.getConfig().getInt("max_accounts_per_email", 2);
+            int emailCount = userDao.countUsersByEmail(request.email());
+            if (emailCount >= maxAccounts) {
+                return RegistrationValidationResult.reject("register.email_limit");
+            }
         }
 
         if (authMethodValidator.requiresSms() && request.phone() != null && !request.phone().isEmpty()) {

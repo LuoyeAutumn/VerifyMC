@@ -166,7 +166,7 @@ export interface RegisterResponse {
 }
 
 export interface AdminLoginRequest {
-  username: string
+  account: string
   password: string
   loginMethod: 'username' | 'email' | 'phone'
   language: string
