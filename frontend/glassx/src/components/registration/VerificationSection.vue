@@ -66,8 +66,11 @@
         :country-code="form.countryCode"
         :code="form.smsCode"
         :country-codes="smsCountryCodes"
+        :phone-regex="smsPhoneRegex"
         :error="errors.phone"
         :code-error="errors.smsCode"
+        :error-code="smsErrorCode"
+        :remaining-attempts="smsRemainingAttempts"
         @update:model-value="onPhoneUpdate"
         @update:country-code="onCountryCodeUpdate"
         @update:code="onSmsCodeUpdate"
@@ -121,10 +124,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { AuthMethodType, AuthMethodsState } from '@/composables/useAuthMethods'
 import type { ValidationForm, ValidationErrors } from '@/composables/useRegistrationValidation'
+import { useNotification } from '@/composables/useNotification'
 import VerificationProgress from '@/components/VerificationProgress.vue'
 import PhoneInput from '@/components/PhoneInput.vue'
 import DiscordLink from '@/components/DiscordLink.vue'
@@ -144,10 +148,13 @@ interface Props {
   captchaToken: string
   discordLinked: boolean
   smsCountryCodes: string[]
+  smsPhoneRegex?: string
   normalizedUsername: string
   validateCode: () => void
   validateCaptcha: () => void
   validateEmail: () => void
+  smsErrorCode?: string
+  smsRemainingAttempts?: number
 }
 
 interface Emits {
@@ -168,6 +175,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const { t } = useI18n()
+const { error: showError } = useNotification()
 
 const sending = ref(false)
 const emailCooldownSeconds = ref(0)
@@ -177,6 +185,21 @@ const showEmailVerification = computed(() => props.isMethodEnabled('email'))
 const showSmsVerification = computed(() => props.isMethodEnabled('sms'))
 const showCaptchaVerification = computed(() => props.isMethodEnabled('captcha'))
 const showDiscordVerification = computed(() => props.isMethodEnabled('discord'))
+
+const handleError = (error: unknown, fallbackKey: string = 'errors.unknown') => {
+  console.error('Verification error:', error)
+  const message = error instanceof Error ? error.message : t(fallbackKey)
+  showError(message)
+}
+
+watch(() => props.errors, (newErrors, oldErrors) => {
+  const errorFields = ['email', 'code', 'phone', 'smsCode', 'captcha', 'discord'] as const
+  for (const field of errorFields) {
+    if (newErrors[field] && newErrors[field] !== oldErrors?.[field]) {
+      showError(newErrors[field])
+    }
+  }
+}, { deep: true })
 
 const onEmailUpdate = (value: string) => {
   emit('update:email', value)

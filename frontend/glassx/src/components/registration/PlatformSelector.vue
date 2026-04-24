@@ -65,10 +65,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const displayLabel = computed(() => props.label || t('register.form.platform'))
-const javaDisplayLabel = computed(() => props.javaLabel || t('register.form.platform_java'))
-const bedrockDisplayLabel = computed(() => props.bedrockLabel || t('register.form.platform_bedrock'))
-
 const prefixHint = computed(() => {
   return t('register.form.platform_bedrock_prefix_hint', { prefix: props.bedrockPrefix })
 })

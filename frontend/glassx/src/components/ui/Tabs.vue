@@ -3,7 +3,7 @@
     <div
       class="inline-flex h-10 items-center justify-center rounded-md bg-white/5 backdrop-blur-sm p-1 text-white/70 border border-white/10"
       role="tablist"
-      :aria-label="ariaLabel"
+      :aria-label="ariaLabel || $t('a11y.tabs')"
     >
       <button
         v-for="(tab, index) in tabs"
@@ -48,7 +48,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   defaultTab: '',
-  ariaLabel: 'Tabs'
+  ariaLabel: ''
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])

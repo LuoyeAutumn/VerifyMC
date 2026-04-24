@@ -28,11 +28,7 @@
                 :username-regex="config.usernameRegex"
                 :password-regex="authmeConfig.passwordRegex"
                 @submit="handleBasicInfoSubmit"
-              >
-                <template #submit-text>
-                  {{ questionnaireEnabled ? $t('register.actions.next_questionnaire') : $t('register.steps.submit') }}
-                </template>
-              </BasicInfoForm>
+              />
 
               <VerificationSection
                 ref="authMethodsRef"
@@ -47,10 +43,13 @@
                 :captcha-token="captchaToken"
                 :discord-linked="discordLinked"
                 :sms-country-codes="smsCountryCodes"
+                :sms-phone-regex="smsPhoneRegex"
                 :normalized-username="getNormalizedUsername()"
                 :validate-code="validateCode"
                 :validate-captcha="validateCaptcha"
                 :validate-email="validateEmail"
+                :sms-error-code="smsErrorCode"
+                :sms-remaining-attempts="smsRemainingAttempts"
                 @update:email="handleEmailUpdate"
                 @update:code="handleCodeUpdate"
                 @update:phone="handlePhoneUpdate"
@@ -62,6 +61,10 @@
                 @discord-linked="handleDiscordLinked"
                 @discord-unlinked="handleDiscordUnlinked"
               />
+
+              <Button type="submit" :disabled="!isBasicStepValid" class="w-full">
+                {{ questionnaireEnabled ? $t('register.actions.next_questionnaire') : $t('register.steps.submit') }}
+              </Button>
             </form>
           </div>
         </Step>
@@ -96,7 +99,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { apiService } from '@/services/api'
+import { apiService, ApiError, getVerifyCodeErrorMessage } from '@/services/api'
 import { useNotification } from '@/composables/useNotification'
 import { useCooldown } from '@/composables/useCooldown'
 import { useAuthMethods, type AuthMethodType } from '@/composables/useAuthMethods'
@@ -109,9 +112,9 @@ import QuestionnaireForm from '@/components/QuestionnaireForm.vue'
 import Button from '@/components/ui/Button.vue'
 import AnimatedStepper from '@/components/ui/AnimatedStepper.vue'
 import Step from '@/components/ui/Step.vue'
-import type { ConfigResponse, QuestionnaireSubmission, RegisterRequest } from '@/services/api'
+import type { ConfigResponse, RegisterRequest } from '@/services/api'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const { success, error } = useNotification()
 
 const loading = ref(false)
@@ -133,6 +136,8 @@ const captchaImage = ref('')
 const captchaToken = ref('')
 const discordLinked = ref(false)
 const selectedPlatform = ref<'java' | 'bedrock'>('java')
+const smsErrorCode = ref('')
+const smsRemainingAttempts = ref<number | undefined>(undefined)
 
 const basicInfoFormRef = ref<InstanceType<typeof BasicInfoForm> | null>(null)
 const authMethodsRef = ref<InstanceType<typeof VerificationSection> | null>(null)
@@ -141,13 +146,13 @@ const bedrockEnabled = computed(() => config.value.bedrock?.enabled || false)
 const bedrockPrefix = computed(() => config.value.bedrock?.prefix || '.')
 const authmeConfig = computed(() => config.value.authme)
 const smsCountryCodes = computed(() => config.value.sms?.countryCodes || ['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'])
+const smsPhoneRegex = computed(() => config.value.sms?.phoneRegex)
 
 const {
   authState: authMethodsState,
   isMethodEnabled,
   isMethodRequired,
   setMethodCompleted,
-  canSubmit: authCanSubmit,
   getMissingRequiredMethods,
   getOptionalMethodsProgress
 } = useAuthMethods({ config })
@@ -173,17 +178,11 @@ const platformState = {
 }
 
 const {
-  validateUsername,
   validateEmail,
-  validatePassword,
   validateCode,
   validateCaptcha,
-  validateDiscord,
-  validatePhone,
-  validateSmsCode,
   validateForm,
-  getNormalizedUsername,
-  clearErrors
+  getNormalizedUsername
 } = useRegistrationValidation({
   config: validationConfig,
   form,
@@ -243,6 +242,8 @@ const handleSubmit = async () => {
   loading.value = true
   registrationSubmitted.value = false
   registrationSuccessMessage.value = ''
+  smsErrorCode.value = ''
+  smsRemainingAttempts.value = undefined
 
   try {
     const registerData: RegisterRequest = {
@@ -268,16 +269,34 @@ const handleSubmit = async () => {
     const response = await apiService.register(registerData)
     if (response.success) {
       registrationSubmitted.value = true
-      registrationSuccessMessage.value = response.message || ''
+      registrationSuccessMessage.value = response.message || t('register.messages.success')
       success(registrationSuccessMessage.value)
     } else {
       registrationSubmitted.value = false
-      error(response.message || '')
+      if (response.errorCode) {
+        smsErrorCode.value = response.errorCode
+        smsRemainingAttempts.value = response.remainingAttempts
+        const i18nKey = getVerifyCodeErrorMessage(response.errorCode) || 'register.sendFailed'
+        error(t(i18nKey))
+      } else {
+        error(response.message || t('register.messages.error'))
+      }
       if (isMethodEnabled('captcha')) await refreshCaptcha()
     }
-  } catch {
+  } catch (err) {
     registrationSubmitted.value = false
-    error('')
+    if (err instanceof ApiError) {
+      smsErrorCode.value = err.errorCode || ''
+      smsRemainingAttempts.value = err.remainingAttempts
+      if (err.errorCode) {
+        const i18nKey = getVerifyCodeErrorMessage(err.errorCode) || 'register.sendFailed'
+        error(t(i18nKey))
+      } else {
+        error(err.message || t('register.messages.error'))
+      }
+    } else {
+      error(t('register.messages.error'))
+    }
     if (isMethodEnabled('captcha')) await refreshCaptcha()
   } finally {
     loading.value = false
@@ -436,18 +455,18 @@ const handleSendCode = async () => {
     const email = form.email.trim()
     const res = await apiService.sendCode({ email, language: locale.value })
     if (res.success) {
-      success('')
+      success(t('register.codeSent'))
       startEmailCooldown(60)
       authMethodsRef.value?.startEmailCooldown(60)
     } else if (res.remainingSeconds && res.remainingSeconds > 0) {
       startEmailCooldown(res.remainingSeconds)
       authMethodsRef.value?.startEmailCooldown(res.remainingSeconds)
-      error(res.message || '')
+      error(res.message || t('register.rate_limited', { seconds: res.remainingSeconds }))
     } else {
-      error(res.message || '')
+      error(res.message || t('register.sendFailed'))
     }
   } catch {
-    error('')
+    error(t('register.sendFailed'))
   } finally {
     authMethodsRef.value?.setSending(false)
   }

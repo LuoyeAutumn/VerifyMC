@@ -1,5 +1,4 @@
-import { ref, computed, reactive, type ComputedRef, type Ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { computed, reactive, type ComputedRef, type Ref } from 'vue'
 import type { ConfigResponse, AuthMethodsConfig } from '@/services/api'
 
 export type AuthMethodType = 'email' | 'sms' | 'captcha' | 'discord'
@@ -38,7 +37,6 @@ export interface UseAuthMethodsReturn {
 
 export function useAuthMethods(options: UseAuthMethodsOptions): UseAuthMethodsReturn {
   const { config } = options
-  const { t } = useI18n()
 
   const methodStates = reactive<Map<AuthMethodType, AuthMethodState>>(new Map())
 

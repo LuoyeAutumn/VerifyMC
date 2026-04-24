@@ -136,14 +136,14 @@
         <div class="flex flex-col gap-3">
           <Button
             v-for="account in availableAccounts"
-            :key="account"
+            :key="account.username"
             variant="outline"
             class="w-full justify-start text-left"
             :disabled="selectingAccount"
             @click="handleSelectAccount(account)"
           >
-            <div v-if="selectingAccount && selectedAccount === account" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-            <span class="font-medium">{{ account }}</span>
+            <div v-if="selectingAccount && selectedAccount === account.username" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+            <span class="font-medium">{{ account.username }}</span>
           </Button>
         </div>
         <div class="mt-4 text-center">
@@ -307,6 +307,8 @@ let loginCooldownTimer: ReturnType<typeof setInterval> | null = null
 const redirectTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 const countryCodes = ref<string[]>(['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'])
+const phoneRegex = ref<string>('')
+const passwordRegex = ref<string>('')
 const allowedLoginMethods = ref<string[]>(['username', 'email_password', 'email_code', 'phone_password', 'phone_code'])
 const allowedLoginIdentifiers = ref<string[]>(['username', 'email', 'phone'])
 const forgotPasswordConfig = ref<{ enabled: boolean; resetMethods: string[] }>({
@@ -346,8 +348,14 @@ const errors = reactive({
   password: ''
 })
 
+interface AccountInfo {
+  username: string
+  email?: string
+  status?: string
+}
+
 const showAccountSelection = ref(false)
-const availableAccounts = ref<string[]>([])
+const availableAccounts = ref<AccountInfo[]>([])
 const tempToken = ref('')
 const selectingAccount = ref(false)
 const selectedAccount = ref('')
@@ -457,11 +465,17 @@ const loadConfig = async () => {
     if (config.sms?.countryCodes) {
       countryCodes.value = config.sms.countryCodes
     }
+    if (config.sms?.phoneRegex) {
+      phoneRegex.value = config.sms.phoneRegex
+    }
     if (config.forgotPassword) {
       forgotPasswordConfig.value = {
         enabled: config.forgotPassword.enabled ?? true,
         resetMethods: config.forgotPassword.resetMethods ?? []
       }
+    }
+    if (config.authme?.passwordRegex) {
+      passwordRegex.value = config.authme.passwordRegex
     }
   } catch {
     // 使用默认值
@@ -497,8 +511,8 @@ const validateForm = () => {
       isValid = false
     }
   } else if (form.loginMethod === 'phone') {
-    const phoneRegex = /^\d{6,15}$/
-    if (!phoneRegex.test(account)) {
+    const regex = phoneRegex.value ? new RegExp(phoneRegex.value) : /^\d{6,15}$/
+    if (!regex.test(account)) {
       errors.account = t('sms.invalidPhone')
       isValid = false
     }
@@ -566,7 +580,7 @@ const handleSubmit = async () => {
     
     if (response.success) {
       if (response.requireAccountSelection && response.accounts && response.tempToken) {
-        availableAccounts.value = response.accounts
+        availableAccounts.value = response.accounts.map(username => ({ username }))
         tempToken.value = response.tempToken
         showAccountSelection.value = true
         return
@@ -598,9 +612,9 @@ const handleSubmit = async () => {
   }
 }
 
-const handleSelectAccount = async (account: string) => {
+const handleSelectAccount = async (account: AccountInfo) => {
   selectingAccount.value = true
-  selectedAccount.value = account
+  selectedAccount.value = account.username
 
   try {
     const response = await apiService.adminLogin({
@@ -609,7 +623,7 @@ const handleSelectAccount = async (account: string) => {
         : form.account.trim(),
       password: form.password,
       loginMethod: form.loginMethod,
-      selectedUsername: account,
+      selectedUsername: account.username,
       tempToken: tempToken.value,
       language: locale.value
     })
@@ -618,7 +632,7 @@ const handleSelectAccount = async (account: string) => {
       sessionService.setToken(response.token)
       
       sessionService.setUserInfo({
-        username: response.username || account,
+        username: response.username || account.username,
         isAdmin: response.isAdmin ?? false
       })
       
@@ -634,8 +648,15 @@ const handleSelectAccount = async (account: string) => {
     } else {
       notification.error(response.message || t('login.messages.error'))
     }
-  } catch {
-    notification.error(t('login.messages.invalid_credentials'))
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      notification.error(t('login.messages.network_error'))
+    } else if (error instanceof Error) {
+      const errorMessage = error.message || t('login.messages.invalid_credentials')
+      notification.error(errorMessage)
+    } else {
+      notification.error(t('login.messages.invalid_credentials'))
+    }
   } finally {
     selectingAccount.value = false
     selectedAccount.value = ''
@@ -695,8 +716,8 @@ const handleSendLoginCode = async () => {
       return
     }
   } else if (form.loginMethod === 'phone') {
-    const phoneRegex = /^\d{6,15}$/
-    if (!phoneRegex.test(form.account.trim())) {
+    const regex = phoneRegex.value ? new RegExp(phoneRegex.value) : /^\d{6,15}$/
+    if (!regex.test(form.account.trim())) {
       notification.error(t('sms.invalidPhone'))
       return
     }
@@ -779,8 +800,8 @@ const handleSendCode = async () => {
       return
     }
 
-    const phoneRegex = /^\d{6,15}$/
-    if (!phoneRegex.test(forgotForm.phone.trim())) {
+    const regex = phoneRegex.value ? new RegExp(phoneRegex.value) : /^\d{6,15}$/
+    if (!regex.test(forgotForm.phone.trim())) {
       notification.error(t('sms.invalidPhone'))
       return
     }
@@ -796,9 +817,16 @@ const handleSendCode = async () => {
 
       if (response.success) {
         notification.success(t('sms.sent'))
-        startCooldown(60)
+        if (response.remainingSeconds) {
+          startCooldown(response.remainingSeconds)
+        } else {
+          startCooldown(60)
+        }
       } else {
         notification.error(response.message || t('sms.failed'))
+        if (response.remainingSeconds) {
+          startCooldown(response.remainingSeconds)
+        }
       }
     } catch {
       notification.error(t('sms.failed'))
@@ -835,6 +863,14 @@ const handleForgotPassword = async () => {
     return
   }
 
+  if (passwordRegex.value) {
+    const regex = new RegExp(passwordRegex.value)
+    if (!regex.test(forgotForm.password)) {
+      notification.error(t('register.validation.password_format'))
+      return
+    }
+  }
+
   resetLoading.value = true
 
   try {
@@ -855,8 +891,15 @@ const handleForgotPassword = async () => {
     } else {
       notification.error(response.message || t('login.forgot_password.reset_failed'))
     }
-  } catch {
-    notification.error(t('login.forgot_password.reset_failed'))
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      notification.error(t('login.messages.network_error'))
+    } else if (error instanceof Error) {
+      const errorMessage = error.message || t('login.forgot_password.reset_failed')
+      notification.error(errorMessage)
+    } else {
+      notification.error(t('login.forgot_password.reset_failed'))
+    }
   } finally {
     resetLoading.value = false
   }
@@ -875,5 +918,10 @@ onUnmounted(() => {
     clearInterval(loginCooldownTimer)
     loginCooldownTimer = null
   }
+  showAccountSelection.value = false
+  availableAccounts.value = []
+  tempToken.value = ''
+  selectingAccount.value = false
+  selectedAccount.value = ''
 })
 </script>

@@ -23,7 +23,15 @@
     "info": "Info",
     "back_home": "Back to Home",
     "second": "second",
-    "seconds": "seconds"
+    "seconds": "seconds",
+    "user": "User",
+    "clear_search": "Clear search",
+    "complete": "Complete",
+    "continue": "Continue"
+  },
+  "a11y": {
+    "tabs": "Tabs",
+    "toggle_mobile_menu": "Toggle mobile menu"
   },
   "nav": {
     "home": "Home",
@@ -91,7 +99,6 @@
     },
     "validation": {
       "username_required": "Please enter username",
-      "username_length": "Invalid username format. Must match regex: {regex}",
       "username_format": "Invalid username format. Must match regex: {regex}",
       "email_required": "Please enter email address",
       "email_format": "Please enter a valid email address",
@@ -106,12 +113,9 @@
       "user_exists": "Username or email already exists",
       "username_exists": "Username already exists"
     },
-    "send_code": "Send Code",
     "sendCode": "Send Code",
     "sending": "Sending...",
-    "code_sent": "Code sent! Please check your inbox.",
     "codeSent": "Code sent! Please check your inbox.",
-    "send_failed": "Failed to send code. Please try again.",
     "sendFailed": "Failed to send code. Please try again.",
     "rate_limited": "Verification code sent too frequently. Please wait {seconds} seconds before trying again",
     "success": "Registration successful! Please wait for review.",
@@ -133,6 +137,11 @@
     "questionnaire": {
       "required": "You must pass the questionnaire before registration."
     }
+  },
+  "notification": {
+    "register_success": "Registration successful! Your application is under review.",
+    "register_failed": "Registration failed, please try again later.",
+    "username_exists": "Username already exists"
   },
   "login": {
     "title": "Login",
@@ -167,7 +176,8 @@
       "error": "Login failed, please try again later",
       "invalid_credentials": "Invalid username or password",
       "not_authorized": "You do not have admin privileges",
-      "system_error": "System configuration error, please contact server admin"
+      "system_error": "System configuration error, please contact server admin",
+      "network_error": "Network connection failed, please check your network and try again"
     },
     "account_selection": {
       "title": "Select Account",
@@ -212,7 +222,7 @@
       "table": {
         "username": "Username",
         "email": "Email",
-        "register_time": "Register Time",
+        "register_time": "Registration Time",
         "actions": "Actions",
         "questionnaire_score": "Questionnaire Score",
         "questionnaire_reason": "Questionnaire Review Reason"
@@ -230,10 +240,12 @@
         "confirm": "Reject"
       },
       "messages": {
-        "error": "Load failed",
+        "error": "Failed to load",
         "approve_success": "Approval successful",
         "reject_success": "Rejection successful",
-        "failed": "Operation failed"
+        "failed": "Operation failed",
+        "approve_failed": "Approval failed",
+        "reject_failed": "Rejection failed"
       }
     },
     "users": {
@@ -243,7 +255,7 @@
         "username": "Username",
         "email": "Email",
         "status": "Status",
-        "register_time": "Register Time",
+        "register_time": "Registration Time",
         "actions": "Actions"
       },
       "status": {
@@ -282,7 +294,7 @@
         "cancel": "Cancel"
       },
       "messages": {
-        "load_error": "Load failed",
+        "load_error": "Failed to load",
         "delete_success": "Delete successful",
         "delete_failed": "Delete failed",
         "ban_success": "Ban successful",
@@ -310,20 +322,6 @@
     },
     "unban": "Unban"
   },
-  "user_status": {
-    "title": "Application Status",
-    "status": {
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected"
-    },
-    "messages": {
-      "pending": "Your application is under review, please wait patiently",
-      "approved": "Congratulations! Your application has been approved, you can join the server now",
-      "rejected": "Sorry, your application has been rejected"
-    },
-    "reason": "Rejection Reason"
-  },
   "errors": {
     "404": {
       "title": "Page Not Found",
@@ -332,17 +330,12 @@
     },
     "500": {
       "title": "Server Error",
-      "message": "The server encountered some problems, please try again later",
+      "message": "The server encountered an issue. Please try again later.",
       "back_home": "Back to Home"
     },
     "network": "Network connection failed, please check network settings",
     "timeout": "Request timeout, please try again later",
     "unknown": "Unknown error, please try again later"
-  },
-  "language": {
-    "switch": "Switch Language",
-    "zh": "中文",
-    "en": "English"
   },
   "pagination": {
     "title": "Pagination",
@@ -403,11 +396,15 @@
     "sent": "Code sent",
     "failed": "Failed to send",
     "invalidPhone": "Invalid phone number format",
-    "phoneLimit": "Phone number reached registration limit",
-    "rateLimited": "Too many requests",
+    "phoneLimit": "This phone number has reached the registration limit",
+    "rateLimited": "Too many requests. Please try again later.",
     "notEnabled": "SMS verification not enabled",
     "phoneNotFound": "Phone number not registered",
-    "selectCountryCode": "Select country code"
+    "selectCountryCode": "Select country code",
+    "code_expired": "Verification code expired, please get a new one",
+    "code_attempts_exceeded": "Too many verification attempts, please get a new code",
+    "code_invalid": "Invalid verification code",
+    "remaining_attempts": "Remaining attempts: {count}"
   },
   "auth": {
     "required": "Required",
@@ -479,6 +476,7 @@
       "all_actions": "All Actions",
       "search_placeholder": "Search operator, target or detail...",
       "load_error": "Failed to load audit logs",
+      "system": "System",
       "actions": {
         "approve": "Approve",
         "reject": "Reject",
@@ -499,5 +497,20 @@
       },
       "no_logs": "No audit logs available"
     }
+  },
+  "footer": {
+    "copyright": "VerifyMC by KiteMC Team 2025-{year}",
+    "made_with": "Made with love"
+  },
+  "a11y": {
+    "stepper_nav": "Step navigation, {total} steps total, currently on step {current}",
+    "step_content": "Step {step} content",
+    "back_to_step": "Go back to step {step}",
+    "complete_all": "Complete all steps",
+    "forward_to_step": "Proceed to step {step}",
+    "step_x": "Step {step}",
+    "current_step": "Current step",
+    "completed": "Completed",
+    "incomplete": "Incomplete"
   }
 }

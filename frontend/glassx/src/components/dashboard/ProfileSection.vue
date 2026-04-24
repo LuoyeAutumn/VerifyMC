@@ -5,7 +5,7 @@
         <User class="w-12 h-12" />
       </div>
       <div class="flex-1">
-        <h2 class="text-2xl font-bold text-white mb-1">{{ userInfo?.username || 'User' }}</h2>
+        <h2 class="text-2xl font-bold text-white mb-1">{{ userInfo?.username || $t('common.user') }}</h2>
         <p class="text-white/60 m-0">{{ userInfo?.email || '' }}</p>
       </div>
     </Card>
@@ -266,7 +266,7 @@ const sendEmailCode = async () => {
   sendCodeLoading.value = true
   try {
     const response = await apiService.forgotPasswordSendCode({
-      email: userInfo.value.email,
+      account: userInfo.value.email,
       language: locale.value,
     })
 

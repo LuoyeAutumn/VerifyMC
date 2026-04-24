@@ -2,6 +2,9 @@ package team.kitemc.verifymc.web.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -20,6 +23,7 @@ import team.kitemc.verifymc.web.WebResponseHelper;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,11 +33,13 @@ public class LoginHandler implements HttpHandler {
     private static final int MAX_ATTEMPTS_PER_IP = 5;
     private static final long RATE_LIMIT_WINDOW_MS = 60_000L;
     private static final long TEMP_TOKEN_EXPIRY_MS = 300_000L;
+    private static final long CLEANUP_INTERVAL_TICKS = 60 * 20L;
 
     private final PluginContext ctx;
     private final boolean isAdminLogin;
     private final ConcurrentHashMap<String, LoginAttempt> loginAttempts = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AccountSelectionToken> accountSelectionTokens = new ConcurrentHashMap<>();
+    private volatile BukkitTask cleanupTask;
 
     private static class LoginAttempt {
         final AtomicInteger count = new AtomicInteger(0);
@@ -57,6 +63,30 @@ public class LoginHandler implements HttpHandler {
     public LoginHandler(PluginContext ctx, boolean isAdminLogin) {
         this.ctx = ctx;
         this.isAdminLogin = isAdminLogin;
+    }
+
+    public void startCleanupTask(Plugin plugin) {
+        if (cleanupTask != null) {
+            return;
+        }
+        cleanupTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            long now = System.currentTimeMillis();
+            Iterator<Map.Entry<String, AccountSelectionToken>> iterator = 
+                    accountSelectionTokens.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, AccountSelectionToken> entry = iterator.next();
+                if (now > entry.getValue().expiryTime) {
+                    iterator.remove();
+                }
+            }
+        }, CLEANUP_INTERVAL_TICKS, CLEANUP_INTERVAL_TICKS);
+    }
+
+    public void stopCleanupTask() {
+        if (cleanupTask != null) {
+            cleanupTask.cancel();
+            cleanupTask = null;
+        }
     }
 
     private boolean isRateLimited(String ip) {

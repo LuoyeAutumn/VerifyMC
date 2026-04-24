@@ -50,7 +50,10 @@
     </div>
 
     <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
-    <p v-if="codeError" class="text-sm text-red-400">{{ codeError }}</p>
+    <div v-if="localizedCodeError || remainingAttemptsText" class="space-y-1">
+      <p v-if="localizedCodeError" class="text-sm text-red-400">{{ localizedCodeError }}</p>
+      <p v-if="remainingAttemptsText" class="text-sm text-yellow-400">{{ remainingAttemptsText }}</p>
+    </div>
   </div>
 </template>
 
@@ -71,6 +74,9 @@ interface Props {
   countryCodes?: string[]
   error?: string
   codeError?: string
+  phoneRegex?: string
+  errorCode?: string
+  remainingAttempts?: number
 }
 
 interface Emits {
@@ -87,12 +93,14 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   countryCodes: () => ['+86', '+1', '+44', '+81', '+82', '+852', '+853', '+886'],
   error: '',
-  codeError: ''
+  codeError: '',
+  errorCode: '',
+  remainingAttempts: undefined
 })
 
 const emit = defineEmits<Emits>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { success, error: showError } = useNotification()
 
 const phoneNumber = ref(props.modelValue)
@@ -109,8 +117,29 @@ const availableCountryCodes = computed(() => {
 const isPhoneValid = computed(() => {
   const phone = phoneNumber.value.trim()
   if (!phone) return false
-  const phoneRegex = /^\d{6,15}$/
-  return phoneRegex.test(phone.replace(/[\s-]/g, ''))
+  const regex = props.phoneRegex ? new RegExp(props.phoneRegex) : /^\d{6,15}$/
+  return regex.test(phone.replace(/[\s-]/g, ''))
+})
+
+const errorCodeMap: Record<string, string> = {
+  CODE_INVALID: 'sms.code_invalid',
+  CODE_EXPIRED: 'sms.code_expired',
+  CODE_ATTEMPTS_EXCEEDED: 'sms.code_attempts_exceeded',
+  RATE_LIMITED: 'sms.rateLimited'
+}
+
+const localizedCodeError = computed(() => {
+  if (props.errorCode && errorCodeMap[props.errorCode]) {
+    return t(errorCodeMap[props.errorCode])
+  }
+  return props.codeError
+})
+
+const remainingAttemptsText = computed(() => {
+  if (props.remainingAttempts !== undefined && props.remainingAttempts > 0) {
+    return t('sms.remaining_attempts', { count: props.remainingAttempts })
+  }
+  return ''
 })
 
 watch(phoneNumber, (value) => {
@@ -148,12 +177,12 @@ const handleSendCode = async () => {
     const res = await apiService.sendSmsCode({
       phone,
       countryCode,
-      language: t('language.zh') ? 'zh' : 'en'
+      language: locale.value === 'zh' ? 'zh' : 'en'
     })
 
     if (res.success) {
       success(t('sms.sent'))
-      startCooldown(60)
+      startCooldown(res.remainingSeconds || 60)
     } else {
       showError(res.message || t('sms.failed'))
     }
@@ -163,11 +192,6 @@ const handleSendCode = async () => {
   } finally {
     sending.value = false
   }
-}
-
-const getFullPhone = () => {
-  const phone = phoneNumber.value.trim().replace(/[\s-]/g, '')
-  return `${selectedCountryCode.value}${phone}`
 }
 
 onUnmounted(() => {

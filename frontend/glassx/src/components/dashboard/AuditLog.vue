@@ -64,7 +64,7 @@
                   {{ $t(`dashboard.audit_log.actions.${log.action}`) }}
                 </span>
               </TableCell>
-              <TableCell class="font-medium text-white">{{ log.operator || 'System' }}</TableCell>
+              <TableCell class="font-medium text-white">{{ log.operator || $t('dashboard.audit_log.system') }}</TableCell>
               <TableCell class="font-medium text-white">{{ log.target || '—' }}</TableCell>
               <TableCell class="max-w-xs truncate text-white/70" :title="log.detail || ''">
                 {{ log.detail || '—' }}

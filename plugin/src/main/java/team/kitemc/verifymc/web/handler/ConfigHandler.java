@@ -73,6 +73,7 @@ public class ConfigHandler implements HttpHandler {
         JSONObject smsConfig = new JSONObject();
         smsConfig.put("enabled", ctx.getConfigManager().isSmsEnabled());
         smsConfig.put("countryCodes", new JSONArray(ctx.getConfigManager().getCountryCodes()));
+        smsConfig.put("phoneRegex", ctx.getConfigManager().getSmsPhoneRegex());
         config.put("sms", smsConfig);
 
         JSONObject loginConfig = new JSONObject();

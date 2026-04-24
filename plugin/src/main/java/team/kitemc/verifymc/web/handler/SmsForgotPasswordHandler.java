@@ -59,6 +59,8 @@ public class SmsForgotPasswordHandler implements HttpHandler {
 
         String clientIp = resolveClientIp(exchange);
         if (!checkIpRateLimit(clientIp)) {
+            ctx.getPlugin().getLogger().warning("[VerifyMC] IP rate limited for SMS forgot password from IP " + clientIp);
+            ctx.getAuditService().recordVerifyCodeIpRateLimited(clientIp, "SMS forgot password");
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("sms.ip_rate_limited", language)));
             return;
@@ -108,6 +110,7 @@ public class SmsForgotPasswordHandler implements HttpHandler {
         boolean sent = smsService.sendVerificationCode(fullPhone, issueResult.code(), language).join();
 
         if (sent) {
+            ctx.getPlugin().getLogger().info("[VerifyMC] Forgot password SMS verification code sent to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             ctx.getAuditService().record(AuditEventType.SMS_SEND_SUCCESS, clientIp,
                     PhoneUtil.maskPhone(fullPhone), "ForgotPassword");
             JSONObject response = ApiResponseFactory.success(ctx.getMessage("forgot_password.code_sent", language));
@@ -115,6 +118,7 @@ public class SmsForgotPasswordHandler implements HttpHandler {
             WebResponseHelper.sendJson(exchange, response);
         } else {
             verifyCodeService.revokeSmsCode(phone, countryCode, VerifyCodePurpose.SMS_FORGOT_PASSWORD);
+            ctx.getPlugin().getLogger().warning("[VerifyMC] Forgot password SMS verification code send failed to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             ctx.getAuditService().record(AuditEventType.SMS_SEND_FAILED, clientIp,
                     PhoneUtil.maskPhone(fullPhone), "ForgotPassword failed");
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(

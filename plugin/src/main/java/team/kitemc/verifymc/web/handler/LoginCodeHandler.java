@@ -48,6 +48,10 @@ public class LoginCodeHandler implements HttpHandler {
 
         String clientIp = resolveClientIp(exchange);
         if (!checkIpRateLimit(clientIp)) {
+            ctx.getPlugin().getLogger().warning("[VerifyMC] IP rate limited for login code from IP " + clientIp);
+            if (ctx.getAuditService() != null) {
+                ctx.getAuditService().recordVerifyCodeIpRateLimited(clientIp, "Login code");
+            }
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("verification.ip_rate_limited", language)));
             return;
@@ -100,6 +104,7 @@ public class LoginCodeHandler implements HttpHandler {
 
         boolean sent = ctx.getMailService().sendVerificationCode(normalizedEmail, issueResult.code(), language);
         if (sent) {
+            ctx.getPlugin().getLogger().info("[VerifyMC] Login verification code sent to " + EmailAddressUtil.maskEmail(normalizedEmail) + " from IP " + clientIp);
             if (ctx.getAuditService() != null) {
                 ctx.getAuditService().record(AuditEventType.EMAIL_SEND_SUCCESS, clientIp,
                         EmailAddressUtil.maskEmail(normalizedEmail), "Login code");
@@ -109,6 +114,7 @@ public class LoginCodeHandler implements HttpHandler {
             WebResponseHelper.sendJson(exchange, response);
         } else {
             verifyCodeService.revokeCode(VerifyCodePurpose.EMAIL_LOGIN, normalizedEmail);
+            ctx.getPlugin().getLogger().warning("[VerifyMC] Login verification code send failed to " + EmailAddressUtil.maskEmail(normalizedEmail) + " from IP " + clientIp);
             if (ctx.getAuditService() != null) {
                 ctx.getAuditService().record(AuditEventType.EMAIL_SEND_FAILED, clientIp,
                         EmailAddressUtil.maskEmail(normalizedEmail), "Login code failed");
@@ -171,6 +177,7 @@ public class LoginCodeHandler implements HttpHandler {
         boolean sent = smsService.sendVerificationCode(fullPhone, issueResult.code(), language).join();
 
         if (sent) {
+            ctx.getPlugin().getLogger().info("[VerifyMC] Login SMS verification code sent to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             if (ctx.getAuditService() != null) {
                 ctx.getAuditService().record(AuditEventType.SMS_SEND_SUCCESS, clientIp,
                         PhoneUtil.maskPhone(fullPhone), "Login code");
@@ -180,6 +187,7 @@ public class LoginCodeHandler implements HttpHandler {
             WebResponseHelper.sendJson(exchange, response);
         } else {
             verifyCodeService.revokeSmsCode(normalizedPhone, countryCode, VerifyCodePurpose.SMS_LOGIN);
+            ctx.getPlugin().getLogger().warning("[VerifyMC] Login SMS verification code send failed to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             if (ctx.getAuditService() != null) {
                 ctx.getAuditService().record(AuditEventType.SMS_SEND_FAILED, clientIp,
                         PhoneUtil.maskPhone(fullPhone), "Login code failed");

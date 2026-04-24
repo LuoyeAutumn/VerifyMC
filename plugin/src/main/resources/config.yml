@@ -74,6 +74,9 @@ sms:
     - "+86"
   phone_regex: "^[0-9]{6,15}$"
   max_accounts_per_phone: 5
+  code:
+    expire_minutes: 5
+    max_attempts: 5
   connect_timeout: 5
   request_timeout: 10
   
@@ -148,7 +151,7 @@ questionnaire:
     email:
       max: 6
 llm:
-  enabled: true
+  enabled: false
   provider: deepseek
   api_base: https://api.deepseek.com/v1
   api_key: ""

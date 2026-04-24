@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
+import { ref, onMounted, watch, nextTick, computed } from 'vue'
 
 interface Props {
   direction?: 'forward' | 'backward'

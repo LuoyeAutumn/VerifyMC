@@ -23,7 +23,15 @@
     "info": "信息",
     "back_home": "返回首页",
     "second": "秒",
-    "seconds": "秒"
+    "seconds": "秒",
+    "user": "用户",
+    "clear_search": "清除搜索",
+    "complete": "完成",
+    "continue": "继续"
+  },
+  "a11y": {
+    "tabs": "标签页",
+    "toggle_mobile_menu": "切换移动端菜单"
   },
   "nav": {
     "home": "首页",
@@ -91,7 +99,6 @@
     },
     "validation": {
       "username_required": "请输入用户名",
-      "username_length": "用户名格式不正确，应符合正则表达式：{regex}",
       "username_format": "用户名格式不正确，应符合正则表达式：{regex}",
       "email_required": "请输入邮箱地址",
       "email_format": "请输入有效的邮箱地址",
@@ -106,12 +113,9 @@
       "user_exists": "用户名或邮箱已存在",
       "username_exists": "用户名已存在"
     },
-    "send_code": "发送验证码",
     "sendCode": "发送验证码",
     "sending": "发送中...",
-    "code_sent": "验证码已发送，请查收！",
     "codeSent": "验证码已发送，请查收！",
-    "send_failed": "验证码发送失败，请重试。",
     "sendFailed": "验证码发送失败，请重试。",
     "rate_limited": "发送验证码过于频繁，请等待 {seconds} 秒后再试",
     "success": "注册成功！请等待审核。",
@@ -167,7 +171,8 @@
       "error": "登录失败，请稍后重试",
       "invalid_credentials": "用户名或密码错误",
       "not_authorized": "您没有管理员权限",
-      "system_error": "系统配置错误，请联系服务器管理员"
+      "system_error": "系统配置错误，请联系服务器管理员",
+      "network_error": "网络连接失败，请检查网络后重试"
     },
     "account_selection": {
       "title": "选择账户",
@@ -203,6 +208,7 @@
   "admin": {
     "title": "管理面板",
     "login_success": "登录成功，正在跳转...",
+    "unban": "解封",
     "tabs": {
       "review": "待审核",
       "users": "全部用户"
@@ -297,21 +303,19 @@
       },
       "no_users": "暂无用户",
       "no_search_results": "未找到匹配的用户"
+    },
+    "announcement": {
+      "title": "公告管理",
+      "form": {
+        "content": "公告内容",
+        "content_placeholder": "请输入公告内容",
+        "submit": "更新公告"
+      },
+      "messages": {
+        "update_success": "公告更新成功",
+        "error": "更新失败，请稍后重试"
+      }
     }
-  },
-  "user_status": {
-    "title": "申请状态",
-    "status": {
-      "pending": "待审核",
-      "approved": "已通过",
-      "rejected": "已拒绝"
-    },
-    "messages": {
-      "pending": "您的申请正在审核中，请耐心等待",
-      "approved": "恭喜！您的申请已通过，可以加入服务器了",
-      "rejected": "很抱歉，您的申请被拒绝"
-    },
-    "reason": "拒绝原因"
   },
   "errors": {
     "404": {
@@ -327,11 +331,6 @@
     "network": "网络连接失败，请检查网络设置",
     "timeout": "请求超时，请稍后重试",
     "unknown": "未知错误，请稍后重试"
-  },
-  "language": {
-    "switch": "切换语言",
-    "zh": "中文",
-    "en": "English"
   },
   "notification": {
     "register_success": "注册成功！您的申请已提交审核。",
@@ -401,7 +400,11 @@
     "rateLimited": "请求过于频繁",
     "notEnabled": "短信验证未启用",
     "phoneNotFound": "该手机号未注册",
-    "selectCountryCode": "选择国家码"
+    "selectCountryCode": "选择国家码",
+    "code_expired": "验证码已过期，请重新获取",
+    "code_attempts_exceeded": "验证码尝试次数过多，请重新获取",
+    "code_invalid": "验证码错误",
+    "remaining_attempts": "剩余尝试次数：{count} 次"
   },
   "auth": {
     "required": "必填",
@@ -473,6 +476,7 @@
       "all_actions": "所有操作",
       "search_placeholder": "搜索操作者、目标或详情...",
       "load_error": "加载审计日志失败",
+      "system": "系统",
       "actions": {
         "approve": "通过",
         "reject": "拒绝",
@@ -493,5 +497,20 @@
       },
       "no_logs": "暂无审计日志"
     }
+  },
+  "footer": {
+    "copyright": "VerifyMC by KiteMC Team 2025-{year}",
+    "made_with": "用爱制作"
+  },
+  "a11y": {
+    "stepper_nav": "步骤导航，共 {total} 步，当前第 {current} 步",
+    "step_content": "步骤 {step} 内容",
+    "back_to_step": "返回到第 {step} 步",
+    "complete_all": "完成所有步骤",
+    "forward_to_step": "前进到第 {step} 步",
+    "step_x": "第 {step} 步",
+    "current_step": "当前步骤",
+    "completed": "已完成",
+    "incomplete": "未完成"
   }
 }

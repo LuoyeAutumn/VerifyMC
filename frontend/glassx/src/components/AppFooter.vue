@@ -5,10 +5,10 @@
 
     <div class="p-6 text-center">
       <div class="flex items-center justify-center gap-3 flex-wrap">
-        <span class="text-white/70 text-sm font-medium">VerifyMC by KiteMC Team 2025-{{ currentYear }}</span>
+        <span class="text-white/70 text-sm font-medium">{{ $t('footer.copyright', { year: currentYear }) }}</span>
         <span class="text-white/30">•</span>
         <span class="flex items-center gap-1 text-white/50 text-sm">
-          <span>Made with</span>
+          <span>{{ $t('footer.made_with') }}</span>
           <span class="text-pink-300 animate-pulse">💖</span>
         </span>
       </div>

@@ -1,0 +1,66 @@
+questions:
+  - id: 1
+    question_zh: "您是如何得知我们服务器的？"
+    question_en: "How did you find our server?"
+    type: "single_choice"
+    required: true
+    max_score: 20
+    options:
+      - text_zh: "朋友推荐"
+        text_en: "Friend recommendation"
+        score: 20
+      - text_zh: "服务器列表网站"
+        text_en: "Server list website"
+        score: 15
+      - text_zh: "社交媒体"
+        text_en: "Social media"
+        score: 15
+      - text_zh: "搜索引擎"
+        text_en: "Search engine"
+        score: 10
+      - text_zh: "其他"
+        text_en: "Other"
+        score: 5
+
+  - id: 2
+    question_zh: "您在Minecraft中最喜欢做什么？（可多选）"
+    question_en: "What do you like to do most in Minecraft? (Multiple choice)"
+    type: "multiple_choice"
+    required: true
+    max_score: 30
+    input:
+      min_selections: 1
+      max_selections: 3
+    options:
+      - text_zh: "建筑"
+        text_en: "Building"
+        score: 10
+      - text_zh: "红石"
+        text_en: "Redstone"
+        score: 10
+      - text_zh: "探索"
+        text_en: "Exploration"
+        score: 10
+      - text_zh: "PVP"
+        text_en: "PVP"
+        score: 10
+      - text_zh: "生存"
+        text_en: "Survival"
+        score: 10
+      - text_zh: "社区活动"
+        text_en: "Community events"
+        score: 10
+
+  - id: 3
+    question_zh: "请简单介绍一下您自己，以及您为什么想加入我们的服务器？"
+    question_en: "Please briefly introduce yourself and why you want to join our server?"
+    type: "text"
+    required: true
+    max_score: 50
+    input:
+      min_length: 20
+      max_length: 500
+      multiline: true
+      placeholder_zh: "请输入20-500字的自我介绍..."
+      placeholder_en: "Please enter 20-500 characters of self-introduction..."
+    scoring_rule: "Evaluate based on: 1) Sincerity and detail level, 2) Understanding of server rules, 3) Community fit potential"

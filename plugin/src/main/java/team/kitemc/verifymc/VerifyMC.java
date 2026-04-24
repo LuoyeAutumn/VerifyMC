@@ -202,7 +202,7 @@ public class VerifyMC extends JavaPlugin {
         context.setMailService(new MailService(this, config, context.getResourceManager()));
 
         // Verify code service
-        context.setVerifyCodeService(new VerifyCodeService(this));
+        context.setVerifyCodeService(new VerifyCodeService(this, config));
         // AuthMe service
         AuthmeService authmeService = new AuthmeService(this, config);
         authmeService.setUserDao(context.getUserDao());

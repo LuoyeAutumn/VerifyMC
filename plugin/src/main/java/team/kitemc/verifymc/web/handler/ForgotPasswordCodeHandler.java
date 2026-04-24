@@ -6,6 +6,7 @@ import java.io.IOException;
 import org.json.JSONException;
 import org.json.JSONObject;
 import team.kitemc.verifymc.core.PluginContext;
+import team.kitemc.verifymc.db.AuditEventType;
 import team.kitemc.verifymc.registration.VerifyCodePurpose;
 import team.kitemc.verifymc.service.VerifyCodeService;
 import team.kitemc.verifymc.sms.SmsService;
@@ -41,6 +42,8 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
                     ctx.getMessage("forgot_password.disabled", language)));
             return;
         }
+
+        String clientIp = resolveClientIp(exchange);
 
         boolean isEmail = EmailAddressUtil.isValid(account);
         boolean isPhone = false;
@@ -85,13 +88,56 @@ public class ForgotPasswordCodeHandler implements HttpHandler {
         }
 
         if (sent) {
+            if (isEmail) {
+                ctx.getPlugin().getLogger().info("[VerifyMC] Forgot password verification code sent to " + EmailAddressUtil.maskEmail(normalizedAccount) + " from IP " + clientIp);
+            } else {
+                ctx.getPlugin().getLogger().info("[VerifyMC] Forgot password verification code sent to " + PhoneUtil.maskPhone(normalizedAccount) + " from IP " + clientIp);
+            }
+            if (ctx.getAuditService() != null) {
+                if (isEmail) {
+                    ctx.getAuditService().record(AuditEventType.EMAIL_SEND_SUCCESS, clientIp,
+                            EmailAddressUtil.maskEmail(normalizedAccount), "Forgot password code");
+                } else {
+                    ctx.getAuditService().record(AuditEventType.SMS_SEND_SUCCESS, clientIp,
+                            PhoneUtil.maskPhone(normalizedAccount), "Forgot password code");
+                }
+            }
             JSONObject response = ApiResponseFactory.success(ctx.getMessage("forgot_password.code_sent", language));
             response.put("remainingSeconds", issueResult.remainingSeconds());
             WebResponseHelper.sendJson(exchange, response);
         } else {
             verifyCodeService.revokeCode(VerifyCodePurpose.FORGOT_PASSWORD, normalizedAccount);
+            if (isEmail) {
+                ctx.getPlugin().getLogger().warning("[VerifyMC] Forgot password verification code send failed to " + EmailAddressUtil.maskEmail(normalizedAccount) + " from IP " + clientIp);
+            } else {
+                ctx.getPlugin().getLogger().warning("[VerifyMC] Forgot password verification code send failed to " + PhoneUtil.maskPhone(normalizedAccount) + " from IP " + clientIp);
+            }
+            if (ctx.getAuditService() != null) {
+                if (isEmail) {
+                    ctx.getAuditService().record(AuditEventType.EMAIL_SEND_FAILED, clientIp,
+                            EmailAddressUtil.maskEmail(normalizedAccount), "Forgot password code failed");
+                } else {
+                    ctx.getAuditService().record(AuditEventType.SMS_SEND_FAILED, clientIp,
+                            PhoneUtil.maskPhone(normalizedAccount), "Forgot password code failed");
+                }
+            }
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("email.failed", language)));
         }
+    }
+
+    private String resolveClientIp(HttpExchange exchange) {
+        String forwarded = exchange.getRequestHeaders().getFirst("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isEmpty()) {
+            String ip = forwarded.split(",")[0].trim();
+            if (!ip.isEmpty()) {
+                return ip;
+            }
+        }
+        String realIp = exchange.getRequestHeaders().getFirst("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return exchange.getRemoteAddress().getAddress().getHostAddress();
     }
 }

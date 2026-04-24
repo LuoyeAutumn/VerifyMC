@@ -60,6 +60,26 @@ public class AuditService implements AutoCloseable {
         );
     }
 
+    public void recordVerifyCodeInvalid(String username, String detail) {
+        record(AuditEventType.VERIFY_CODE_INVALID, username, username, detail);
+    }
+
+    public void recordVerifyCodeExpired(String username, String detail) {
+        record(AuditEventType.VERIFY_CODE_EXPIRED, username, username, detail);
+    }
+
+    public void recordVerifyCodeAttemptsExceeded(String username, String detail) {
+        record(AuditEventType.VERIFY_CODE_ATTEMPTS_EXCEEDED, username, username, detail);
+    }
+
+    public void recordVerifyCodeRateLimited(String username, String detail) {
+        record(AuditEventType.VERIFY_CODE_RATE_LIMITED, username, username, detail);
+    }
+
+    public void recordVerifyCodeIpRateLimited(String ipAddress, String detail) {
+        record(AuditEventType.VERIFY_CODE_IP_RATE_LIMITED, ipAddress, ipAddress, detail);
+    }
+
     public AuditPage query(AuditQuery query) {
         return auditDao.query(query);
     }

@@ -41,10 +41,6 @@
         <p v-if="passwordHint" class="mt-1 text-xs text-white/50">{{ passwordHint }}</p>
       </div>
     </div>
-
-    <Button type="submit" :disabled="!isValid" class="w-full">
-      <slot name="submit-text">{{ $t('register.actions.next') }}</slot>
-    </Button>
   </form>
 </template>
 
@@ -52,7 +48,6 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import PlatformSelector, { type Platform } from '@/components/registration/PlatformSelector.vue'
-import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Label from '@/components/ui/Label.vue'
 import {
@@ -108,17 +103,6 @@ const config = computed<ValidationConfig>(() => ({
   passwordRegex: props.passwordRegex,
   bedrockEnabled: props.bedrockEnabled,
   bedrockPrefix: props.bedrockPrefix
-}))
-
-const form = computed<ValidationForm>(() => ({
-  username: localUsername.value,
-  email: '',
-  password: localPassword.value,
-  code: '',
-  captchaAnswer: '',
-  phone: '',
-  countryCode: '+86',
-  smsCode: ''
 }))
 
 const errors = reactive<ValidationErrors>(createValidationErrors())

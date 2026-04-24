@@ -2,7 +2,7 @@
   <div
     class="w-full flex flex-col items-center"
     role="navigation"
-    :aria-label="`步骤导航，共 ${totalSteps} 步，当前第 ${currentStep} 步`"
+    :aria-label="$t('a11y.stepper_nav', { total: totalSteps, current: currentStep })"
   >
     <div class="w-full mb-8">
       <ol class="flex items-center justify-center" role="list">
@@ -22,7 +22,7 @@
     </div>
 
     <StepContentWrapper :direction="direction" :content-key="currentStep" class="w-full">
-      <div class="w-full" role="region" :aria-label="`步骤 ${currentStep} 内容`">
+      <div class="w-full" role="region" :aria-label="$t('a11y.step_content', { step: currentStep })">
         <slot :currentStep="currentStep" :totalSteps="totalSteps" />
       </div>
     </StepContentWrapper>
@@ -33,16 +33,16 @@
           v-if="currentStep !== 1"
           @click="handleBack"
           class="text-sm font-medium transition-all duration-300 text-muted-foreground hover:text-foreground px-4 py-2 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          :aria-label="`返回到第 ${currentStep - 1} 步`"
+          :aria-label="$t('a11y.back_to_step', { step: currentStep - 1 })"
         >
-          {{ backButtonText }}
+          {{ resolvedBackButtonText }}
         </button>
         <button
           @click="isLastStep ? handleComplete : handleNext"
           class="inline-flex h-11 items-center justify-center rounded-full bg-primary/80 backdrop-blur-sm px-8 text-sm font-semibold tracking-tight text-primary-foreground transition-all duration-300 hover:bg-primary hover:shadow-lg hover:shadow-primary/30 active:scale-95 border border-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          :aria-label="isLastStep ? '完成所有步骤' : `前进到第 ${currentStep + 1} 步`"
+          :aria-label="isLastStep ? $t('a11y.complete_all') : $t('a11y.forward_to_step', { step: currentStep + 1 })"
         >
-          {{ isLastStep ? 'Complete' : nextButtonText }}
+          {{ isLastStep ? $t('common.complete') : resolvedNextButtonText }}
         </button>
       </div>
     </div>
@@ -50,9 +50,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, useSlots, defineComponent, h, type VNode, type PropType } from 'vue'
+import { ref, computed, useSlots, defineComponent, h, type VNode } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Check } from 'lucide-vue-next'
 import StepContentWrapper from './StepContentWrapper.vue'
+
+const { t } = useI18n()
 
 type StepStatus = 'inactive' | 'active' | 'complete'
 
@@ -67,10 +70,13 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   initialStep: 1,
   totalSteps: 0,
-  backButtonText: 'Back',
-  nextButtonText: 'Continue',
+  backButtonText: undefined,
+  nextButtonText: undefined,
   disableStepIndicators: false
 })
+
+const resolvedBackButtonText = computed(() => props.backButtonText ?? t('common.back'))
+const resolvedNextButtonText = computed(() => props.nextButtonText ?? t('common.continue'))
 
 const emit = defineEmits<{
   (e: 'stepChange', step: number): void
@@ -169,14 +175,14 @@ const StepIndicator = defineComponent({
     }
 
     const getAriaLabel = () => {
-      const stepText = `第 ${props.step} 步`
+      const stepText = t('a11y.step_x', { step: props.step })
       switch (status.value) {
         case 'active':
-          return `${stepText}，当前步骤`
+          return `${stepText}，${t('a11y.current_step')}`
         case 'complete':
-          return `${stepText}，已完成`
+          return `${stepText}，${t('a11y.completed')}`
         default:
-          return `${stepText}，未完成`
+          return `${stepText}，${t('a11y.incomplete')}`
       }
     }
 

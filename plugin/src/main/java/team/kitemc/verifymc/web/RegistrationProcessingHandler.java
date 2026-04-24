@@ -258,9 +258,13 @@ public class RegistrationProcessingHandler implements HttpHandler {
                     return RegistrationValidationResult.reject("verify.email_required");
                 }
             } else {
-                if (!codeService.checkCode(VerifyCodePurpose.REGISTER, request.email(), request.code())) {
+                VerifyCodeService.VerifyResult emailResult = codeService.checkCodeWithResult(
+                        VerifyCodePurpose.REGISTER, request.email(), request.code(), 
+                        request.normalizedUsername(), null);
+                if (!emailResult.success()) {
                     if (authMethodValidator.isEmailMust()) {
-                        return RegistrationValidationResult.reject("verify.wrong_code");
+                        String errorCode = mapFailureReasonToErrorCode(emailResult.failureReason());
+                        return RegistrationValidationResult.rejectWithCode("verify.wrong_code", errorCode, emailResult.remainingAttempts());
                     }
                 } else {
                     emailVerified = true;
@@ -274,9 +278,13 @@ public class RegistrationProcessingHandler implements HttpHandler {
                     return RegistrationValidationResult.reject("verify.sms_required");
                 }
             } else {
-                if (!codeService.checkSmsCode(request.phone(), request.countryCode(), request.smsCode(), VerifyCodePurpose.SMS_REGISTER)) {
+                VerifyCodeService.VerifyResult smsResult = codeService.checkSmsCodeWithResult(
+                        request.phone(), request.countryCode(), request.smsCode(), 
+                        VerifyCodePurpose.SMS_REGISTER, request.normalizedUsername(), null);
+                if (!smsResult.success()) {
                     if (authMethodValidator.isSmsMust()) {
-                        return RegistrationValidationResult.reject("verify.wrong_sms_code");
+                        String errorCode = mapFailureReasonToErrorCode(smsResult.failureReason());
+                        return RegistrationValidationResult.rejectWithCode("verify.wrong_sms_code", errorCode, smsResult.remainingAttempts());
                     }
                 } else {
                     smsVerified = true;
@@ -308,6 +316,17 @@ public class RegistrationProcessingHandler implements HttpHandler {
         }
 
         return RegistrationValidationResult.pass();
+    }
+
+    private String mapFailureReasonToErrorCode(String failureReason) {
+        if (failureReason == null) {
+            return "INVALID";
+        }
+        return switch (failureReason) {
+            case "EXPIRED" -> "CODE_EXPIRED";
+            case "ATTEMPTS_EXCEEDED" -> "CODE_ATTEMPTS_EXCEEDED";
+            default -> "CODE_INVALID";
+        };
     }
 
     private RegistrationValidationResult validateDiscordRequirement(RegistrationRequest request, String requestId) {

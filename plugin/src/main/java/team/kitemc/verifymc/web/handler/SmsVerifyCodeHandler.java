@@ -53,6 +53,8 @@ public class SmsVerifyCodeHandler implements HttpHandler {
 
         String clientIp = resolveClientIp(exchange);
         if (!checkIpRateLimit(clientIp)) {
+            ctx.getPlugin().getLogger().warning("[VerifyMC] IP rate limited for SMS verification from IP " + clientIp);
+            ctx.getAuditService().recordVerifyCodeIpRateLimited(clientIp, "SMS registration");
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(
                     ctx.getMessage("sms.ip_rate_limited", language)));
             return;
@@ -102,6 +104,7 @@ public class SmsVerifyCodeHandler implements HttpHandler {
         boolean sent = smsService.sendVerificationCode(fullPhone, issueResult.code(), language).join();
 
         if (sent) {
+            ctx.getPlugin().getLogger().info("[VerifyMC] SMS verification code sent to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             ctx.getAuditService().record(AuditEventType.SMS_SEND_SUCCESS, clientIp,
                     PhoneUtil.maskPhone(fullPhone), "Registration");
             JSONObject response = ApiResponseFactory.success(ctx.getMessage("sms.sent", language));
@@ -109,6 +112,7 @@ public class SmsVerifyCodeHandler implements HttpHandler {
             WebResponseHelper.sendJson(exchange, response);
         } else {
             verifyCodeService.revokeSmsCode(phone, countryCode, VerifyCodePurpose.SMS_REGISTER);
+            ctx.getPlugin().getLogger().warning("[VerifyMC] SMS verification code send failed to " + PhoneUtil.maskPhone(fullPhone) + " from IP " + clientIp);
             ctx.getAuditService().record(AuditEventType.SMS_SEND_FAILED, clientIp,
                     PhoneUtil.maskPhone(fullPhone), "Registration failed");
             WebResponseHelper.sendJson(exchange, ApiResponseFactory.failure(

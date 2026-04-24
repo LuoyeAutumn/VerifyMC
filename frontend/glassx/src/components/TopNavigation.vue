@@ -36,8 +36,8 @@
             size="icon"
             @click="toggleMobileMenu"
             class="md:hidden text-white"
-            aria-label="Toggle mobile menu"
-            title="Toggle mobile menu"
+            :aria-label="$t('a11y.toggle_mobile_menu')"
+            :title="$t('a11y.toggle_mobile_menu')"
           >
             <svg
               class="w-6 h-6 transition-transform duration-300"

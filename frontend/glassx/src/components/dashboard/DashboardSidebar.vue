@@ -56,7 +56,7 @@
           <User class="w-5 h-5" />
         </div>
         <div v-if="!isCollapsed" class="flex flex-col overflow-hidden">
-          <span class="text-sm font-semibold text-white truncate">{{ userInfo?.username || 'User' }}</span>
+          <span class="text-sm font-semibold text-white truncate">{{ userInfo?.username || $t('common.user') }}</span>
           <span class="text-xs text-white/50 truncate">{{ isAdmin ? $t('dashboard.roles.admin') : $t('dashboard.roles.player') }}</span>
         </div>
       </div>

@@ -960,4 +960,12 @@ public class ConfigManager {
         
         return getAllowedLoginMethods().contains(combination);
     }
+
+    public int getVerificationCodeExpireMinutes() {
+        return getConfig().getInt("sms.code.expire_minutes", 5);
+    }
+
+    public int getVerificationCodeMaxAttempts() {
+        return getConfig().getInt("sms.code.max_attempts", 5);
+    }
 }

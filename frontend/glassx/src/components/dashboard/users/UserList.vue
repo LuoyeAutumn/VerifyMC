@@ -119,7 +119,7 @@
     <ConfirmDialog
       :show="showDeleteDialog"
       :title="$t('admin.users.delete_modal.title')"
-      :message="$t('admin.users.delete_modal.message').replace('{username}', selectedUser?.username || '')"
+      :message="$t('admin.users.delete_modal.message', { username: selectedUser?.username || '' })"
       :confirm-text="$t('admin.users.delete_modal.confirm')"
       :cancel-text="$t('admin.users.delete_modal.cancel')"
       type="danger"
@@ -130,7 +130,7 @@
     <ConfirmDialog
       :show="showBanDialog"
       :title="$t('admin.users.ban_modal.title')"
-      :message="$t('admin.users.ban_modal.message').replace('{username}', selectedUser?.username || '')"
+      :message="$t('admin.users.ban_modal.message', { username: selectedUser?.username || '' })"
       :confirm-text="$t('admin.users.ban_modal.confirm')"
       :cancel-text="$t('admin.users.ban_modal.cancel')"
       type="danger"
@@ -141,7 +141,7 @@
     <ConfirmDialog
       :show="showUnbanDialog"
       :title="$t('admin.users.unban_modal.title')"
-      :message="$t('admin.users.unban_modal.message').replace('{username}', selectedUser?.username || '')"
+      :message="$t('admin.users.unban_modal.message', { username: selectedUser?.username || '' })"
       :confirm-text="$t('admin.users.unban_modal.confirm')"
       :cancel-text="$t('admin.users.unban_modal.cancel')"
       type="info"

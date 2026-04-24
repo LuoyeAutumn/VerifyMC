@@ -484,6 +484,28 @@ public class MysqlUserDao implements UserDao, AutoCloseable {
     }
 
     @Override
+    public List<Map<String, Object>> findAllByEmail(String email) {
+        debugLog("Finding all users by email: " + email);
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (email == null || email.isEmpty()) {
+            return result;
+        }
+        String sql = "SELECT * FROM users WHERE LOWER(email)=LOWER(?)";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapUserFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            debugLog("Error finding users by email: " + e.getMessage());
+        }
+        debugLog("Found " + result.size() + " users with email: " + email);
+        return result;
+    }
+
+    @Override
     public void save() {
         debugLog("MySQL storage: save() called (no-op)");
     }

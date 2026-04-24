@@ -6,6 +6,43 @@ export interface ApiResponse<T = unknown> {
   success: boolean
   message?: string
   data?: T
+  errorCode?: string
+  remainingAttempts?: number
+  retryAfter?: number
+}
+
+export const VERIFY_CODE_ERROR_CODES: Record<string, string> = {
+  CODE_INVALID: 'sms.code_invalid',
+  CODE_EXPIRED: 'sms.code_expired',
+  CODE_ATTEMPTS_EXCEEDED: 'sms.code_attempts_exceeded',
+  RATE_LIMITED: 'sms.rateLimited',
+  IP_RATE_LIMITED: 'sms.rateLimited',
+}
+
+export function getVerifyCodeErrorMessage(errorCode?: string): string | undefined {
+  if (!errorCode) return undefined
+  return VERIFY_CODE_ERROR_CODES[errorCode]
+}
+
+export interface ApiErrorDetail {
+  message: string
+  errorCode?: string
+  remainingAttempts?: number
+  retryAfter?: number
+}
+
+export class ApiError extends Error {
+  public readonly errorCode?: string
+  public readonly remainingAttempts?: number
+  public readonly retryAfter?: number
+
+  constructor(detail: ApiErrorDetail) {
+    super(detail.message)
+    this.name = 'ApiError'
+    this.errorCode = detail.errorCode
+    this.remainingAttempts = detail.remainingAttempts
+    this.retryAfter = detail.retryAfter
+  }
 }
 
 export interface ConfigResponse {
@@ -139,11 +176,13 @@ export interface SendSmsCodeRequest {
 export interface SendSmsCodeResponse {
   success: boolean
   message?: string
+  remainingSeconds?: number
 }
 
 export interface SmsConfig {
   enabled: boolean
   countryCodes: string[]
+  phoneRegex?: string
 }
 
 export interface AuthMethodsConfig {
@@ -170,6 +209,8 @@ export interface RegisterRequest {
 export interface RegisterResponse {
   success: boolean
   message: string
+  errorCode?: string
+  remainingAttempts?: number
 }
 
 export interface AdminLoginRequest {
@@ -181,6 +222,7 @@ export interface AdminLoginRequest {
   verifyMethod?: 'password' | 'code'
   code?: string
   countryCode?: string
+  tempToken?: string
 }
 
 export interface AdminLoginResponse {
@@ -261,31 +303,53 @@ class ApiService {
       // 处理 401/403 认证错误
       if (response.status === 401) {
         sessionService.handleUnauthorized()
-        throw new Error('Authentication required')
+        throw new ApiError({ message: 'Authentication required' })
       }
 
       // 检查 HTTP 状态码，非 2xx 响应抛出错误
       if (!response.ok) {
         let errorMessage = `HTTP error: ${response.status}`
+        let errorCode: string | undefined
+        let remainingAttempts: number | undefined
+        let retryAfter: number | undefined
         try {
           const errorData = await response.json()
           errorMessage = errorData?.message || errorMessage
+          errorCode = errorData?.errorCode
+          remainingAttempts = errorData?.remainingAttempts
+          retryAfter = errorData?.retryAfter
         } catch {
           // 无法解析 JSON，使用默认错误消息
         }
-        throw new Error(errorMessage)
+        throw new ApiError({
+          message: errorMessage,
+          errorCode,
+          remainingAttempts,
+          retryAfter,
+        })
       }
 
       const data = await response.json()
       const responseMessage = this.getResponseMessage(data)
       if (data && data.success === false && responseMessage.includes('Authentication required')) {
         sessionService.handleUnauthorized()
-        throw new Error('Authentication required')
+        throw new ApiError({ message: 'Authentication required' })
       }
+
+      // 处理业务逻辑错误（success: false）
+      if (data && data.success === false) {
+        throw new ApiError({
+          message: responseMessage || 'Request failed',
+          errorCode: data.errorCode,
+          remainingAttempts: data.remainingAttempts,
+          retryAfter: data.retryAfter,
+        })
+      }
+
       return data
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout')
+        throw new ApiError({ message: 'Request timeout' })
       }
       throw error
     } finally {

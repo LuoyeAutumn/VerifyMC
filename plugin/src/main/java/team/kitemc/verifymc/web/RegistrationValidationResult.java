@@ -19,4 +19,15 @@ public record RegistrationValidationResult(boolean passed, String messageKey, JS
     public static RegistrationValidationResult reject(String messageKey, JSONObject responseFields) {
         return new RegistrationValidationResult(false, messageKey, responseFields == null ? new JSONObject() : responseFields);
     }
+
+    public static RegistrationValidationResult rejectWithCode(String messageKey, String errorCode, Integer remainingAttempts) {
+        JSONObject fields = new JSONObject();
+        if (errorCode != null) {
+            fields.put("errorCode", errorCode);
+        }
+        if (remainingAttempts != null) {
+            fields.put("remainingAttempts", remainingAttempts);
+        }
+        return new RegistrationValidationResult(false, messageKey, fields);
+    }
 }
